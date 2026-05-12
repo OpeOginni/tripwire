@@ -14,6 +14,7 @@ import {
 } from "#/db/schema";
 import { logEvent } from "#/lib/events";
 import { describeRuleConfigChanges, normalizeRuleConfig } from "#/lib/rules/config-draft";
+import { ruleConfigSchema } from "#/lib/rules/config-schema";
 import { getInstallationToken, putRepoFile } from "#/lib/github/github-api";
 import {
 	generateHoneypotPhrase,
@@ -23,52 +24,6 @@ import {
 } from "#/lib/github/repo-files";
 
 import type { TRPCRouterRecord } from "@trpc/server";
-
-const ruleActionSchema = z.enum(["block", "warn", "log", "threshold"]);
-
-const ruleBaseSchema = z.object({
-	enabled: z.boolean(),
-	action: ruleActionSchema.default("block"),
-	thresholdCount: z.number().int().min(1).optional(),
-});
-
-const ruleConfigSchema = z.object({
-	aiSlopDetection: ruleBaseSchema,
-	languageRequirement: ruleBaseSchema.extend({
-		language: z.string(),
-	}),
-	minMergedPrs: ruleBaseSchema.extend({ count: z.number().int().min(0) }),
-	accountAge: ruleBaseSchema.extend({ days: z.number().int().min(0) }),
-	maxPrsPerDay: ruleBaseSchema.extend({ limit: z.number().int().min(1) }),
-	maxFilesChanged: ruleBaseSchema.extend({ limit: z.number().int().min(1) }),
-	repoActivityMinimum: ruleBaseSchema.extend({ minRepos: z.number().int().min(1) }),
-	requireProfileReadme: ruleBaseSchema,
-	cryptoAddressDetection: ruleBaseSchema,
-	vouchedUsersOnly: ruleBaseSchema,
-	aiHoneypot: ruleBaseSchema,
-	contentScope: z.object({
-		pullRequests: z.boolean(),
-		issues: z.boolean(),
-		comments: z.boolean(),
-	}),
-	repoFiles: z.object({
-		rulesMd: z.object({
-			autoSync: z.boolean(),
-			customContent: z.string(),
-		}),
-		prTemplate: z.object({
-			autoSync: z.boolean(),
-			honeypotEnabled: z.boolean(),
-			honeypotPhrases: z.array(
-				z.object({
-					kind: z.enum(["codeword", "marker", "natural", "tag"]),
-					phrase: z.string().min(1),
-				}),
-			),
-			customContent: z.string(),
-		}),
-	}),
-});
 
 export const rulesRouter = {
 	/** Get rule config for a repo */
