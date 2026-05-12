@@ -3,7 +3,7 @@ import { createTRPCRouter, publicProcedure } from "../init";
 import { db } from "#/db";
 import { waitlist } from "#/db/schema";
 import { checkRateLimit } from "#/lib/ratelimit";
-import { TRPCError } from "@trpc/server";
+import { trpcError } from "../error";
 
 export const waitlistRouter = createTRPCRouter({
 	join: publicProcedure
@@ -22,9 +22,12 @@ export const waitlistRouter = createTRPCRouter({
 					err instanceof Error &&
 					err.message.includes("unique constraint")
 				) {
-					throw new TRPCError({
-						code: "CONFLICT",
+					throw trpcError({
+						code: "waitlist.already_joined",
+						status: 409,
 						message: "You're already on the waitlist!",
+						fix: "Watch the inbox you used — we'll email when access opens.",
+						cause: err,
 					});
 				}
 				throw err;

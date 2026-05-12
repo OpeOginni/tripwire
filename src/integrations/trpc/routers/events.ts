@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { eq, desc, sql, and, gte, inArray, isNotNull } from "drizzle-orm";
-import { TRPCError } from "@trpc/server";
+import { trpcError } from "../error";
 import { authedProcedure } from "../init";
 import { db } from "#/db";
 import { events, repositories } from "#/db/schema";
@@ -43,7 +43,12 @@ export const eventsRouter = {
 				.limit(1);
 
 			if (!event) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
+				throw trpcError({
+					code: "events.not_found",
+					status: 404,
+					message: "Event not found",
+					internal: { eventId: input.eventId },
+				});
 			}
 
 			// Fetch repo info

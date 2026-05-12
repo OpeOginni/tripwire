@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq, and } from "drizzle-orm";
-import { TRPCError } from "@trpc/server";
 import { authedProcedure } from "../init";
+import { trpcError } from "../error";
 import { db } from "#/db";
 import { whitelistEntries, blacklistEntries, repositories, organizations } from "#/db/schema";
 import { logEvent } from "#/lib/events";
@@ -23,16 +23,22 @@ async function validateGitHubUser(username: string): Promise<{
 	});
 
 	if (res.status === 404) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
+		throw trpcError({
+			code: "github.user_not_found",
+			status: 404,
 			message: `GitHub user "${username}" not found`,
+			fix: "Double-check the username spelling and try again.",
+			internal: { username },
 		});
 	}
 
 	if (!res.ok) {
-		throw new TRPCError({
-			code: "INTERNAL_SERVER_ERROR",
+		throw trpcError({
+			code: "github.user_lookup_failed",
+			status: 500,
 			message: "Failed to validate GitHub user",
+			why: `GitHub responded with HTTP ${res.status}.`,
+			internal: { username, githubStatus: res.status },
 		});
 	}
 
@@ -72,9 +78,11 @@ export const whitelistRouter = {
 				.limit(1);
 
 			if (blacklisted) {
-				throw new TRPCError({
-					code: "CONFLICT",
+				throw trpcError({
+					code: "whitelist.user_blacklisted",
+					status: 409,
 					message: `@${ghUser.login} is on the blacklist. Remove them from the blacklist first.`,
+					fix: "Open the People tab, remove the user from the blacklist, then re-try adding to the whitelist.",
 				});
 			}
 
@@ -91,8 +99,9 @@ export const whitelistRouter = {
 				.limit(1);
 
 			if (existing) {
-				throw new TRPCError({
-					code: "CONFLICT",
+				throw trpcError({
+					code: "whitelist.already_present",
+					status: 409,
 					message: `@${ghUser.login} is already on the whitelist.`,
 				});
 			}
@@ -215,8 +224,9 @@ export const blacklistRouter = {
 				.limit(1);
 
 			if (existing) {
-				throw new TRPCError({
-					code: "CONFLICT",
+				throw trpcError({
+					code: "blacklist.already_present",
+					status: 409,
 					message: `@${ghUser.login} is already on the blacklist.`,
 				});
 			}

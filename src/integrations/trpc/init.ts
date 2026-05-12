@@ -1,5 +1,6 @@
 import { initTRPC, TRPCError } from '@trpc/server'
 import superjson from 'superjson'
+import { EvlogError } from 'evlog'
 import { auth } from '#/lib/auth'
 
 export interface TRPCContext {
@@ -21,6 +22,25 @@ export async function createContext(opts: { headers: Headers }): Promise<TRPCCon
 
 const t = initTRPC.context<TRPCContext>().create({
   transformer: superjson,
+  errorFormatter({ shape, error }) {
+    // Surface evlog's structured fields on shape.data so clients can use
+    // parseError() to branch on `code` and render `why` / `fix` / `link`.
+    const cause = error.cause
+    if (cause instanceof EvlogError) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          code: cause.code ?? shape.data?.code,
+          status: cause.statusCode,
+          why: cause.why,
+          fix: cause.fix,
+          link: cause.link,
+        },
+      }
+    }
+    return shape
+  },
 })
 
 export const createTRPCRouter = t.router

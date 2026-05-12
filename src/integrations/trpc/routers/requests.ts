@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { and, desc, eq } from "drizzle-orm";
-import { TRPCError } from "@trpc/server";
 import { authedProcedure, publicProcedure } from "../init";
+import { trpcError } from "../error";
 import { db } from "#/db";
 import {
 	account,
@@ -29,9 +29,12 @@ async function resolveSessionGithubUser(userId: string): Promise<{
 		.limit(1);
 
 	if (!gh?.accessToken) {
-		throw new TRPCError({
-			code: "UNAUTHORIZED",
+		throw trpcError({
+			code: "auth.github_required",
+			status: 401,
 			message: "Sign in with GitHub to submit a request.",
+			why: "No GitHub OAuth account is linked to this Tripwire session.",
+			fix: "Sign in with the GitHub account you want this request filed under.",
 		});
 	}
 
@@ -44,9 +47,13 @@ async function resolveSessionGithubUser(userId: string): Promise<{
 	});
 
 	if (!res.ok) {
-		throw new TRPCError({
-			code: "UNAUTHORIZED",
+		throw trpcError({
+			code: "auth.github_verify_failed",
+			status: 401,
 			message: "Could not verify your GitHub identity.",
+			why: "GitHub rejected the stored access token (likely expired or revoked).",
+			fix: "Sign out of Tripwire and sign back in with GitHub to refresh the token.",
+			internal: { githubStatus: res.status },
 		});
 	}
 
@@ -74,9 +81,11 @@ export const requestsRouter = {
 		)
 		.mutation(async ({ input, ctx }) => {
 			if (!ctx.user) {
-				throw new TRPCError({
-					code: "UNAUTHORIZED",
+				throw trpcError({
+					code: "auth.signin_required",
+					status: 401,
 					message: "Sign in to submit a request.",
+					fix: "Click \"Sign in with GitHub\" and try again.",
 				});
 			}
 
@@ -86,7 +95,14 @@ export const requestsRouter = {
 				.where(eq(repositories.fullName, input.repoFullName))
 				.limit(1);
 			if (!repo) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Repository not found." });
+				throw trpcError({
+					code: "repo.not_found",
+					status: 404,
+					message: "Repository not found.",
+					why: `No installed repository matches ${input.repoFullName}.`,
+					fix: "Confirm the URL is correct, or ask the maintainer to install Tripwire on this repo.",
+					internal: { repoFullName: input.repoFullName },
+				});
 			}
 
 			const ghUser = await resolveSessionGithubUser(ctx.user.id);
@@ -105,12 +121,17 @@ export const requestsRouter = {
 				.limit(1);
 
 			if (existing) {
-				throw new TRPCError({
-					code: "CONFLICT",
+				throw trpcError({
+					code:
+						input.kind === "unblock"
+							? "requests.pending_unblock_exists"
+							: "requests.pending_access_exists",
+					status: 409,
 					message:
 						input.kind === "unblock"
 							? "You already have a pending appeal for this repository."
 							: "You already have a pending access request for this repository.",
+					fix: "Wait for the maintainer to review your existing request, or contact them directly.",
 				});
 			}
 
@@ -170,12 +191,20 @@ export const requestsRouter = {
 				.where(eq(contributorRequests.id, input.requestId))
 				.limit(1);
 			if (!req) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Request not found." });
+				throw trpcError({
+					code: "requests.not_found",
+					status: 404,
+					message: "Request not found.",
+					internal: { requestId: input.requestId },
+				});
 			}
 			if (req.status !== "pending") {
-				throw new TRPCError({
-					code: "CONFLICT",
+				throw trpcError({
+					code: "requests.already_decided",
+					status: 409,
 					message: `Request has already been ${req.status}.`,
+					why: `This request was ${req.status} at ${req.decidedAt?.toISOString() ?? "an earlier time"}.`,
+					fix: "Refresh the list — decisions can't be reversed from this view.",
 				});
 			}
 

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
-import { TRPCError } from "@trpc/server";
 import { authedProcedure } from "../init";
+import { trpcError } from "../error";
 import { db } from "#/db";
 import {
 	ruleConfigs,
@@ -315,14 +315,26 @@ async function syncRepoFile(
 		.from(repositories)
 		.where(eq(repositories.id, repoId));
 	if (!repo) {
-		throw new TRPCError({ code: "NOT_FOUND", message: "Repository not found." });
+		throw trpcError({
+			code: "repo.not_found",
+			status: 404,
+			message: "Repository not found.",
+			internal: { repoId },
+		});
 	}
 	const [org] = await db
 		.select({ installationId: organizations.githubInstallationId })
 		.from(organizations)
 		.where(eq(organizations.id, repo.orgId));
 	if (!org) {
-		throw new TRPCError({ code: "NOT_FOUND", message: "GitHub installation not found." });
+		throw trpcError({
+			code: "github.installation_missing",
+			status: 404,
+			message: "GitHub installation not found.",
+			why: "The org row references no GitHub installation — Tripwire was likely uninstalled.",
+			fix: "Reinstall the Tripwire GitHub App on this organization.",
+			internal: { repoId, orgId: repo.orgId },
+		});
 	}
 
 	const token = await getInstallationToken(org.installationId);
