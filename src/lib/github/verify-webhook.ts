@@ -1,3 +1,5 @@
+import { timingSafeEqual } from "node:crypto";
+
 /**
  * Verify GitHub webhook signature (SHA-256).
  */
@@ -22,5 +24,8 @@ export async function verifyWebhookSignature(
 		.map((b) => b.toString(16).padStart(2, "0"))
 		.join("")}`;
 
-	return signature === digest;
+	const sigBuf = Buffer.from(signature);
+	const digestBuf = Buffer.from(digest);
+	if (sigBuf.length !== digestBuf.length) return false;
+	return timingSafeEqual(sigBuf, digestBuf);
 }

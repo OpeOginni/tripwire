@@ -17,7 +17,7 @@ const tokenCache = new Map<number, { token: string; expiresAt: number }>();
 /**
  * Create a JWT signed with the GitHub App's private key.
  */
-async function createAppJwt(): Promise<string> {
+export async function createAppJwt(): Promise<string> {
 	const appId = process.env.GITHUB_APP_ID;
 	const privateKey = process.env.GITHUB_APP_PRIVATE_KEY;
 

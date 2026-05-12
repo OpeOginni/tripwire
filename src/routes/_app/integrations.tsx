@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useWorkspace } from "#/lib/workspace-context";
-import { env } from "#/env";
 
 export const Route = createFileRoute("/_app/integrations")({
 	component: IntegrationsPage,
@@ -8,9 +7,11 @@ export const Route = createFileRoute("/_app/integrations")({
 
 function IntegrationsPage() {
 	const { repos, repo, setRepo, isLoading } = useWorkspace();
-	const appSlug = env.VITE_GITHUB_APP_SLUG ?? "tripwire-dev";
 
-	const installUrl = `https://github.com/apps/${appSlug}/installations/new`;
+	// Always start the install via our server route so we can mint a signed
+	// `state` parameter and set the matching HttpOnly cookie BEFORE bouncing
+	// to GitHub. The callback verifies both halves.
+	const installUrl = "/api/github/install";
 
 	return (
 		<div className="p-6 max-w-2xl mx-auto">

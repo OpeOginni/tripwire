@@ -24,6 +24,7 @@ import { Route as AppEventsIndexRouteImport } from './routes/_app/events.index'
 import { Route as RequestOwnerRepoRouteImport } from './routes/request.$owner.$repo'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
 import { Route as ApiGithubWebhookRouteImport } from './routes/api.github.webhook'
+import { Route as ApiGithubInstallRouteImport } from './routes/api.github.install'
 import { Route as ApiGithubCallbackRouteImport } from './routes/api.github.callback'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppSettingsGeneralRouteImport } from './routes/_app/settings/general'
@@ -106,6 +107,11 @@ const ApiGithubWebhookRoute = ApiGithubWebhookRouteImport.update({
   path: '/api/github/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGithubInstallRoute = ApiGithubInstallRouteImport.update({
+  id: '/api/github/install',
+  path: '/api/github/install',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGithubCallbackRoute = ApiGithubCallbackRouteImport.update({
   id: '/api/github/callback',
   path: '/api/github/callback',
@@ -160,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/settings/general': typeof AppSettingsGeneralRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/github/callback': typeof ApiGithubCallbackRoute
+  '/api/github/install': typeof ApiGithubInstallRoute
   '/api/github/webhook': typeof ApiGithubWebhookRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/request/$owner/$repo': typeof RequestOwnerRepoRoute
@@ -183,6 +190,7 @@ export interface FileRoutesByTo {
   '/settings/general': typeof AppSettingsGeneralRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/github/callback': typeof ApiGithubCallbackRoute
+  '/api/github/install': typeof ApiGithubInstallRoute
   '/api/github/webhook': typeof ApiGithubWebhookRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/request/$owner/$repo': typeof RequestOwnerRepoRoute
@@ -208,6 +216,7 @@ export interface FileRoutesById {
   '/_app/settings/general': typeof AppSettingsGeneralRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/github/callback': typeof ApiGithubCallbackRoute
+  '/api/github/install': typeof ApiGithubInstallRoute
   '/api/github/webhook': typeof ApiGithubWebhookRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/request/$owner/$repo': typeof RequestOwnerRepoRoute
@@ -233,6 +242,7 @@ export interface FileRouteTypes {
     | '/settings/general'
     | '/api/auth/$'
     | '/api/github/callback'
+    | '/api/github/install'
     | '/api/github/webhook'
     | '/api/trpc/$'
     | '/request/$owner/$repo'
@@ -256,6 +266,7 @@ export interface FileRouteTypes {
     | '/settings/general'
     | '/api/auth/$'
     | '/api/github/callback'
+    | '/api/github/install'
     | '/api/github/webhook'
     | '/api/trpc/$'
     | '/request/$owner/$repo'
@@ -280,6 +291,7 @@ export interface FileRouteTypes {
     | '/_app/settings/general'
     | '/api/auth/$'
     | '/api/github/callback'
+    | '/api/github/install'
     | '/api/github/webhook'
     | '/api/trpc/$'
     | '/request/$owner/$repo'
@@ -293,6 +305,7 @@ export interface RootRouteChildren {
   ApiChatRoute: typeof ApiChatRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiGithubCallbackRoute: typeof ApiGithubCallbackRoute
+  ApiGithubInstallRoute: typeof ApiGithubInstallRoute
   ApiGithubWebhookRoute: typeof ApiGithubWebhookRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
   RequestOwnerRepoRoute: typeof RequestOwnerRepoRoute
@@ -405,6 +418,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGithubWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/github/install': {
+      id: '/api/github/install'
+      path: '/api/github/install'
+      fullPath: '/api/github/install'
+      preLoaderRoute: typeof ApiGithubInstallRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/github/callback': {
       id: '/api/github/callback'
       path: '/api/github/callback'
@@ -508,6 +528,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChatRoute: ApiChatRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiGithubCallbackRoute: ApiGithubCallbackRoute,
+  ApiGithubInstallRoute: ApiGithubInstallRoute,
   ApiGithubWebhookRoute: ApiGithubWebhookRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
   RequestOwnerRepoRoute: RequestOwnerRepoRoute,

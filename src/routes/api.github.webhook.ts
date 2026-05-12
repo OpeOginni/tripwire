@@ -13,29 +13,25 @@ async function handler({ request }: { request: Request }) {
 	console.log("[Webhook] ═══════════════════════════════════════");
 	console.log("[Webhook] ▶ Received request at", new Date().toISOString());
 	console.log("[Webhook] Method:", request.method);
-	console.log("[Webhook] Headers:", Object.fromEntries(request.headers.entries()));
 
 	const secret = process.env.GITHUB_WEBHOOK_SECRET;
+	if (!secret) {
+		console.error("[Webhook] ✗ GITHUB_WEBHOOK_SECRET is not configured");
+		return new Response("Server misconfigured", { status: 500 });
+	}
 
 	// Read body
 	const body = await request.text();
 	console.log("[Webhook] Body length:", body.length);
 
-	// Verify signature if secret is configured
-	if (secret) {
-		const signature = request.headers.get("x-hub-signature-256");
-		console.log("[Webhook] Signature header:", signature);
-		console.log("[Webhook] Secret (first 8 chars):", secret.substring(0, 8) + "...");
-		console.log("[Webhook] Verifying signature...");
-		const valid = await verifyWebhookSignature(body, signature, secret);
-		if (!valid) {
-			console.log("[Webhook] ✗ Invalid signature - returning 401");
-			return new Response("Invalid signature", { status: 401 });
-		}
-		console.log("[Webhook] ✓ Signature valid");
-	} else {
-		console.log("[Webhook] ⚠ No webhook secret configured, skipping verification");
+	// Verify signature (fail-closed: missing or invalid signature -> 401)
+	const signature = request.headers.get("x-hub-signature-256");
+	const valid = await verifyWebhookSignature(body, signature, secret);
+	if (!valid) {
+		console.log("[Webhook] ✗ Invalid signature - returning 401");
+		return new Response("Invalid signature", { status: 401 });
 	}
+	console.log("[Webhook] ✓ Signature valid");
 
 	const event = request.headers.get("x-github-event");
 	const payload = JSON.parse(body);
@@ -168,8 +164,6 @@ async function handleInstallation(payload: {
 		// Find the Tripwire user by matching the sender's GitHub ID
 		// to the Better Auth `account` table (provider = "github")
 		console.log("[Install] Looking up sender in account table...");
-		const allAccounts = await db.select().from(account);
-		console.log("[Install] All accounts in DB:", allAccounts.map(a => ({ provider: a.providerId, accountId: a.accountId, userId: a.userId })));
 
 		const [senderAccount] = await db
 			.select()
