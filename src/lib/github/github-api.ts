@@ -9,6 +9,7 @@
 
 import { SignJWT, importPKCS8 } from "jose";
 import * as crypto from "crypto";
+import { createError } from "evlog";
 
 // Cache installation tokens: installationId -> { token, expiresAt }
 const tokenCache = new Map<number, { token: string; expiresAt: number }>();
@@ -21,7 +22,14 @@ async function createAppJwt(): Promise<string> {
 	const privateKey = process.env.GITHUB_APP_PRIVATE_KEY;
 
 	if (!appId || !privateKey) {
-		throw new Error("GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY must be set");
+		throw createError({
+			code: "github.app_credentials_missing",
+			status: 500,
+			message: "GitHub App credentials are not configured",
+			why: "GITHUB_APP_ID and/or GITHUB_APP_PRIVATE_KEY environment variables are missing.",
+			fix: "Set both env vars to your GitHub App's ID and private key, then restart the server.",
+			internal: { hasAppId: !!appId, hasPrivateKey: !!privateKey },
+		});
 	}
 
 	// The private key may have literal \n in env vars — normalize
@@ -95,9 +103,14 @@ export async function getInstallationToken(
 
 	if (!res.ok) {
 		const text = await res.text();
-		throw new Error(
-			`Failed to get installation token (${res.status}): ${text}`,
-		);
+		throw createError({
+			code: "github.installation_token_failed",
+			status: 502,
+			message: "Failed to authenticate as the GitHub App installation",
+			why: `GitHub returned HTTP ${res.status} when exchanging the App JWT.`,
+			fix: "Verify the App is still installed on this org and the private key hasn't been rotated.",
+			internal: { installationId, githubStatus: res.status, githubBody: text },
+		});
 	}
 
 	const data = (await res.json()) as { token: string; expires_at: string };
@@ -127,7 +140,13 @@ export async function githubApi(
 
 	if (!res.ok) {
 		const text = await res.text();
-		throw new Error(`GitHub API ${res.status}: ${text}`);
+		// Message format is preserved for callers that match on it (e.g. putRepoFile's 404/409 retries).
+		throw createError({
+			code: `github.api.${res.status}`,
+			status: res.status >= 500 ? 502 : 500,
+			message: `GitHub API ${res.status}: ${text}`,
+			internal: { endpoint, githubStatus: res.status, githubBody: text },
+		});
 	}
 
 	// Some responses (like DELETE) return empty body

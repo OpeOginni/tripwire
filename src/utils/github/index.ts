@@ -1,3 +1,4 @@
+import { createError } from "evlog";
 import type { GitHubUser, GitHubRepository, GitHubEvent, UserProfileData } from "#/types/github";
 
 const GITHUB_API = "https://api.github.com";
@@ -20,7 +21,12 @@ async function fetchWithCache<T>(url: string, options?: RequestInit): Promise<T>
 	});
 
 	if (!response.ok) {
-		throw new Error(`GitHub API error: ${response.status}`);
+		throw createError({
+			code: `github.public_api.${response.status}`,
+			status: response.status >= 500 ? 502 : 500,
+			message: `GitHub API error: ${response.status}`,
+			internal: { url, githubStatus: response.status },
+		});
 	}
 
 	const data = await response.json();

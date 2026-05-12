@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { chat, toServerSentEventsResponse, maxIterations } from "@tanstack/ai";
 import { openRouterText } from "@tanstack/ai-openrouter";
 import { webSearchTool } from "@tanstack/ai-openrouter/tools";
+import { useRequest } from "nitro/context";
+import type { RequestLogger } from "evlog";
 import { createTripwireTools } from "#/lib/ai/tools";
 import { createCreditMiddleware } from "#/lib/ai/credit-middleware";
 import { buildSystemPrompt } from "#/lib/ai/prompt";
@@ -11,6 +13,15 @@ import { db } from "#/db";
 import { organizations, repositories } from "#/db/schema";
 import { eq } from "drizzle-orm";
 import type { ProviderError } from "#/types/chat";
+
+function getRequestLog(): RequestLogger | undefined {
+	try {
+		const req = useRequest() as { context?: { log?: RequestLogger } } | undefined;
+		return req?.context?.log;
+	} catch {
+		return undefined;
+	}
+}
 
 export const Route = createFileRoute("/api/chat")({
 	server: {
@@ -147,6 +158,17 @@ export const Route = createFileRoute("/api/chat")({
 					// Model selection (configurable via env)
 					const aiModel = process.env.TRIPWIRE_AI_MODEL || "openai/gpt-5.4";
 
+					// Seed the wide event with chat context — token / cost / outcome
+					// fields land on this same event when the credit middleware finishes.
+					getRequestLog()?.set({
+						ai: {
+							model: aiModel,
+							conversationId,
+							repoId: resolvedRepoId,
+							currentPage: currentPage ?? "/home",
+						},
+					});
+
 					// Create tools with context
 					const tools = createTripwireTools({
 						userId: ctx.user.id,
@@ -216,6 +238,13 @@ export const Route = createFileRoute("/api/chat")({
 					console.error(
 						`[Chat API] ${provider ? provider + ": " : ""}${errMsg}`,
 						raw ? `\n${raw}` : "",
+					);
+					// Surface on the wide event for Axiom dashboards / drilldowns.
+					getRequestLog()?.set({
+						ai: { outcome: "error", provider, errorMessage: errMsg },
+					});
+					getRequestLog()?.error(
+						error instanceof Error ? error : new Error(errMsg),
 					);
 					return new Response(
 						JSON.stringify({

@@ -1,5 +1,6 @@
 import { toolDefinition } from "@tanstack/ai";
 import { z } from "zod";
+import { createError } from "evlog";
 import { db } from "#/db";
 import {
 	events,
@@ -304,7 +305,12 @@ async function fetchGitHubUser(username: string, token?: string) {
 	const res = await fetch(`https://api.github.com/users/${username}`, { headers });
 
 	if (!res.ok) {
-		throw new Error(`GitHub user @${username} not found`);
+		throw createError({
+			code: "github.user_not_found",
+			status: 404,
+			message: `GitHub user @${username} not found`,
+			internal: { username, githubStatus: res.status },
+		});
 	}
 
 	return res.json();
@@ -469,7 +475,12 @@ export function createTripwireTools(ctx: ToolContext) {
 				.limit(1);
 
 			if (!event) {
-				throw new Error("Event not found");
+				throw createError({
+					code: "events.not_found",
+					status: 404,
+					message: "Event not found",
+					internal: { eventId, repoId },
+				});
 			}
 
 			return makeSpec("EventCard", {
