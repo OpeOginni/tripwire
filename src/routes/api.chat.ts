@@ -1,13 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { chat, toServerSentEventsResponse, maxIterations } from "@tanstack/ai";
+import {
+	chat,
+	toServerSentEventsResponse,
+	maxIterations,
+	type ChatMiddleware,
+} from "@tanstack/ai";
 import { openRouterText } from "@tanstack/ai-openrouter";
 import { webSearchTool } from "@tanstack/ai-openrouter/tools";
 import { useRequest } from "nitro/context";
 import type { RequestLogger } from "evlog";
 import { createTripwireTools } from "#/lib/ai/tools";
 import { createCreditMiddleware } from "#/lib/ai/credit-middleware";
+import {
+	hashArgs,
+	signApprovalToken,
+	verifyApprovalToken,
+} from "#/lib/ai/approval-token";
 import { buildSystemPrompt } from "#/lib/ai/prompt";
-import { createContext } from "#/integrations/trpc/init";
+import { createContext, assertRepoOwner } from "#/integrations/trpc/init";
 import { autumn } from "#/lib/autumn";
 import { db } from "#/db";
 import { organizations, repositories } from "#/db/schema";
@@ -59,9 +69,20 @@ export const Route = createFileRoute("/api/chat")({
 								withPreview: true,
 							});
 						} else {
-							// Autumn is down or misconfigured, allow chat to proceed
-							console.error("[Tripwire] Autumn check failed, allowing request:", checkErr);
-							quota = { allowed: true };
+							// Autumn is down or misconfigured. Fail closed: don't grant
+							// free AI credits when we can't verify quota.
+							console.error("[Tripwire] Autumn check failed, denying request:", checkErr);
+							return new Response(
+								JSON.stringify({
+									error: "quota_check_failed",
+									code: "quota_check_failed",
+									message: "Could not verify your AI credits. Try again shortly.",
+								}),
+								{
+									status: 429,
+									headers: { "Content-Type": "application/json" },
+								},
+							);
 						}
 					}
 
@@ -139,6 +160,15 @@ export const Route = createFileRoute("/api/chat")({
 						);
 					}
 
+					try {
+						await assertRepoOwner(ctx.user.id, resolvedRepoId);
+					} catch {
+						return new Response(
+							JSON.stringify({ error: "repo_not_accessible" }),
+							{ status: 403, headers: { "Content-Type": "application/json" } },
+						);
+					}
+
 					// Get repo info for context
 					const [repo] = await db
 						.select()
@@ -181,12 +211,24 @@ export const Route = createFileRoute("/api/chat")({
 					// After approval, the client sends the messages back with the
 					// tool-call marked as "approval-responded" but without results.
 					// The server must execute them and inject results before chat().
-					await executeApprovedTools(messages, tools);
+					await executeApprovedTools(messages, tools, {
+						userId: ctx.user.id,
+						conversationId: String(conversationId ?? ""),
+						repoId: resolvedRepoId,
+					});
 
 					// Credit tracking middleware — accumulates tokens, computes credits, fires autumn.track()
 					const creditMiddleware = createCreditMiddleware({
 						customerId: ctx.user.id,
 						modelId: aiModel,
+					});
+
+					// Sign approval-requested chunks so executeApprovedTools can prove
+					// the model actually proposed each tool-call before re-running it.
+					const approvalSigner = createApprovalSignerMiddleware({
+						userId: ctx.user.id,
+						conversationId: String(conversationId ?? ""),
+						repoId: resolvedRepoId,
 					});
 
 					// Create streaming chat response with concise error logging
@@ -199,7 +241,7 @@ export const Route = createFileRoute("/api/chat")({
 						systemPrompts: [systemPrompt],
 						conversationId,
 						agentLoopStrategy: maxIterations(10),
-						middleware: [creditMiddleware],
+						middleware: [approvalSigner, creditMiddleware],
 						debug: {
 							errors: true,
 							provider: false,
@@ -258,12 +300,74 @@ export const Route = createFileRoute("/api/chat")({
 	},
 });
 
+interface ApprovalSessionContext {
+	userId: string;
+	conversationId: string;
+	repoId: string;
+}
+
+/**
+ * ChatMiddleware that intercepts the CUSTOM `approval-requested` chunk
+ * emitted by @tanstack/ai when a `needsApproval` tool is proposed by the
+ * model. We replace the opaque `approval.id` with an HMAC-signed token
+ * that binds {toolCallId, userId, conversationId, repoId, name, argsHash}.
+ *
+ * The token round-trips through the client as `part.approval.id` and is
+ * verified by executeApprovedTools on the next request. A client cannot
+ * forge a token (no access to BETTER_AUTH_SECRET), so synthetic
+ * "approval-responded" tool-calls are rejected.
+ */
+function createApprovalSignerMiddleware(
+	session: ApprovalSessionContext,
+): ChatMiddleware {
+	return {
+		name: "approval-signer",
+		onChunk(_ctx, chunk) {
+			if (chunk.type !== "CUSTOM") return;
+			if ((chunk as any).name !== "approval-requested") return;
+			const value = (chunk as any).value;
+			if (!value || typeof value !== "object") return;
+			const { toolCallId, toolName, input, approval } = value;
+			if (!toolCallId || !toolName || !approval?.id) return;
+
+			const token = signApprovalToken({
+				toolCallId,
+				userId: session.userId,
+				conversationId: session.conversationId,
+				repoId: session.repoId,
+				name: toolName,
+				argsHash: hashArgs(input ?? {}),
+			});
+
+			return {
+				...chunk,
+				value: {
+					...value,
+					approval: {
+						...approval,
+						id: token,
+					},
+				},
+			} as typeof chunk;
+		},
+	};
+}
+
 /**
  * Execute approved tool-calls that the client approved but the server
  * hasn't executed yet. Mutates the messages array in-place by adding
  * tool-result parts next to each approved tool-call.
+ *
+ * Each tool-call MUST carry a server-signed token at `approval.id`
+ * (issued by createApprovalSignerMiddleware on the previous turn).
+ * Tool-calls without a valid signature get an error tool-result and
+ * are NOT executed.
  */
-async function executeApprovedTools(messages: any[], tools: any[]) {
+async function executeApprovedTools(
+	messages: any[],
+	tools: any[],
+	session: ApprovalSessionContext,
+) {
 	// Build a name→execute map from the tools array
 	const toolMap = new Map<string, (args: any) => Promise<any>>();
 	for (const tool of tools) {
@@ -299,13 +403,9 @@ async function executeApprovedTools(messages: any[], tools: any[]) {
 
 	if (pendingCalls.length === 0) return;
 
-	console.log(`[executeApproved] executing ${pendingCalls.length} approved tools: ${pendingCalls.map((p) => p.call.name).join(", ")}`);
+	console.log(`[executeApproved] processing ${pendingCalls.length} approved tools: ${pendingCalls.map((p) => p.call.name).join(", ")}`);
 
-	// Execute each approved tool and append results to the correct message
 	for (const { call, message } of pendingCalls) {
-		const execute = toolMap.get(call.name);
-		if (!execute) continue;
-
 		const id = call.toolCallId || call.id;
 		let args: any = {};
 		if (call.arguments) {
@@ -313,6 +413,43 @@ async function executeApprovedTools(messages: any[], tools: any[]) {
 		} else if (call.input) {
 			args = call.input;
 		}
+
+		const token: string | undefined = call.approval?.id;
+		if (!token) {
+			console.warn(`[executeApproved] rejecting ${call.name} (${id}): missing approval signature`);
+			call.state = "input-complete";
+			message.parts.push({
+				type: "tool-result",
+				toolCallId: id,
+				content: JSON.stringify({ error: "approval_signature_missing" }),
+				state: "error",
+			});
+			continue;
+		}
+
+		const ok = verifyApprovalToken(token, {
+			toolCallId: id,
+			userId: session.userId,
+			conversationId: session.conversationId,
+			repoId: session.repoId,
+			name: call.name,
+			argsHash: hashArgs(args),
+		});
+
+		if (!ok) {
+			console.warn(`[executeApproved] rejecting ${call.name} (${id}): invalid approval signature`);
+			call.state = "input-complete";
+			message.parts.push({
+				type: "tool-result",
+				toolCallId: id,
+				content: JSON.stringify({ error: "approval_signature_invalid" }),
+				state: "error",
+			});
+			continue;
+		}
+
+		const execute = toolMap.get(call.name);
+		if (!execute) continue;
 
 		try {
 			const output = await execute(args);
