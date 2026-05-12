@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
 	pgTable,
 	text,
@@ -7,6 +8,7 @@ import {
 	jsonb,
 	uuid,
 	index,
+	uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 // ─── Better Auth tables ────────────────────────────────────────
@@ -271,7 +273,10 @@ export const whitelistEntries = pgTable(
 	},
 	(t) => [
 		index("whitelist_repo_idx").on(t.repoId),
-		index("whitelist_unique_idx").on(t.repoId, t.githubUsername),
+		uniqueIndex("whitelist_repo_username_uniq").on(
+			t.repoId,
+			sql`lower(${t.githubUsername})`,
+		),
 	],
 );
 
@@ -293,7 +298,10 @@ export const blacklistEntries = pgTable(
 	},
 	(t) => [
 		index("blacklist_repo_idx").on(t.repoId),
-		index("blacklist_unique_idx").on(t.repoId, t.githubUsername),
+		uniqueIndex("blacklist_repo_username_uniq").on(
+			t.repoId,
+			sql`lower(${t.githubUsername})`,
+		),
 	],
 );
 
@@ -310,6 +318,8 @@ export type EventAction =
 	// Pipeline lifecycle
 	| "pipeline_allowed"    // all rules passed, content was allowed through
 	| "pipeline_blocked"    // a rule blocked the content
+	| "pipeline_warned"     // a rule warned but did not block
+	| "pipeline_logged"     // a rule fired in log-only mode
 	// Near-miss warnings
 	| "rule_near_miss"      // user was close to triggering a rule
 	// List-based outcomes
@@ -386,7 +396,9 @@ export const githubReputation = pgTable(
 	"github_reputation",
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
-		githubUsername: text("github_username").notNull().unique(),
+		// repoId nullable until #6 backfill completes; follow-up migration tightens to NOT NULL
+		repoId: uuid("repo_id").references(() => repositories.id, { onDelete: "cascade" }),
+		githubUsername: text("github_username").notNull(),
 		githubUserId: integer("github_user_id"),
 		score: integer("score").notNull().default(0),
 		totalBlocks: integer("total_blocks").notNull().default(0),
@@ -400,6 +412,10 @@ export const githubReputation = pgTable(
 		index("reputation_score_idx").on(t.score),
 		index("reputation_blocks_idx").on(t.totalBlocks),
 		index("reputation_username_idx").on(t.githubUsername),
+		uniqueIndex("github_reputation_repo_user_uniq").on(
+			t.repoId,
+			sql`lower(${t.githubUsername})`,
+		),
 	],
 );
 
@@ -458,6 +474,9 @@ export const contributorRequests = pgTable(
 		index("requests_repo_idx").on(t.repoId),
 		index("requests_status_idx").on(t.status),
 		index("requests_repo_user_idx").on(t.repoId, t.githubUsername),
+		uniqueIndex("contributor_requests_pending_uniq")
+			.on(t.repoId, t.githubUsername, t.kind)
+			.where(sql`${t.status} = 'pending'`),
 	],
 );
 
