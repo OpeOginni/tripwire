@@ -21,7 +21,7 @@ import { createContext, assertRepoOwner } from "#/integrations/trpc/init";
 import { autumn } from '@tripwire/auth/autumn';
 import { db } from "@tripwire/db/client";
 import { conversations, organizations, repositories } from "@tripwire/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { ProviderError } from "#/types/chat";
 
 function getRequestLog(): RequestLogger | undefined {
@@ -226,11 +226,32 @@ export const Route = createFileRoute("/api/chat")({
 					// in place. After this, sanitize will see paired call+result and keep
 					// them. (See the comment above the sanitize call for the loop bug
 					// this ordering avoids.)
-					await executeApprovedTools(rawMessages, tools, {
+					const approvalResult = await executeApprovedTools(rawMessages, tools, {
 						userId: ctx.user.id,
 						conversationId: String(conversationId ?? ""),
 						repoId: resolvedRepoId,
 					});
+
+					// If executeApprovedTools mutated any messages (e.g. rejected stale
+					// approval-responded tool-calls left over from a previous session)
+					// persist the cleaned state immediately. Without this, the client's
+					// useChat doesn't see the server-side mutation, so its eventual
+					// `saveMessages` overwrites our cleanup with the original stale
+					// state — and the same calls get re-rejected on every request.
+					if (approvalResult.mutated && typeof conversationId === "string") {
+						await db
+							.update(conversations)
+							.set({ messages: rawMessages, updatedAt: new Date() })
+							.where(
+								and(
+									eq(conversations.id, conversationId),
+									eq(conversations.userId, ctx.user.id),
+								),
+							)
+							.catch((err) => {
+								console.error("[chat] Failed to persist approval cleanup:", err);
+							});
+					}
 
 					// Now sanitize, with the approved tool-results already in place.
 					const messages = sanitizeMessages(rawMessages);
@@ -399,7 +420,7 @@ async function executeApprovedTools(
 	messages: any[],
 	tools: any[],
 	session: ApprovalSessionContext,
-) {
+): Promise<{ mutated: boolean }> {
 	// Build a name→execute map from the tools array
 	const toolMap = new Map<string, (args: any) => Promise<any>>();
 	for (const tool of tools) {
@@ -433,7 +454,7 @@ async function executeApprovedTools(
 		}
 	}
 
-	if (pendingCalls.length === 0) return;
+	if (pendingCalls.length === 0) return { mutated: false };
 
 	console.log(`[executeApproved] processing ${pendingCalls.length} approved tools: ${pendingCalls.map((p) => p.call.name).join(", ")}`);
 
@@ -502,6 +523,8 @@ async function executeApprovedTools(
 			});
 		}
 	}
+
+	return { mutated: true };
 }
 
 /**
