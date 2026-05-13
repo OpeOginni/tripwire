@@ -61,3 +61,11 @@ Open http://localhost:3000.
 ## License
 
 MIT.
+
+<!--
+## Sponsors
+---
+<a href="https://www.coderabbit.ai">
+  <img src="https://github.com/user-attachments/assets/5bbfd2ad-78fa-4e2e-b9ae-fc0954a5da4b" alt="CodeRabbit" width="200" />
+</a>
+-->
