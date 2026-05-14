@@ -125,7 +125,12 @@ export function formatAccountAge(days: number): string {
 
 // ─── Category scorers ────────────────────────────────────────────
 
-function scoreGlobalReputation(input: ScoreInput, sink: ScoreLineItem[]): number {
+interface CategoryScore {
+	value: number;
+	lostToCap: number;
+}
+
+function scoreGlobalReputation(input: ScoreInput, sink: ScoreLineItem[]): CategoryScore {
 	const b = new CategoryBuilder("globalReputation", sink);
 	const days = input.accountAgeDays;
 	const ageLabel = formatAccountAge(days);
@@ -191,27 +196,14 @@ function scoreGlobalReputation(input: ScoreInput, sink: ScoreLineItem[]): number
 
 	const raw = b.total;
 	const clamped = clamp(raw, 0, 40);
-	if (raw > clamped) {
-		sink.push({
-			category: "globalReputation",
-			reason: `Capped at 40 (raw ${raw})`,
-			delta: clamped - raw,
-		});
-	}
-	return clamped;
+	return { value: clamped, lostToCap: Math.max(0, raw - clamped) };
 }
 
-function scoreCommunitySignals(input: ScoreInput, sink: ScoreLineItem[]): number {
+function scoreCommunitySignals(input: ScoreInput, sink: ScoreLineItem[]): CategoryScore {
 	const b = new CategoryBuilder("communitySignals", sink);
 
-	let achievementTotal = 0;
 	for (const a of input.achievements) {
-		const pts = achievementPoints(a);
-		achievementTotal += pts;
-		b.add(`Achievement: ${a.type} (tier ${a.tier})`, pts);
-	}
-	if (achievementTotal > 20) {
-		b.add("Achievements capped at 20", 20 - achievementTotal);
+		b.add(`Achievement: ${a.type} (tier ${a.tier})`, achievementPoints(a));
 	}
 
 	if (input.graphql?.sponsoringCount && input.graphql.sponsoringCount > 0) {
@@ -244,14 +236,7 @@ function scoreCommunitySignals(input: ScoreInput, sink: ScoreLineItem[]): number
 
 	const raw = b.total;
 	const clamped = clamp(raw, 0, 30);
-	if (raw > clamped) {
-		sink.push({
-			category: "communitySignals",
-			reason: `Capped at 30 (raw ${raw})`,
-			delta: clamped - raw,
-		});
-	}
-	return clamped;
+	return { value: clamped, lostToCap: Math.max(0, raw - clamped) };
 }
 
 function scoreRepoHistory(input: ScoreInput, sink: ScoreLineItem[]): number {
@@ -342,23 +327,16 @@ function scoreRedFlags(input: ScoreInput, sink: ScoreLineItem[]): number {
 export function computeContributorScore(input: ScoreInput): ScoreResult {
 	const lineItems: ScoreLineItem[] = [];
 
-	const globalReputation = scoreGlobalReputation(input, lineItems);
-	const communitySignals = scoreCommunitySignals(input, lineItems);
+	const gr = scoreGlobalReputation(input, lineItems);
+	const cs = scoreCommunitySignals(input, lineItems);
+	const globalReputation = gr.value;
+	const communitySignals = cs.value;
 	const repoHistory = scoreRepoHistory(input, lineItems);
 	const redFlags = scoreRedFlags(input, lineItems);
 
 	let raw = globalReputation + communitySignals + repoHistory + redFlags;
 
-	const capLosses: number[] = [];
-	for (const item of lineItems) {
-		if (
-			item.delta < 0 &&
-			(item.category === "globalReputation" || item.category === "communitySignals") &&
-			(item.reason.startsWith("Capped at") || item.reason === "Achievements capped at 20")
-		) {
-			capLosses.push(-item.delta);
-		}
-	}
+	const capLosses = [gr.lostToCap, cs.lostToCap].filter((n) => n > 0);
 	if (capLosses.length > 0) {
 		const totalLost = capLosses.reduce((sum, n) => sum + n, 0);
 		const bonus = totalLost / capLosses.length;
