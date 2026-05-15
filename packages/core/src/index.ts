@@ -15,4 +15,5 @@ export * from "./language-detection";
 export * from "./fake-bounty";
 export * from "./rules/config-schema";
 export * from "./rules/config-draft";
+export * from "./api-keys";
 export * from "./assertions";

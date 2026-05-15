@@ -60,7 +60,10 @@ export type RuleConfig = {
 	repoActivityMinimum: RuleBase & { minRepos: number };
 	requireProfileReadme: RuleBase;
 	cryptoAddressDetection: RuleBase;
-	vouchedUsersOnly: RuleBase;
+	vouchedUsersOnly: RuleBase & {
+		/** "repo" = only repo whitelist, "global" = only global vouches, "both" = either */
+		vouchScope: "repo" | "global" | "both";
+	};
 	aiHoneypot: RuleBase;
 	/** Auto-whitelist users who have global vouch records (from any Tripwire maintainer). */
 	autoWhitelistGlobalVouches: { enabled: boolean; minVouches: number };
@@ -94,7 +97,7 @@ export const DEFAULT_RULE_CONFIG: RuleConfig = {
 	repoActivityMinimum: { enabled: false, action: "block", minRepos: 3 },
 	requireProfileReadme: { enabled: false, action: "block" },
 	cryptoAddressDetection: { enabled: false, action: "block" },
-	vouchedUsersOnly: { enabled: false, action: "block" },
+	vouchedUsersOnly: { enabled: false, action: "block", vouchScope: "repo" },
 	aiHoneypot: { enabled: false, action: "block" },
 	autoWhitelistGlobalVouches: { enabled: false, minVouches: 1 },
 	contentScope: { pullRequests: true, issues: true, comments: true },

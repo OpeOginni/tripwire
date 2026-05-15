@@ -27,6 +27,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotwellKnownChar93OauthAuthorizationServerRouteImport } from './routes/[.well-known].oauth-authorization-server'
 import { Route as AppEventsIndexRouteImport } from './routes/_app/events.index'
 import { Route as RequestOwnerRepoRouteImport } from './routes/request.$owner.$repo'
+import { Route as ApiV1VouchedRouteImport } from './routes/api.v1.vouched'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
 import { Route as ApiToolsRunRouteImport } from './routes/api.tools.run'
 import { Route as ApiOauthAppInfoRouteImport } from './routes/api.oauth.app-info'
@@ -35,6 +36,7 @@ import { Route as ApiGithubInstallRouteImport } from './routes/api.github.instal
 import { Route as ApiGithubCallbackRouteImport } from './routes/api.github.callback'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppSettingsGeneralRouteImport } from './routes/_app/settings/general'
+import { Route as AppSettingsDevelopersRouteImport } from './routes/_app/settings/developers'
 import { Route as AppSettingsBillingRouteImport } from './routes/_app/settings/billing'
 import { Route as AppSettingsAccountRouteImport } from './routes/_app/settings/account'
 import { Route as AppEventsEventIdRouteImport } from './routes/_app/events.$eventId'
@@ -133,6 +135,11 @@ const RequestOwnerRepoRoute = RequestOwnerRepoRouteImport.update({
   path: '/request/$owner/$repo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1VouchedRoute = ApiV1VouchedRouteImport.update({
+  id: '/api/v1/vouched',
+  path: '/api/v1/vouched',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
   id: '/api/trpc/$',
   path: '/api/trpc/$',
@@ -171,6 +178,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 const AppSettingsGeneralRoute = AppSettingsGeneralRouteImport.update({
   id: '/general',
   path: '/general',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsDevelopersRoute = AppSettingsDevelopersRouteImport.update({
+  id: '/developers',
+  path: '/developers',
   getParentRoute: () => AppSettingsRoute,
 } as any)
 const AppSettingsBillingRoute = AppSettingsBillingRouteImport.update({
@@ -228,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/events/$eventId': typeof AppEventsEventIdRoute
   '/settings/account': typeof AppSettingsAccountRoute
   '/settings/billing': typeof AppSettingsBillingRoute
+  '/settings/developers': typeof AppSettingsDevelopersRoute
   '/settings/general': typeof AppSettingsGeneralRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/github/callback': typeof ApiGithubCallbackRoute
@@ -236,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/api/oauth/app-info': typeof ApiOauthAppInfoRoute
   '/api/tools/run': typeof ApiToolsRunRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/api/v1/vouched': typeof ApiV1VouchedRoute
   '/request/$owner/$repo': typeof RequestOwnerRepoRoute
   '/events/': typeof AppEventsIndexRoute
 }
@@ -261,6 +275,7 @@ export interface FileRoutesByTo {
   '/events/$eventId': typeof AppEventsEventIdRoute
   '/settings/account': typeof AppSettingsAccountRoute
   '/settings/billing': typeof AppSettingsBillingRoute
+  '/settings/developers': typeof AppSettingsDevelopersRoute
   '/settings/general': typeof AppSettingsGeneralRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/github/callback': typeof ApiGithubCallbackRoute
@@ -269,6 +284,7 @@ export interface FileRoutesByTo {
   '/api/oauth/app-info': typeof ApiOauthAppInfoRoute
   '/api/tools/run': typeof ApiToolsRunRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/api/v1/vouched': typeof ApiV1VouchedRoute
   '/request/$owner/$repo': typeof RequestOwnerRepoRoute
   '/events': typeof AppEventsIndexRoute
 }
@@ -296,6 +312,7 @@ export interface FileRoutesById {
   '/_app/events/$eventId': typeof AppEventsEventIdRoute
   '/_app/settings/account': typeof AppSettingsAccountRoute
   '/_app/settings/billing': typeof AppSettingsBillingRoute
+  '/_app/settings/developers': typeof AppSettingsDevelopersRoute
   '/_app/settings/general': typeof AppSettingsGeneralRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/github/callback': typeof ApiGithubCallbackRoute
@@ -304,6 +321,7 @@ export interface FileRoutesById {
   '/api/oauth/app-info': typeof ApiOauthAppInfoRoute
   '/api/tools/run': typeof ApiToolsRunRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/api/v1/vouched': typeof ApiV1VouchedRoute
   '/request/$owner/$repo': typeof RequestOwnerRepoRoute
   '/_app/events/': typeof AppEventsIndexRoute
 }
@@ -331,6 +349,7 @@ export interface FileRouteTypes {
     | '/events/$eventId'
     | '/settings/account'
     | '/settings/billing'
+    | '/settings/developers'
     | '/settings/general'
     | '/api/auth/$'
     | '/api/github/callback'
@@ -339,6 +358,7 @@ export interface FileRouteTypes {
     | '/api/oauth/app-info'
     | '/api/tools/run'
     | '/api/trpc/$'
+    | '/api/v1/vouched'
     | '/request/$owner/$repo'
     | '/events/'
   fileRoutesByTo: FileRoutesByTo
@@ -364,6 +384,7 @@ export interface FileRouteTypes {
     | '/events/$eventId'
     | '/settings/account'
     | '/settings/billing'
+    | '/settings/developers'
     | '/settings/general'
     | '/api/auth/$'
     | '/api/github/callback'
@@ -372,6 +393,7 @@ export interface FileRouteTypes {
     | '/api/oauth/app-info'
     | '/api/tools/run'
     | '/api/trpc/$'
+    | '/api/v1/vouched'
     | '/request/$owner/$repo'
     | '/events'
   id:
@@ -398,6 +420,7 @@ export interface FileRouteTypes {
     | '/_app/events/$eventId'
     | '/_app/settings/account'
     | '/_app/settings/billing'
+    | '/_app/settings/developers'
     | '/_app/settings/general'
     | '/api/auth/$'
     | '/api/github/callback'
@@ -406,6 +429,7 @@ export interface FileRouteTypes {
     | '/api/oauth/app-info'
     | '/api/tools/run'
     | '/api/trpc/$'
+    | '/api/v1/vouched'
     | '/request/$owner/$repo'
     | '/_app/events/'
   fileRoutesById: FileRoutesById
@@ -427,6 +451,7 @@ export interface RootRouteChildren {
   ApiOauthAppInfoRoute: typeof ApiOauthAppInfoRoute
   ApiToolsRunRoute: typeof ApiToolsRunRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
+  ApiV1VouchedRoute: typeof ApiV1VouchedRoute
   RequestOwnerRepoRoute: typeof RequestOwnerRepoRoute
 }
 
@@ -558,6 +583,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RequestOwnerRepoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/vouched': {
+      id: '/api/v1/vouched'
+      path: '/api/v1/vouched'
+      fullPath: '/api/v1/vouched'
+      preLoaderRoute: typeof ApiV1VouchedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/trpc/$': {
       id: '/api/trpc/$'
       path: '/api/trpc/$'
@@ -614,6 +646,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsGeneralRouteImport
       parentRoute: typeof AppSettingsRoute
     }
+    '/_app/settings/developers': {
+      id: '/_app/settings/developers'
+      path: '/developers'
+      fullPath: '/settings/developers'
+      preLoaderRoute: typeof AppSettingsDevelopersRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
     '/_app/settings/billing': {
       id: '/_app/settings/billing'
       path: '/billing'
@@ -662,12 +701,14 @@ declare module '@tanstack/react-router' {
 interface AppSettingsRouteChildren {
   AppSettingsAccountRoute: typeof AppSettingsAccountRoute
   AppSettingsBillingRoute: typeof AppSettingsBillingRoute
+  AppSettingsDevelopersRoute: typeof AppSettingsDevelopersRoute
   AppSettingsGeneralRoute: typeof AppSettingsGeneralRoute
 }
 
 const AppSettingsRouteChildren: AppSettingsRouteChildren = {
   AppSettingsAccountRoute: AppSettingsAccountRoute,
   AppSettingsBillingRoute: AppSettingsBillingRoute,
+  AppSettingsDevelopersRoute: AppSettingsDevelopersRoute,
   AppSettingsGeneralRoute: AppSettingsGeneralRoute,
 }
 
@@ -752,6 +793,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOauthAppInfoRoute: ApiOauthAppInfoRoute,
   ApiToolsRunRoute: ApiToolsRunRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
+  ApiV1VouchedRoute: ApiV1VouchedRoute,
   RequestOwnerRepoRoute: RequestOwnerRepoRoute,
 }
 export const routeTree = rootRouteImport

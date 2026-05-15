@@ -5,6 +5,7 @@ import { parseAsString, parseAsStringEnum, useQueryStates } from "nuqs";
 import { authClient } from '@tripwire/auth/client';
 import { useTRPC } from "#/integrations/trpc/react";
 import { Button } from "#/components/ui/button";
+import { TripwireLogo } from "#/components/icons/tripwire-logo";
 import { toastFromError } from "#/lib/toast-error";
 
 export const Route = createFileRoute("/request/$owner/$repo")({
@@ -79,8 +80,19 @@ function RequestPage() {
 	);
 
 	return (
-		<div className="min-h-screen w-full bg-[#191919] text-white flex justify-center px-4 py-16">
-			<div className="w-full max-w-[520px] flex flex-col gap-6">
+		<div className="h-screen flex flex-col overflow-hidden bg-tw-bg text-tw-text-primary">
+			{/* Top bar */}
+			<header className="shrink-0 flex items-center justify-between h-12 px-4">
+				<a href="/" className="flex items-center gap-2">
+					<TripwireLogo className="w-5 h-5" />
+					<span className="text-[14px] font-medium text-tw-text-primary">tripwire</span>
+				</a>
+			</header>
+
+			{/* Inset content area */}
+			<div className="flex-1 min-h-0 px-2 pb-2">
+				<div className="tw-inset h-full overflow-auto flex justify-center" style={{ boxShadow: "#00000008 0px 1px 4px" }}>
+					<div className="w-full max-w-[520px] flex flex-col gap-6 px-4 py-16">
 				<header className="flex flex-col gap-1">
 					<h1 className="text-[22px] font-semibold tracking-[-0.02em] m-0">
 						Request review
@@ -127,12 +139,12 @@ function RequestPage() {
 						</div>
 					</div>
 				) : (
+					<>
 					{vouchQuery.data?.isVouched && (
-						<div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-4 flex items-center gap-3">
-							<span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-							<div className="text-[13px] text-emerald-200">
-								<span className="font-medium text-emerald-100">Globally vouched</span>
-								{" "}— you have {vouchQuery.data.vouchCount} vouch{vouchQuery.data.vouchCount !== 1 ? "es" : ""} from Tripwire maintainers. Some repositories may auto-approve your contributions.
+						<div className="flex items-center gap-3">
+							<div className="text-[13px] text-tw-text-secondary">
+								<span className="font-medium text-tw-text-primary">You&apos;re vouched.</span>
+								{" "}You have {vouchQuery.data.vouchCount} vouch{vouchQuery.data.vouchCount !== 1 ? "es" : ""} from Tripwire maintainers. Some repositories may auto-approve your contributions.
 							</div>
 						</div>
 					)}
@@ -186,7 +198,10 @@ function RequestPage() {
 							{submit.isPending ? "Submitting…" : "Submit request"}
 						</Button>
 					</form>
+					</>
 				)}
+					</div>
+				</div>
 			</div>
 		</div>
 	);

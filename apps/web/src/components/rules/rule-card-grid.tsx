@@ -30,10 +30,10 @@ const ACTION_LABELS: Record<RuleAction, string> = {
 };
 
 const ACTION_COLORS: Record<RuleAction, { active: string; chip: string }> = {
-	block: { active: "text-red-400", chip: "bg-red-500/15 text-red-400 border-red-500/30" },
-	warn: { active: "text-amber-400", chip: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
-	log: { active: "text-white/60", chip: "bg-white/10 text-white/60 border-white/20" },
-	threshold: { active: "text-tw-accent", chip: "bg-tw-accent/15 text-tw-accent border-tw-accent/30" },
+	block: { active: "text-red-400", chip: "bg-tw-inner text-tw-text-primary" },
+	warn: { active: "text-amber-400", chip: "bg-tw-inner text-tw-text-primary" },
+	log: { active: "text-white/60", chip: "bg-tw-inner text-tw-text-primary" },
+	threshold: { active: "text-tw-accent", chip: "bg-tw-inner text-tw-text-primary" },
 };
 
 interface NumericConfig {
@@ -307,24 +307,8 @@ export function RuleCardGrid({
 
 					<div className="px-5 pb-5 flex flex-col gap-5">
 						{configureHint ? (
-							<div className="flex items-start gap-2 rounded-lg bg-tw-inner border border-tw-border px-3 py-2.5 text-[12px] text-tw-text-secondary leading-snug">
-								<svg
-									width="13"
-									height="13"
-									viewBox="0 0 14 14"
-									fill="none"
-									aria-hidden="true"
-									className="mt-0.5 shrink-0 text-tw-accent"
-								>
-									<circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2" />
-									<path
-										d="M7 6v3.5M7 4.25v.25"
-										stroke="currentColor"
-										strokeWidth="1.2"
-										strokeLinecap="round"
-									/>
-								</svg>
-								<div className="flex-1 min-w-0">{configureHint({ close: () => setConfigureOpen(false) })}</div>
+							<div className="text-[12px] text-tw-text-secondary leading-snug">
+								{configureHint({ close: () => setConfigureOpen(false) })}
 							</div>
 						) : null}
 
@@ -334,23 +318,20 @@ export function RuleCardGrid({
 								<label className="text-[12px] font-medium text-tw-text-secondary">
 									Action level
 								</label>
-								<div className="flex flex-wrap items-center gap-1.5">
+								<div className="flex flex-wrap items-center gap-1">
 									{(["block", "warn", "log"] as const).map((a) => (
-										<Button
+										<button
 											key={a}
-											variant="ghost"
-											size="xs"
+											type="button"
 											onClick={() => onActionChange(a)}
-											className={`
-												px-3 py-1.5 text-[12px] border whitespace-nowrap
-												${action === a
+											className={`px-2.5 py-1 rounded-md text-[12px] font-medium transition-colors cursor-pointer whitespace-nowrap ${
+												action === a
 													? ACTION_COLORS[a].chip
-													: "bg-transparent text-tw-text-tertiary border-tw-border hover:border-tw-text-tertiary hover:text-tw-text-secondary"
-												}
-											`}
+													: "text-tw-text-tertiary hover:text-tw-text-secondary"
+											}`}
 										>
 											{ACTION_LABELS[a]}
-										</Button>
+										</button>
 									))}
 								</div>
 							</div>
@@ -464,24 +445,22 @@ function ScopeOverrideSection({ global, override, onChange }: ScopeOverrideSecti
 					</button>
 				)}
 			</div>
-			<div className="flex flex-wrap items-center gap-1.5">
+			<div className="flex flex-wrap items-center gap-1">
 				{SCOPE_TYPES.map(({ key, label }) => {
 					const on = effective(key);
-					const overridden = isOverridden(key);
 					return (
-						<Button
+						<button
 							key={key}
-							variant="ghost"
-							size="xs"
+							type="button"
 							onClick={() => handleToggle(key)}
-							className={`px-3 py-1.5 text-[12px] border whitespace-nowrap ${
+							className={`px-2.5 py-1 rounded-md text-[12px] font-medium transition-colors cursor-pointer whitespace-nowrap ${
 								on
-									? "bg-tw-accent/15 text-tw-accent border-tw-accent/40"
-									: "bg-transparent text-tw-text-tertiary border-tw-border hover:border-tw-text-tertiary hover:text-tw-text-secondary"
-							} ${overridden ? "ring-1 ring-tw-accent/20" : ""}`}
+									? "bg-tw-inner text-tw-text-primary"
+									: "text-tw-text-tertiary hover:text-tw-text-secondary"
+							}`}
 						>
 							{label}
-						</Button>
+						</button>
 					);
 				})}
 			</div>

@@ -35,7 +35,9 @@ export const ruleConfigSchema = z.object({
 	repoActivityMinimum: ruleBaseSchema.extend({ minRepos: z.number().int().min(1) }),
 	requireProfileReadme: ruleBaseSchema,
 	cryptoAddressDetection: ruleBaseSchema,
-	vouchedUsersOnly: ruleBaseSchema,
+	vouchedUsersOnly: ruleBaseSchema.extend({
+		vouchScope: z.enum(["repo", "global", "both"]).default("repo"),
+	}),
 	aiHoneypot: ruleBaseSchema,
 	autoWhitelistGlobalVouches: z.object({
 		enabled: z.boolean(),

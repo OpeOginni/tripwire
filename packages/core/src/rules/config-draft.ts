@@ -324,6 +324,18 @@ export function getRuleConfigChanges(base: RuleConfig, draft: RuleConfig): RuleC
 			before: normalizedBase.repoFiles.prTemplate.honeypotEnabled,
 			after: normalizedDraft.repoFiles.prTemplate.honeypotEnabled,
 		},
+		{
+			id: "repoFiles.agentsMd.autoSync",
+			title: "Auto-sync AGENTS.md",
+			before: normalizedBase.repoFiles.agentsMd.autoSync,
+			after: normalizedDraft.repoFiles.agentsMd.autoSync,
+		},
+		{
+			id: "repoFiles.agentsMd.honeypotEnabled",
+			title: "AGENTS.md honeypot embed",
+			before: normalizedBase.repoFiles.agentsMd.honeypotEnabled,
+			after: normalizedDraft.repoFiles.agentsMd.honeypotEnabled,
+		},
 	];
 	for (const t of repoFileToggles) {
 		if (t.before === t.after) continue;
@@ -353,6 +365,22 @@ export function getRuleConfigChanges(base: RuleConfig, draft: RuleConfig): RuleC
 			beforeTone: "muted",
 			afterTone: afterPhrases.length > beforePhrases.length ? "accent" : "muted",
 			label: `AI honeypot phrases: ${beforePhrases.length} -> ${afterPhrases.length}`,
+		});
+	}
+
+	const beforeAgentPhrases = normalizedBase.repoFiles.agentsMd.honeypotPhrases;
+	const afterAgentPhrases = normalizedDraft.repoFiles.agentsMd.honeypotPhrases;
+	if (!honeypotPhrasesEqual(beforeAgentPhrases, afterAgentPhrases)) {
+		changes.push({
+			id: "repoFiles.agentsMd.honeypotPhrases",
+			ruleKey: "repoFiles",
+			field: "honeypotPhrases",
+			title: "AGENTS.md honeypot phrases",
+			before: `${beforeAgentPhrases.length}`,
+			after: `${afterAgentPhrases.length}`,
+			beforeTone: "muted",
+			afterTone: afterAgentPhrases.length > beforeAgentPhrases.length ? "accent" : "muted",
+			label: `AGENTS.md honeypot phrases: ${beforeAgentPhrases.length} -> ${afterAgentPhrases.length}`,
 		});
 	}
 
@@ -387,6 +415,23 @@ export function getRuleConfigChanges(base: RuleConfig, draft: RuleConfig): RuleC
 			beforeTone: "muted",
 			afterTone: "accent",
 			label: "PR template content edited",
+		});
+	}
+
+	if (
+		normalizedBase.repoFiles.agentsMd.customContent !==
+		normalizedDraft.repoFiles.agentsMd.customContent
+	) {
+		changes.push({
+			id: "repoFiles.agentsMd.customContent",
+			ruleKey: "repoFiles",
+			field: "customContent",
+			title: "AGENTS.md content",
+			before: "previous",
+			after: "edited",
+			beforeTone: "muted",
+			afterTone: "accent",
+			label: "AGENTS.md content edited",
 		});
 	}
 
@@ -493,6 +538,54 @@ export function revertRuleConfigChange(base: RuleConfig, draft: RuleConfig, chan
 					prTemplate: {
 						...normalizedDraft.repoFiles.prTemplate,
 						customContent: normalizedBase.repoFiles.prTemplate.customContent,
+					},
+				},
+			});
+		}
+		if (changeId === "repoFiles.agentsMd.autoSync") {
+			return normalizeRuleConfig({
+				...normalizedDraft,
+				repoFiles: {
+					...normalizedDraft.repoFiles,
+					agentsMd: {
+						...normalizedDraft.repoFiles.agentsMd,
+						autoSync: normalizedBase.repoFiles.agentsMd.autoSync,
+					},
+				},
+			});
+		}
+		if (changeId === "repoFiles.agentsMd.honeypotEnabled") {
+			return normalizeRuleConfig({
+				...normalizedDraft,
+				repoFiles: {
+					...normalizedDraft.repoFiles,
+					agentsMd: {
+						...normalizedDraft.repoFiles.agentsMd,
+						honeypotEnabled: normalizedBase.repoFiles.agentsMd.honeypotEnabled,
+					},
+				},
+			});
+		}
+		if (changeId === "repoFiles.agentsMd.honeypotPhrases") {
+			return normalizeRuleConfig({
+				...normalizedDraft,
+				repoFiles: {
+					...normalizedDraft.repoFiles,
+					agentsMd: {
+						...normalizedDraft.repoFiles.agentsMd,
+						honeypotPhrases: normalizedBase.repoFiles.agentsMd.honeypotPhrases.map((p) => ({ ...p })),
+					},
+				},
+			});
+		}
+		if (changeId === "repoFiles.agentsMd.customContent") {
+			return normalizeRuleConfig({
+				...normalizedDraft,
+				repoFiles: {
+					...normalizedDraft.repoFiles,
+					agentsMd: {
+						...normalizedDraft.repoFiles.agentsMd,
+						customContent: normalizedBase.repoFiles.agentsMd.customContent,
 					},
 				},
 			});

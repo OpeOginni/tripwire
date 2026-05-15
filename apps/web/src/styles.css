@@ -193,3 +193,75 @@ body {
 .tw-chat-markdown [data-streamdown="horizontal-rule"] {
   @apply border-tw-border my-3;
 }
+
+/* ─── File preview markdown ─────────────────────────────── */
+
+.prose-file-preview h1 {
+  @apply text-[16px] font-semibold text-tw-text-primary mt-0 mb-2;
+}
+
+.prose-file-preview h2 {
+  @apply text-[14px] font-semibold text-tw-text-primary mt-4 mb-1.5;
+}
+
+.prose-file-preview h3 {
+  @apply text-[13px] font-medium text-tw-text-primary mt-3 mb-1;
+}
+
+.prose-file-preview strong {
+  @apply text-tw-text-primary font-medium;
+}
+
+.prose-file-preview em {
+  @apply italic;
+}
+
+.prose-file-preview ul {
+  @apply pl-4 my-1.5 list-disc;
+}
+
+.prose-file-preview li {
+  @apply mb-0.5;
+}
+
+.prose-file-preview li.task {
+  @apply list-none -ml-4 pl-0;
+}
+
+.prose-file-preview li.task::before {
+  content: "☐ ";
+  @apply text-tw-text-tertiary;
+}
+
+.prose-file-preview li.task.checked::before {
+  content: "☑ ";
+  @apply text-tw-accent;
+}
+
+.prose-file-preview hr {
+  @apply border-tw-border my-3;
+}
+
+.prose-file-preview .code-block {
+  @apply my-2 rounded-lg bg-tw-bg border border-tw-border overflow-hidden;
+}
+
+.prose-file-preview .code-block code {
+  @apply block p-2.5 font-mono text-[11px] leading-snug text-tw-text-secondary whitespace-pre overflow-x-auto;
+}
+
+.prose-file-preview .inline-code {
+  @apply font-mono text-[11px] text-tw-accent bg-tw-inner px-1 py-0.5 rounded;
+}
+
+.prose-file-preview .html-comment {
+  @apply font-mono text-[10px] text-tw-text-tertiary/50 bg-tw-inner/50 rounded px-2 py-1.5 my-2 leading-snug whitespace-pre-wrap break-all;
+}
+
+.prose-file-preview p {
+  @apply mb-1.5;
+}
+
+.prose-file-preview p:empty {
+  @apply hidden;
+}

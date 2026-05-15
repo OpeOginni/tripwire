@@ -565,42 +565,73 @@ export async function runFilterPipeline(
 	}
 
 	// ─── vouchedUsersOnly ──────────────────────────────────────
-	// Non-vouched (not-whitelisted) users are rejected before any
-	// per-user GitHub lookups. Whitelisted users already returned above.
+	// Non-vouched users are rejected before any per-user GitHub lookups.
+	// Whitelisted users already returned above (covers "repo" scope).
+	// When vouchScope is "global" or "both", also check global vouches.
 	if (ruleApplies(config.vouchedUsersOnly, contentType, scope)) {
 		rulesChecked++;
-		const reason = `@${ctx.senderLogin} is not a vouched contributor for this repository.`;
-		evaluations.push({
-			rule: "vouchedUsersOnly",
-			passed: false,
-			nearMiss: false,
-			reason,
-		});
-		const action = config.vouchedUsersOnly.action;
-		let outcome: PipelineResult["outcome"];
-		if (action === "threshold") {
-			const thresholdCount =
-				config.vouchedUsersOnly.thresholdCount ?? DEFAULT_THRESHOLD_COUNT;
-			const newCount = await recordThresholdViolation(
-				repo.id,
-				ctx.senderId,
-				"vouchedUsersOnly",
-			);
-			outcome = newCount >= thresholdCount ? "blocked" : "warned";
-		} else {
-			outcome = resolveOutcome(action, true);
+		const vouchScope = config.vouchedUsersOnly.vouchScope ?? "repo";
+
+		// If scope includes global vouches, check if user is globally vouched
+		let isGloballyVouched = false;
+		if (vouchScope === "global" || vouchScope === "both") {
+			const vouchRows = await db
+				.select()
+				.from(globalVouches)
+				.where(
+					sql`lower(${globalVouches.githubUsername}) = ${senderLoginLower}`,
+				);
+			isGloballyVouched = vouchRows.length > 0;
 		}
-		const allowed = outcome !== "blocked";
-		return {
-			allowed,
-			outcome,
-			blockingRule: "vouchedUsersOnly",
-			blockReason: reason,
-			resolvedAction: action,
-			evaluations,
-			rulesChecked,
-			repoId: repo.id,
-		};
+
+		// For "repo" scope, the whitelist check above already handled it —
+		// if we're here, the user wasn't whitelisted, so they fail.
+		// For "global", pass if globally vouched.
+		// For "both", pass if globally vouched (whitelist already checked above).
+		const passed = isGloballyVouched;
+
+		if (passed) {
+			evaluations.push({
+				rule: "vouchedUsersOnly",
+				passed: true,
+				nearMiss: false,
+			});
+		} else {
+			const reason = vouchScope === "global"
+				? `@${ctx.senderLogin} is not a globally vouched contributor.`
+				: `@${ctx.senderLogin} is not a vouched contributor for this repository.`;
+			evaluations.push({
+				rule: "vouchedUsersOnly",
+				passed: false,
+				nearMiss: false,
+				reason,
+			});
+			const action = config.vouchedUsersOnly.action;
+			let outcome: PipelineResult["outcome"];
+			if (action === "threshold") {
+				const thresholdCount =
+					config.vouchedUsersOnly.thresholdCount ?? DEFAULT_THRESHOLD_COUNT;
+				const newCount = await recordThresholdViolation(
+					repo.id,
+					ctx.senderId,
+					"vouchedUsersOnly",
+				);
+				outcome = newCount >= thresholdCount ? "blocked" : "warned";
+			} else {
+				outcome = resolveOutcome(action, true);
+			}
+			const allowed = outcome !== "blocked";
+			return {
+				allowed,
+				outcome,
+				blockingRule: "vouchedUsersOnly",
+				blockReason: reason,
+				resolvedAction: action,
+				evaluations,
+				rulesChecked,
+				repoId: repo.id,
+			};
+		}
 	}
 
 	const token = await getInstallationToken(ctx.installationId);

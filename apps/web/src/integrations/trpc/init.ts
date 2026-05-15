@@ -15,7 +15,7 @@ export {
 
 export interface TRPCContext {
   headers: Headers
-  user: { id: string; name: string; email: string } | null
+  user: { id: string; name: string; email: string; role?: string | null } | null
 }
 
 export async function createContext(opts: { headers: Headers }): Promise<TRPCContext> {
@@ -73,3 +73,27 @@ const authMiddleware = t.middleware(async ({ ctx, next }) => {
 })
 
 export const authedProcedure = t.procedure.use(authMiddleware)
+
+// Middleware that requires admin role
+const adminMiddleware = t.middleware(async ({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'You must be logged in to perform this action',
+    })
+  }
+  if (ctx.user.role !== 'admin') {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'This action requires admin privileges',
+    })
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user,
+    },
+  })
+})
+
+export const adminProcedure = t.procedure.use(adminMiddleware)

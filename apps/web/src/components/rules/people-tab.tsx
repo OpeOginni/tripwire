@@ -1,5 +1,8 @@
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTRPC } from "#/integrations/trpc/react";
 import { toastFromError } from "#/lib/toast-error";
+import { toastManager } from "#/components/ui/toast";
 
 interface PeopleUser {
 	username: string;
@@ -38,7 +41,7 @@ export function PeopleTab({
 	isAddingBlacklist,
 	isAddingWhitelist,
 }: PeopleTabProps) {
-	const [subtab, setSubtab] = useState<"block" | "allow">("block");
+	const [subtab, setSubtab] = useState<"block" | "allow" | "vouched">("block");
 	const [dismissed, setDismissed] = useState(false);
 	const [addingAll, setAddingAll] = useState(false);
 	const [search, setSearch] = useState("");
@@ -106,41 +109,32 @@ export function PeopleTab({
 		});
 	};
 
-	const blockColor = "rgb(245, 109, 93)";
-	const allowColor = "rgb(93, 209, 122)";
-	const activeColor = subtab === "block" ? blockColor : allowColor;
-
 	return (
 		<div className="flex flex-col gap-4 min-w-0">
 			{/* Header: tabs + search */}
 			<div className="flex items-center justify-between gap-3">
 				<div className="flex items-center gap-1 bg-tw-card rounded-[10px] p-1">
-					<button
-						type="button"
-						onClick={() => { setSubtab("block"); setSearch(""); }}
-						className={`flex items-center gap-1.5 h-7 px-2.5 rounded-[6px] text-[12px] font-medium transition-colors ${
-							subtab === "block"
-								? "bg-[#FAFAFA1A] text-[#EEEEEE]"
-								: "text-[#9F9FA9] hover:text-[#EEEEEE]"
-						}`}
-					>
-						<span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: blockColor }} />
-						Always block
-						<span className="text-[11px] text-[#6E6E6E] tabular-nums ml-0.5">{blacklistUsers.length}</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => { setSubtab("allow"); setSearch(""); }}
-						className={`flex items-center gap-1.5 h-7 px-2.5 rounded-[6px] text-[12px] font-medium transition-colors ${
-							subtab === "allow"
-								? "bg-[#FAFAFA1A] text-[#EEEEEE]"
-								: "text-[#9F9FA9] hover:text-[#EEEEEE]"
-						}`}
-					>
-						<span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: allowColor }} />
-						Always allow
-						<span className="text-[11px] text-[#6E6E6E] tabular-nums ml-0.5">{whitelistUsers.length}</span>
-					</button>
+					{([
+						{ key: "block" as const, label: "Always block", count: blacklistUsers.length },
+						{ key: "allow" as const, label: "Always allow", count: whitelistUsers.length },
+						{ key: "vouched" as const, label: "Vouched", count: null },
+					]).map(({ key, label, count }) => (
+						<button
+							key={key}
+							type="button"
+							onClick={() => { setSubtab(key); setSearch(""); }}
+							className={`flex items-center gap-1.5 h-7 px-2.5 rounded-[6px] text-[12px] font-medium transition-colors cursor-pointer ${
+								subtab === key
+									? "bg-[#FAFAFA1A] text-[#EEEEEE]"
+									: "text-[#9F9FA9] hover:text-[#EEEEEE]"
+							}`}
+						>
+							{label}
+							{count !== null && (
+								<span className="text-[11px] text-[#6E6E6E] tabular-nums ml-0.5">{count}</span>
+							)}
+						</button>
+					))}
 				</div>
 				<div className="flex items-center gap-2 h-9 w-[200px] rounded-[10px] bg-tw-card px-2.5">
 					<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="#9a9a9a" strokeWidth="1.3" /><path d="M10.5 10.5L13.5 13.5" stroke="#9a9a9a" strokeWidth="1.3" strokeLinecap="round" /></svg>
@@ -153,10 +147,13 @@ export function PeopleTab({
 				</div>
 			</div>
 
+			{subtab === "vouched" ? (
+				<VouchedSubtab />
+			) : (
+			<>
 			{/* Add form */}
 			<div className="rounded-[10px] bg-tw-card p-1">
 				<div className="flex items-center gap-2 h-9 px-2.5">
-					<span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: activeColor }} />
 					<span className="text-[12px] text-[#6E6E6E] shrink-0">{subtab === "block" ? "Block" : "Allow"}</span>
 					<input
 						value={username}
@@ -253,13 +250,7 @@ export function PeopleTab({
 							key={user.username}
 							className="flex items-center gap-3 h-14 px-2.5 rounded-[8px] hover:bg-[#FAFAFA14] group"
 						>
-							<div className="relative shrink-0">
-								<img src={user.avatarUrl} alt="" className="w-8 h-8 rounded-full" />
-								<span
-									className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-tw-card"
-									style={{ background: activeColor }}
-								/>
-							</div>
+							<img src={user.avatarUrl} alt="" className="w-8 h-8 rounded-full shrink-0" />
 							<div className="flex-1 min-w-0 flex flex-col">
 								<div className="flex items-center gap-2 min-w-0">
 									<span className="text-[13px] leading-5 text-[#EEEEEE] font-medium truncate">@{user.username}</span>
@@ -301,6 +292,142 @@ export function PeopleTab({
 					</p>
 				</div>
 			)}
+			</>
+			)}
 		</div>
+	);
+}
+
+// ─── Vouched subtab ─────────────────────────────────────
+
+function VouchedSubtab() {
+	const trpc = useTRPC();
+	const queryClient = useQueryClient();
+	const [username, setUsername] = useState("");
+	const [reason, setReason] = useState("");
+
+	const vouchQuery = useQuery({
+		...trpc.vouches.list.queryOptions({ limit: 100 }),
+	});
+
+	const addVouch = useMutation(
+		trpc.vouches.add.mutationOptions({
+			onSuccess: () => {
+				setUsername("");
+				setReason("");
+				queryClient.invalidateQueries({ queryKey: trpc.vouches.list.queryKey() });
+				toastManager.add({ type: "success", title: "User vouched" });
+			},
+			onError: (err) => toastFromError(err, { fallbackTitle: "Failed to vouch" }),
+		}),
+	);
+
+	const removeVouch = useMutation(
+		trpc.vouches.remove.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({ queryKey: trpc.vouches.list.queryKey() });
+				toastManager.add({ type: "success", title: "Vouch removed" });
+			},
+			onError: (err) => toastFromError(err, { fallbackTitle: "Failed to remove vouch" }),
+		}),
+	);
+
+	const users = vouchQuery.data?.users ?? [];
+
+	const handleAdd = () => {
+		const clean = username.trim().replace(/^@/, "");
+		if (!clean) return;
+		addVouch.mutate({
+			githubUsername: clean,
+			reason: reason.trim() || undefined,
+		});
+	};
+
+	return (
+		<>
+			{/* Add form */}
+			<div className="rounded-[10px] bg-tw-card p-1">
+				<div className="flex items-center gap-2 h-9 px-2.5">
+					<span className="text-[12px] text-[#6E6E6E] shrink-0">Vouch</span>
+					<input
+						value={username}
+						onChange={(e) => setUsername(e.target.value)}
+						onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+						placeholder="@username"
+						className="flex-1 bg-transparent outline-none text-[13px] text-[#EEEEEE] placeholder:text-[#6E6E6E]"
+					/>
+					<input
+						value={reason}
+						onChange={(e) => setReason(e.target.value)}
+						onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+						placeholder="Reason (optional)"
+						className="w-[180px] bg-transparent outline-none text-[13px] text-[#B4B4B4] placeholder:text-[#6E6E6E] border-l border-[#FAFAFA14] pl-2.5"
+					/>
+					<button
+						type="button"
+						disabled={!username.trim() || addVouch.isPending}
+						onClick={handleAdd}
+						className={`h-7 px-2.5 rounded-[6px] text-[12px] font-medium flex items-center gap-1 transition-colors cursor-pointer ${
+							username.trim()
+								? "bg-[#FAFAFA1A] text-[#EEEEEE] hover:bg-[#FAFAFA2A]"
+								: "bg-[#FAFAFA14] text-[#6E6E6E] cursor-not-allowed"
+						}`}
+					>
+						<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1.5v8M1.5 5.5h8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
+						Vouch
+					</button>
+				</div>
+			</div>
+
+			{/* Helper text */}
+			<div className="flex items-center gap-2 -mt-1.5 px-1">
+				<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1.5l4.5 1.6V7c0 3-2.2 4.7-4.5 5.4C4.7 11.7 2.5 10 2.5 7V3.1L7 1.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" /><path d="M5 7l1.5 1.5L9 5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+				<span className="text-[12px] text-[#6E6E6E]">
+					Globally vouched users can be auto-trusted across repos that opt in.
+				</span>
+			</div>
+
+			{/* Vouched user list */}
+			{vouchQuery.isPending ? (
+				<div className="flex items-center justify-center py-8">
+					<div className="w-5 h-5 border-2 border-tw-text-tertiary border-t-tw-accent rounded-full animate-spin" />
+				</div>
+			) : users.length > 0 ? (
+				<div className="rounded-xl bg-tw-card p-1 flex flex-col gap-1">
+					{users.map((user) => (
+						<div
+							key={user.githubUsername}
+							className="flex items-center gap-3 h-14 px-2.5 rounded-[8px] hover:bg-[#FAFAFA14] group"
+						>
+							<img
+								src={user.avatarUrl || `https://github.com/${user.githubUsername}.png`}
+								alt=""
+								className="w-8 h-8 rounded-full shrink-0"
+							/>
+							<div className="flex-1 min-w-0 flex flex-col">
+								<span className="text-[13px] leading-5 text-[#EEEEEE] font-medium truncate">
+									@{user.githubUsername}
+								</span>
+								<span className="text-[11px] text-[#6E6E6E]">
+									{user.vouchCount} vouch{user.vouchCount !== 1 ? "es" : ""}
+								</span>
+							</div>
+							<button
+								type="button"
+								disabled={removeVouch.isPending}
+								onClick={() => removeVouch.mutate({ githubUsername: user.githubUsername })}
+								className="h-7 px-2.5 rounded-[6px] text-[11px] text-[#B4B4B4] hover:text-[#F56D5D] hover:bg-[#FAFAFA14] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+							>
+								Remove
+							</button>
+						</div>
+					))}
+				</div>
+			) : (
+				<div className="rounded-xl bg-tw-card p-6 text-center">
+					<p className="text-[13px] text-[#6E6E6E]">No vouched users yet.</p>
+				</div>
+			)}
+		</>
 	);
 }

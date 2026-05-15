@@ -13,5 +13,7 @@ export * from "./reputation";
 export * from "./conversations";
 export * from "./requests";
 export * from "./vouches";
+export * from "./vouch-requests";
 export * from "./fake-bounties";
+export * from "./api-keys";
 export * from "./waitlist";

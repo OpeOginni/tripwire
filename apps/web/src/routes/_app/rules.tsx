@@ -20,8 +20,7 @@ import { PeopleTab } from "../../components/rules/people-tab";
 import { EmptyState } from "../../components/layout/empty-state";
 import { Button } from "#/components/ui/button";
 import { Checkbox } from "#/components/ui/checkbox";
-import { File01Icon } from "#/components/icons/file-01-icon";
-import { FileContentEditor } from "#/components/rules/file-content-editor";
+import { RepoFilesTree } from "#/components/rules/repo-files-tree";
 import { toastFromError } from "#/lib/toast-error";
 import {
 	Dialog,
@@ -32,7 +31,7 @@ import {
 	DialogTitle,
 } from "#/components/ui/dialog";
 import { toastManager } from "#/components/ui/toast";
-import type { RuleConfig } from "@tripwire/db";
+import { DEFAULT_RULE_CONFIG, type RuleConfig } from "@tripwire/db";
 import { env } from "@tripwire/env/client";
 import { useTRPC } from "#/integrations/trpc/react";
 // Narrow subpath: avoids pulling the server-only events/reputation/filter
@@ -49,6 +48,7 @@ import {
 	generateHoneypotPhraseOfKind,
 	generatePrTemplate,
 	generateRulesMd,
+	generateAgentsMd,
 } from "@tripwire/github/repo-files";
 import { useWorkspace } from "#/lib/workspace-context";
 
@@ -56,20 +56,6 @@ export const Route = createFileRoute("/_app/rules")({
 	component: RulesPage,
 	pendingComponent: RulesPageSkeleton,
 });
-
-const HONEYPOT_KIND_LABEL: Record<"codeword" | "marker" | "natural" | "tag", string> = {
-	codeword: "Codeword",
-	marker: "Marker",
-	natural: "Natural",
-	tag: "Tag",
-};
-
-const HONEYPOT_KIND_HINT: Record<"codeword" | "marker" | "natural" | "tag", string> = {
-	codeword: "Random adjective-noun-number, e.g. velvet-lantern-742",
-	marker: "CI-style compliance token, e.g. TW-ACK-9F2C",
-	natural: "Human-readable confirmation, e.g. \"Rules reviewed and applied to this submission.\"",
-	tag: "Bracketed slug, e.g. [reviewed-rules]",
-};
 
 function RulesPageSkeleton() {
 	return (
@@ -186,7 +172,7 @@ function RulesPage() {
 	}, [serverConfig, updateConfig.isPending]);
 
 	const updateRepoFileContent = useCallback(
-		(kind: "rules-md" | "pr-template", content: string) => {
+		(kind: "rules-md" | "pr-template" | "agents-md", content: string) => {
 			if (updateConfig.isPending) return;
 			setDraftConfig((currentDraft) => {
 				const baseConfig = currentDraft ?? serverConfig;
@@ -196,10 +182,15 @@ function RulesPage() {
 								...baseConfig.repoFiles,
 								rulesMd: { ...baseConfig.repoFiles.rulesMd, customContent: content },
 							}
-						: {
-								...baseConfig.repoFiles,
-								prTemplate: { ...baseConfig.repoFiles.prTemplate, customContent: content },
-							};
+						: kind === "agents-md"
+							? {
+									...baseConfig.repoFiles,
+									agentsMd: { ...baseConfig.repoFiles.agentsMd, customContent: content },
+								}
+							: {
+									...baseConfig.repoFiles,
+									prTemplate: { ...baseConfig.repoFiles.prTemplate, customContent: content },
+								};
 				return normalizeRuleConfig({ ...baseConfig, repoFiles });
 			});
 		},
@@ -320,6 +311,14 @@ function RulesPage() {
 	);
 	const [searchQuery, setSearchQuery] = useState("");
 
+	// Clear the file param when navigating away from the files tab
+	const [, setFileParam] = useQueryState("file");
+	useEffect(() => {
+		if (tab !== "files") {
+			setFileParam(null);
+		}
+	}, [tab, setFileParam]);
+
 	const [{ rule: configureRule, configure: configureFlag }, setConfigureParams] = useQueryStates({
 		rule: parseAsString,
 		configure: parseAsBoolean.withDefault(false),
@@ -358,8 +357,25 @@ function RulesPage() {
 	);
 	const pendingRequestCount = requestsQuery.data?.length ?? 0;
 
+	const vouchRequestsQuery = useQuery(
+		trpc.vouches.listRequests.queryOptions(
+			{ status: "pending" },
+			{ staleTime: 30 * 1000 },
+		),
+	);
+	const pendingVouchCount = vouchRequestsQuery.data?.length ?? 0;
+
+	const decideVouchRequest = useMutation(
+		trpc.vouches.decideRequest.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({ queryKey: trpc.vouches.listRequests.queryKey() });
+			},
+			onError: (err) => toastFromError(err, { fallbackTitle: "Failed to decide vouch request" }),
+		}),
+	);
+
 	const addHoneypotPhrase = useCallback(
-		(kind: "codeword" | "marker" | "natural" | "tag") => {
+		(target: "prTemplate" | "agentsMd", kind: "codeword" | "marker" | "natural" | "tag") => {
 			if (updateConfig.isPending) return;
 			const newPhrase = generateHoneypotPhraseOfKind(kind);
 			setDraftConfig((currentDraft) => {
@@ -368,14 +384,12 @@ function RulesPage() {
 					...baseConfig,
 					repoFiles: {
 						...baseConfig.repoFiles,
-						prTemplate: {
-							...baseConfig.repoFiles.prTemplate,
+						[target]: {
+							...baseConfig.repoFiles[target],
 							honeypotPhrases: [
-								...baseConfig.repoFiles.prTemplate.honeypotPhrases,
+								...baseConfig.repoFiles[target].honeypotPhrases,
 								newPhrase,
 							],
-							// Clear any stale custom override so the new phrase is visible in the preview.
-							// User edits to the textarea after this will re-populate customContent.
 							customContent: "",
 						},
 					},
@@ -386,7 +400,7 @@ function RulesPage() {
 	);
 
 	const removeHoneypotPhrase = useCallback(
-		(index: number) => {
+		(target: "prTemplate" | "agentsMd", index: number) => {
 			if (updateConfig.isPending) return;
 			setDraftConfig((currentDraft) => {
 				const baseConfig = currentDraft ?? serverConfig;
@@ -394,9 +408,9 @@ function RulesPage() {
 					...baseConfig,
 					repoFiles: {
 						...baseConfig.repoFiles,
-						prTemplate: {
-							...baseConfig.repoFiles.prTemplate,
-							honeypotPhrases: baseConfig.repoFiles.prTemplate.honeypotPhrases.filter(
+						[target]: {
+							...baseConfig.repoFiles[target],
+							honeypotPhrases: baseConfig.repoFiles[target].honeypotPhrases.filter(
 								(_, i) => i !== index,
 							),
 						},
@@ -408,17 +422,31 @@ function RulesPage() {
 	);
 
 	const toggleRepoFile = useCallback(
-		(path: "rulesMd.autoSync" | "prTemplate.autoSync" | "prTemplate.honeypotEnabled", value: boolean) => {
+		(path: string, value: boolean) => {
 			if (updateConfig.isPending) return;
 			setDraftConfig((currentDraft) => {
 				const baseConfig = currentDraft ?? serverConfig;
 				const repoFiles = baseConfig.repoFiles;
-				const nextRepoFiles =
-					path === "rulesMd.autoSync"
-						? { ...repoFiles, rulesMd: { ...repoFiles.rulesMd, autoSync: value } }
-						: path === "prTemplate.autoSync"
-							? { ...repoFiles, prTemplate: { ...repoFiles.prTemplate, autoSync: value } }
-							: { ...repoFiles, prTemplate: { ...repoFiles.prTemplate, honeypotEnabled: value } };
+				let nextRepoFiles;
+				switch (path) {
+					case "rulesMd.autoSync":
+						nextRepoFiles = { ...repoFiles, rulesMd: { ...repoFiles.rulesMd, autoSync: value } };
+						break;
+					case "prTemplate.autoSync":
+						nextRepoFiles = { ...repoFiles, prTemplate: { ...repoFiles.prTemplate, autoSync: value } };
+						break;
+					case "prTemplate.honeypotEnabled":
+						nextRepoFiles = { ...repoFiles, prTemplate: { ...repoFiles.prTemplate, honeypotEnabled: value } };
+						break;
+					case "agentsMd.autoSync":
+						nextRepoFiles = { ...repoFiles, agentsMd: { ...repoFiles.agentsMd, autoSync: value } };
+						break;
+					case "agentsMd.honeypotEnabled":
+						nextRepoFiles = { ...repoFiles, agentsMd: { ...repoFiles.agentsMd, honeypotEnabled: value } };
+						break;
+					default:
+						nextRepoFiles = repoFiles;
+				}
 				return normalizeRuleConfig({ ...baseConfig, repoFiles: nextRepoFiles });
 			});
 		},
@@ -579,8 +607,8 @@ function RulesPage() {
 								<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3h8v6H6.5L4 11V9H3V3Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
 								Requests
 							</span>
-							{pendingRequestCount > 0 && (
-								<span className="text-[11px] text-tw-accent tabular-nums">{pendingRequestCount}</span>
+							{(pendingRequestCount + pendingVouchCount) > 0 && (
+								<span className="text-[11px] text-tw-accent tabular-nums">{pendingRequestCount + pendingVouchCount}</span>
 							)}
 						</button>
 						<button
@@ -740,12 +768,46 @@ function RulesPage() {
 				<RuleCardGrid
 					title="Vouched users only"
 					modalTitle="Vouched users only"
-					description="Allow contributions only from users on the whitelist (People tab)"
+					description={
+						activeConfig.vouchedUsersOnly.vouchScope === "global"
+							? "Allow contributions only from globally vouched users"
+							: activeConfig.vouchedUsersOnly.vouchScope === "both"
+								? "Allow contributions from repo whitelist or globally vouched users"
+								: "Allow contributions only from users on the whitelist (People tab)"
+					}
 					enabled={activeConfig.vouchedUsersOnly.enabled}
 					action={activeConfig.vouchedUsersOnly.action}
 					onToggle={(value) => toggleRule("vouchedUsersOnly", value)}
 					onActionChange={(action) => updateRuleValue("vouchedUsersOnly", { action })}
 					visualization={<VouchedUsersViz />}
+					configureHint={() => (
+						<div className="flex flex-col gap-2 w-full">
+							<span className="text-[12px] font-medium text-tw-text-secondary">Vouch scope</span>
+							<div className="flex items-center gap-1">
+								{(["repo", "global", "both"] as const).map((s) => (
+									<button
+										key={s}
+										type="button"
+										onClick={() => updateRuleValue("vouchedUsersOnly", { vouchScope: s } as never)}
+										className={`px-2.5 py-1 rounded-md text-[12px] font-medium transition-colors cursor-pointer ${
+											activeConfig.vouchedUsersOnly.vouchScope === s
+												? "bg-tw-inner text-tw-text-primary"
+												: "text-tw-text-tertiary hover:text-tw-text-secondary"
+										}`}
+									>
+										{s === "repo" ? "Repo whitelist" : s === "global" ? "Global vouches" : "Both"}
+									</button>
+								))}
+							</div>
+							<p className="text-[11px] text-tw-text-tertiary leading-snug m-0">
+								{activeConfig.vouchedUsersOnly.vouchScope === "repo"
+									? "Only users on this repo's whitelist can contribute."
+									: activeConfig.vouchedUsersOnly.vouchScope === "global"
+										? "Any globally vouched user can contribute, regardless of repo whitelist."
+										: "Users on the repo whitelist or the global vouch list can contribute."}
+							</p>
+						</div>
+					)}
 					{...ruleConfigureProps("vouchedUsersOnly")}
 				/>
 				<RuleCardGrid
@@ -816,7 +878,7 @@ function RulesPage() {
 									<RuleCardGrid title="Crypto address detection" modalTitle="Crypto address detection" description="Block content containing cryptocurrency wallet addresses (BTC, ETH, SOL, XMR, DASH)" enabled={true} action={activeConfig.cryptoAddressDetection.action} onToggle={(v) => toggleRule("cryptoAddressDetection", v)} onActionChange={(a) => updateRuleValue("cryptoAddressDetection", { action: a })} visualization={<CryptoViz />} {...ruleConfigureProps("cryptoAddressDetection")} />
 								)}
 								{activeConfig.vouchedUsersOnly.enabled && matchesSearch(allRules[9]) && (
-									<RuleCardGrid title="Vouched users only" modalTitle="Vouched users only" description="Allow contributions only from users on the whitelist (People tab)" enabled={true} action={activeConfig.vouchedUsersOnly.action} onToggle={(v) => toggleRule("vouchedUsersOnly", v)} onActionChange={(a) => updateRuleValue("vouchedUsersOnly", { action: a })} visualization={<VouchedUsersViz />} {...ruleConfigureProps("vouchedUsersOnly")} />
+									<RuleCardGrid title="Vouched users only" modalTitle="Vouched users only" description={activeConfig.vouchedUsersOnly.vouchScope === "global" ? "Global vouches only" : activeConfig.vouchedUsersOnly.vouchScope === "both" ? "Repo whitelist + global vouches" : "Repo whitelist only"} enabled={true} action={activeConfig.vouchedUsersOnly.action} onToggle={(v) => toggleRule("vouchedUsersOnly", v)} onActionChange={(a) => updateRuleValue("vouchedUsersOnly", { action: a })} visualization={<VouchedUsersViz />} {...ruleConfigureProps("vouchedUsersOnly")} />
 								)}
 								{activeConfig.aiHoneypot.enabled && matchesSearch(allRules[10]) && (
 									<RuleCardGrid
@@ -885,231 +947,31 @@ function RulesPage() {
 					)}
 
 					{tab === "requests" && (
-						<div className="flex flex-col gap-2">
-							{requestsQuery.isLoading ? (
-								<div className="rounded-xl bg-tw-card p-6">
-									<div className="h-5 w-5 animate-spin rounded-full border-2 border-tw-accent border-t-transparent" />
-								</div>
-							) : (requestsQuery.data?.length ?? 0) === 0 ? (
-								<div className="rounded-xl bg-tw-card p-6 text-center">
-									<p className="text-[13px] text-[#FFFFFF73] m-0">
-										No pending requests. Blocked users can appeal via the link in their bot comment.
-									</p>
-								</div>
-							) : (
-								requestsQuery.data!.map((r) => (
-									<div key={r.id} className="rounded-xl bg-tw-card border border-tw-border-card p-4 flex flex-col gap-3">
-										<div className="flex items-start gap-3">
-											<img
-												src={r.avatarUrl ?? `https://github.com/${r.githubUsername}.png`}
-												alt=""
-												className="w-8 h-8 rounded-full bg-white/5"
-											/>
-											<div className="flex flex-col gap-0.5 flex-1 min-w-0">
-												<div className="flex items-center gap-2">
-													<span className="text-[14px] font-medium text-white">@{r.githubUsername}</span>
-													<span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${
-														r.kind === "unblock"
-															? "bg-amber-500/15 text-amber-300"
-															: "bg-tw-accent/15 text-tw-accent"
-													}`}>
-														{r.kind === "unblock" ? "Appeal" : "Access"}
-													</span>
-												</div>
-												<p className="text-[13px] text-[#FFFFFFB3] m-0 whitespace-pre-wrap">{r.reason}</p>
-											</div>
-										</div>
-										<div className="flex items-center gap-2 self-end">
-											<Button
-												size="xs"
-												variant="ghost"
-												disabled={decideRequest.isPending}
-												onClick={() => decideRequest.mutate({ requestId: r.id, decision: "deny" })}
-												className="text-[12px] text-tw-text-tertiary hover:text-red-400"
-											>
-												Deny
-											</Button>
-											<Button
-												size="xs"
-												disabled={decideRequest.isPending}
-												onClick={() => decideRequest.mutate({ requestId: r.id, decision: "approve" })}
-												className="text-[12px]"
-											>
-												{r.kind === "unblock" ? "Unblock" : "Add to whitelist"}
-											</Button>
-										</div>
-									</div>
-								))
-							)}
-						</div>
+						<RequestsTab
+							repoRequests={requestsQuery.data ?? []}
+							repoRequestsLoading={requestsQuery.isLoading}
+							vouchRequests={vouchRequestsQuery.data ?? []}
+							vouchRequestsLoading={vouchRequestsQuery.isLoading}
+							onDecideRepoRequest={(id, decision) => decideRequest.mutate({ requestId: id, decision })}
+							onDecideVouchRequest={(id, decision) => decideVouchRequest.mutate({ requestId: id, decision })}
+							isDecidingRepo={decideRequest.isPending}
+							isDecidingVouch={decideVouchRequest.isPending}
+						/>
 					)}
 
 					{tab === "files" && (
-						<div className="flex flex-col gap-3">
-							<p className="text-[12px] text-[#FFFFFF73] m-0">
-								Tripwire can commit files to your repo so contributors and AI agents see your rules upfront.
-							</p>
-
-							{/* RULES.md card */}
-							{(() => {
-								const generated = generateRulesMd(activeConfig, repo?.fullName ?? "owner/repo");
-								const custom = activeConfig.repoFiles.rulesMd.customContent;
-								const value = custom.length > 0 ? custom : generated;
-								return (
-									<div className="rounded-xl bg-tw-card border border-tw-border-card p-4 flex flex-col gap-3">
-										<div className="flex flex-col gap-0.5">
-											<div className="flex items-center gap-2">
-												<File01Icon size={14} className="text-tw-text-secondary" />
-												<span className="text-[14px] font-medium text-white">RULES.md</span>
-											</div>
-											<p className="text-[12px] text-[#FFFFFF99] m-0">
-												A human-readable summary of your enabled rules, committed to the repo root.
-											</p>
-										</div>
-										<label className="flex items-center gap-2 text-[13px] text-[#FFFFFFCC] cursor-pointer select-none">
-											<Checkbox
-												checked={activeConfig.repoFiles.rulesMd.autoSync}
-												onCheckedChange={(checked) =>
-													toggleRepoFile("rulesMd.autoSync", checked === true)
-												}
-											/>
-											Auto-sync to GitHub on save
-										</label>
-										<FileContentEditor
-											value={value}
-											onChange={(next) => updateRepoFileContent("rules-md", next === generated ? "" : next)}
-											targetPath="RULES.md"
-											autoSync={activeConfig.repoFiles.rulesMd.autoSync}
-											rows={10}
-										/>
-									</div>
-								);
-							})()}
-
-							{/* PR template card */}
-							<div className="rounded-xl bg-tw-card border border-tw-border-card p-4 flex flex-col gap-3">
-								<div className="flex flex-col gap-0.5">
-									<div className="flex items-center gap-2">
-										<File01Icon size={14} className="text-tw-text-secondary" />
-										<span className="text-[14px] font-medium text-white">PULL_REQUEST_TEMPLATE.md</span>
-									</div>
-									<p className="text-[12px] text-[#FFFFFF99] m-0">
-										Pre-fills every PR description with a checklist tied to your rules.
-									</p>
-								</div>
-								<label className="flex items-center gap-2 text-[13px] text-[#FFFFFFCC] cursor-pointer select-none">
-									<Checkbox
-										checked={activeConfig.repoFiles.prTemplate.autoSync}
-										onCheckedChange={(checked) =>
-											toggleRepoFile("prTemplate.autoSync", checked === true)
-										}
-									/>
-									Auto-sync to GitHub on save
-								</label>
-
-								{/* Honeypot sub-section */}
-								<div className="mt-1 pt-3 border-t border-white/[0.06] flex flex-col gap-2">
-									<label htmlFor="honeypot-toggle" className="flex items-start gap-2 cursor-pointer select-none">
-										<Checkbox
-											id="honeypot-toggle"
-											checked={activeConfig.repoFiles.prTemplate.honeypotEnabled}
-											onCheckedChange={(checked) =>
-												toggleRepoFile("prTemplate.honeypotEnabled", checked === true)
-											}
-											className="mt-0.5"
-										/>
-										<span className="flex flex-col gap-0.5">
-											<span className="text-[13px] text-[#FFFFFFCC]">Embed AI honeypot</span>
-											<span className="text-[11px] text-[#FFFFFF73] leading-snug">
-												Hidden instruction in the template that AI agents tend to follow. Pair with the <span className="text-tw-accent">AI honeypot</span> rule to flag PRs that include the phrase.
-											</span>
-										</span>
-									</label>
-									{activeConfig.repoFiles.prTemplate.honeypotEnabled ? (
-										<div className="ml-5 flex flex-col gap-1.5">
-											<div className="text-[11px] text-[#FFFFFF59]">
-												{activeConfig.repoFiles.prTemplate.honeypotPhrases.length === 0
-													? "No phrases yet. Add one to start trapping."
-													: `${activeConfig.repoFiles.prTemplate.honeypotPhrases.length} phrase${activeConfig.repoFiles.prTemplate.honeypotPhrases.length === 1 ? "" : "s"} — one is picked at random on each sync.`}
-											</div>
-											{activeConfig.repoFiles.prTemplate.honeypotPhrases.length > 0 ? (
-												<div className="flex flex-col gap-1">
-													{activeConfig.repoFiles.prTemplate.honeypotPhrases.map((p, i) => (
-														<div key={`${p.kind}-${i}`} className="flex items-center gap-2 group">
-															<span className="text-[10px] uppercase tracking-wide text-[#FFFFFF59] w-[88px] shrink-0">
-																{HONEYPOT_KIND_LABEL[p.kind]}
-															</span>
-															<code className="flex-1 min-w-0 truncate text-[11px] font-mono text-tw-accent bg-tw-inner px-1.5 py-0.5 rounded">
-																{p.phrase}
-															</code>
-															<Button
-																size="xs"
-																variant="ghost"
-																disabled={updateConfig.isPending}
-																onClick={() => removeHoneypotPhrase(i)}
-																className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] text-tw-text-tertiary hover:text-red-400"
-																title="Remove this phrase"
-															>
-																✕
-															</Button>
-														</div>
-													))}
-												</div>
-											) : null}
-											<div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-												<span className="text-[11px] text-[#FFFFFF73] mr-1">Add a phrase:</span>
-												{(["codeword", "marker", "natural", "tag"] as const).map((kind) => (
-													<Button
-														key={kind}
-														size="xs"
-														variant="ghost"
-														disabled={updateConfig.isPending}
-														onClick={() => addHoneypotPhrase(kind)}
-														className="inline-flex items-center gap-1 text-[11px] text-tw-text-tertiary hover:text-tw-text-secondary bg-transparent hover:bg-tw-hover border-none px-2 py-0.5"
-														title={HONEYPOT_KIND_HINT[kind]}
-													>
-														<svg width="7" height="7" viewBox="0 0 10 10" fill="none" aria-hidden="true" className="opacity-70">
-															<path d="M5 1.5v7M1.5 5h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-														</svg>
-														{HONEYPOT_KIND_LABEL[kind]}
-													</Button>
-												))}
-											</div>
-										</div>
-									) : null}
-								</div>
-
-								{(() => {
-									const showHoneypotInPreview =
-										activeConfig.repoFiles.prTemplate.honeypotEnabled &&
-										activeConfig.repoFiles.prTemplate.honeypotPhrases.length > 0;
-									const previewPhrase = showHoneypotInPreview
-										? activeConfig.repoFiles.prTemplate.honeypotPhrases[0].phrase
-										: undefined;
-									const generated = generatePrTemplate(activeConfig, previewPhrase);
-									const custom = activeConfig.repoFiles.prTemplate.customContent;
-									const value = custom.length > 0 ? custom : generated;
-									const phraseCount = activeConfig.repoFiles.prTemplate.honeypotPhrases.length;
-									const footerNote = showHoneypotInPreview
-										? phraseCount > 1
-											? `Preview shows the first phrase — sync rotates among your ${phraseCount} phrases.`
-											: "The honeypot phrase is committed inside this template."
-										: undefined;
-									return (
-										<FileContentEditor
-											value={value}
-											onChange={(next) =>
-												updateRepoFileContent("pr-template", next === generated ? "" : next)
-											}
-											targetPath=".github/PULL_REQUEST_TEMPLATE.md"
-											autoSync={activeConfig.repoFiles.prTemplate.autoSync}
-											footerNote={footerNote}
-											rows={14}
-										/>
-									);
-								})()}
-							</div>
-						</div>
+						<RepoFilesTree
+							config={activeConfig}
+							repoFullName={repo?.fullName ?? "owner/repo"}
+							isPending={updateConfig.isPending}
+							generateRulesMd={generateRulesMd}
+							generatePrTemplate={generatePrTemplate}
+							generateAgentsMd={generateAgentsMd}
+							onUpdateContent={updateRepoFileContent}
+							onToggle={toggleRepoFile}
+							onAddHoneypotPhrase={addHoneypotPhrase}
+							onRemoveHoneypotPhrase={removeHoneypotPhrase}
+						/>
 					)}
 				</div>
 			</div>
@@ -1169,6 +1031,83 @@ function RulesPage() {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+		</div>
+	);
+}
+
+// ─── Requests tab ───────────────────────────────────────
+
+function RequestsTab({ repoRequests, repoRequestsLoading, vouchRequests, vouchRequestsLoading, onDecideRepoRequest, onDecideVouchRequest, isDecidingRepo, isDecidingVouch }: {
+	repoRequests: Array<{ id: string; kind: string; githubUsername: string; avatarUrl: string | null; reason: string }>;
+	repoRequestsLoading: boolean;
+	vouchRequests: Array<{ id: string; githubUsername: string; avatarUrl: string | null; reason: string }>;
+	vouchRequestsLoading: boolean;
+	onDecideRepoRequest: (id: string, decision: "approve" | "deny") => void;
+	onDecideVouchRequest: (id: string, decision: "approve" | "deny") => void;
+	isDecidingRepo: boolean;
+	isDecidingVouch: boolean;
+}) {
+	const [subtab, setSubtab] = useState<"appeals" | "access" | "vouches">("appeals");
+	const appeals = repoRequests.filter((r) => r.kind === "unblock");
+	const access = repoRequests.filter((r) => r.kind === "access");
+	const isLoading = subtab === "vouches" ? vouchRequestsLoading : repoRequestsLoading;
+	const items = subtab === "appeals" ? appeals : subtab === "access" ? access : vouchRequests;
+	const emptyMsg = subtab === "appeals"
+		? "No pending appeals. Blocked users can appeal via the link in their bot comment."
+		: subtab === "access" ? "No pending access requests." : "No pending vouch requests. Users can apply from the vouched contributors page.";
+
+	return (
+		<div className="flex flex-col gap-4 min-w-0">
+			<div className="flex items-center gap-1 bg-tw-card rounded-[10px] p-1 self-start">
+				{([
+					{ key: "appeals" as const, label: "Appeals", count: appeals.length },
+					{ key: "access" as const, label: "Access", count: access.length },
+					{ key: "vouches" as const, label: "Vouches", count: vouchRequests.length },
+				]).map(({ key, label, count }) => (
+					<button key={key} type="button" onClick={() => setSubtab(key)}
+						className={`flex items-center gap-1.5 h-7 px-2.5 rounded-[6px] text-[12px] font-medium transition-colors cursor-pointer ${subtab === key ? "bg-[#FAFAFA1A] text-[#EEEEEE]" : "text-[#9F9FA9] hover:text-[#EEEEEE]"}`}>
+						{label}
+						{count > 0 && <span className="text-[11px] text-tw-accent tabular-nums ml-0.5">{count}</span>}
+					</button>
+				))}
+			</div>
+			{isLoading ? (
+				<div className="rounded-xl bg-tw-card p-6 flex items-center justify-center">
+					<div className="h-5 w-5 animate-spin rounded-full border-2 border-tw-accent border-t-transparent" />
+				</div>
+			) : items.length === 0 ? (
+				<div className="rounded-xl bg-tw-card p-6 text-center">
+					<p className="text-[13px] text-[#FFFFFF73] m-0">{emptyMsg}</p>
+				</div>
+			) : (
+				<div className="flex flex-col gap-2">
+					{items.map((r) => {
+						const isVouch = subtab === "vouches";
+						const kind = "kind" in r ? r.kind : "vouch";
+						const badge = isVouch ? "Vouch" : kind === "unblock" ? "Appeal" : "Access";
+						const badgeClass = kind === "unblock" ? "bg-amber-500/15 text-amber-300" : "bg-tw-accent/15 text-tw-accent";
+						const label = isVouch ? "Vouch" : kind === "unblock" ? "Unblock" : "Add to whitelist";
+						return (
+							<div key={r.id} className="rounded-xl bg-tw-card border border-tw-border-card p-4 flex flex-col gap-3">
+								<div className="flex items-start gap-3">
+									<img src={r.avatarUrl ?? `https://github.com/${r.githubUsername}.png`} alt="" className="w-8 h-8 rounded-full bg-white/5" />
+									<div className="flex flex-col gap-0.5 flex-1 min-w-0">
+										<div className="flex items-center gap-2">
+											<span className="text-[14px] font-medium text-white">@{r.githubUsername}</span>
+											<span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${badgeClass}`}>{badge}</span>
+										</div>
+										<p className="text-[13px] text-[#FFFFFFB3] m-0 whitespace-pre-wrap">{r.reason}</p>
+									</div>
+								</div>
+								<div className="flex items-center gap-2 self-end">
+									<Button size="xs" variant="ghost" disabled={isVouch ? isDecidingVouch : isDecidingRepo} onClick={() => isVouch ? onDecideVouchRequest(r.id, "deny") : onDecideRepoRequest(r.id, "deny")} className="text-[12px] text-tw-text-tertiary hover:text-red-400">Deny</Button>
+									<Button size="xs" disabled={isVouch ? isDecidingVouch : isDecidingRepo} onClick={() => isVouch ? onDecideVouchRequest(r.id, "approve") : onDecideRepoRequest(r.id, "approve")} className="text-[12px]">{label}</Button>
+								</div>
+							</div>
+						);
+					})}
+				</div>
+			)}
 		</div>
 	);
 }

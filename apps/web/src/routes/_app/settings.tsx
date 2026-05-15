@@ -13,6 +13,7 @@ const sidebarItems = [
 	{ label: "General", path: "/settings/general" },
 	{ label: "Account", path: "/settings/account" },
 	{ label: "Billing", path: "/settings/billing" },
+	{ label: "Developers", path: "/settings/developers" },
 	{ label: "Organization", path: "/settings/organization", disabled: true },
 ];
 
