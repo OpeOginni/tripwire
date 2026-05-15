@@ -1,11 +1,12 @@
 import { useWorkspace } from "#/lib/workspace-context";
+import { GithubIcon } from "#/components/icons/github";
 import {
 	Menu,
 	MenuTrigger,
 	MenuPopup,
 	MenuItem,
-	MenuSeparator,
 } from "#/components/ui/menu";
+import { useAuth } from '@tripwire/auth/components';
 
 function ChevronDown() {
 	return (
@@ -17,25 +18,31 @@ function ChevronDown() {
 
 export function OrgSwitcher() {
 	const { org, orgs, setOrg } = useWorkspace();
+	const { user } = useAuth();
 
 	if (orgs.length === 0) return null;
 
 	return (
 		<Menu>
-			<MenuTrigger className="flex items-center gap-1.5 h-8 px-2 rounded-lg text-tw-text-muted hover:text-tw-text-primary hover:bg-tw-hover transition-colors cursor-pointer">
+			<MenuTrigger className="flex items-center gap-1.5 h-8 px-2.5 rounded-[10px] bg-tw-card text-tw-text-muted hover:text-tw-text-primary transition-colors cursor-pointer">
 				{org?.logo ? (
 					<img src={org.logo} alt="" className="w-4 h-4 rounded-full" />
 				) : (
-					<div className="w-4 h-4 rounded-full bg-tw-inner flex items-center justify-center text-[9px] font-semibold text-tw-text-tertiary">
-						{org?.name?.[0]?.toUpperCase() ?? "?"}
-					</div>
+					<div
+						className="shrink-0 relative rounded-full overflow-hidden size-5 bg-cover bg-center bg-tw-card"
+						style={{
+							backgroundImage: user?.image
+								? `url('${user.image}')`
+								: "url('https://i.pravatar.cc/80?img=12')",
+						}}
+					/>
 				)}
-				<span className="text-[13px] font-medium leading-none max-w-[120px] truncate">
+				<span className="text-[13px] text-tw-text-primary leading-none max-w-[120px] truncate">
 					{org?.name ?? "Select org"}
 				</span>
 				<ChevronDown />
 			</MenuTrigger>
-			<MenuPopup align="end">
+			<MenuPopup align="end" className="border-tw-border bg-tw-card">
 				{orgs.map((o) => (
 					<MenuItem
 						key={o.id}
@@ -46,9 +53,14 @@ export function OrgSwitcher() {
 							{o.logo ? (
 								<img src={o.logo} alt="" className="w-4 h-4 rounded-full" />
 							) : (
-								<div className="w-4 h-4 rounded-full bg-tw-inner flex items-center justify-center text-[9px] font-semibold text-tw-text-tertiary">
-									{o.name[0]?.toUpperCase()}
-								</div>
+								<div
+									className="shrink-0 relative rounded-full overflow-hidden size-5 bg-cover bg-center bg-tw-card"
+									style={{
+										backgroundImage: user?.image
+											? `url('${user.image}')`
+											: "url('https://i.pravatar.cc/80?img=12')",
+									}}
+								/>
 							)}
 							{o.name}
 						</span>
@@ -69,7 +81,7 @@ export function RepoSwitcher() {
 
 	if (repos.length === 0) {
 		return (
-			<span className="text-[13px] text-tw-text-tertiary px-1">
+			<span className="text-[13px] text-tw-text-tertiary px-2.5 h-8 flex items-center rounded-[10px] bg-tw-card">
 				No repos
 			</span>
 		);
@@ -77,20 +89,23 @@ export function RepoSwitcher() {
 
 	return (
 		<Menu>
-			<MenuTrigger className="flex items-center gap-1.5 h-8 px-2 rounded-lg text-tw-text-muted hover:text-tw-text-primary hover:bg-tw-hover transition-colors cursor-pointer">
-				<span className="text-[13px] font-medium leading-none font-mono max-w-[160px] truncate">
+			<MenuTrigger className="flex items-center gap-1.5 h-8 px-2.5 rounded-[10px] bg-tw-card text-tw-text-muted hover:text-tw-text-primary transition-colors cursor-pointer">
+				<GithubIcon className="w-5 h-5 text-tw-text-primary" />
+				<span className="text-[13px] text-tw-text-primary leading-none max-w-[160px] truncate">
 					{repo?.name ?? "Select repo"}
 				</span>
 				<ChevronDown />
 			</MenuTrigger>
-			<MenuPopup align="end">
+			<MenuPopup align="end" className="border-tw-border bg-tw-card">
 				{repos.map((r) => (
 					<MenuItem
 						key={r.id}
 						onClick={() => setRepo(r)}
 						className="flex items-center justify-between"
 					>
-						<span className="font-mono text-[12px]">{r.fullName}</span>
+						<span className="flex items-center gap-2">
+							<span className="text-[12px] text-tw-text-primary">{r.fullName}</span>
+						</span>
 						{repo?.id === r.id && (
 							<svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-tw-accent shrink-0">
 								<path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -103,12 +118,10 @@ export function RepoSwitcher() {
 	);
 }
 
-/** Combined org / repo display with separator */
 export function OrgRepoSwitcher() {
 	return (
-		<div className="flex items-center gap-0.5">
+		<div className="flex items-center gap-1.5">
 			<OrgSwitcher />
-			<span className="text-[13px] text-tw-text-tertiary select-none">/</span>
 			<RepoSwitcher />
 		</div>
 	);

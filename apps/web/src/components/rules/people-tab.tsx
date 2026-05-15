@@ -28,6 +28,7 @@ interface PeopleTabProps {
 	onRemoveWhitelist: (username: string) => Promise<void>;
 	isAddingBlacklist?: boolean;
 	isAddingWhitelist?: boolean;
+	isAdmin?: boolean;
 }
 
 export function PeopleTab({
@@ -40,6 +41,7 @@ export function PeopleTab({
 	onRemoveWhitelist,
 	isAddingBlacklist,
 	isAddingWhitelist,
+	isAdmin,
 }: PeopleTabProps) {
 	const [subtab, setSubtab] = useState<"block" | "allow" | "vouched">("block");
 	const [dismissed, setDismissed] = useState(false);
@@ -117,7 +119,7 @@ export function PeopleTab({
 					{([
 						{ key: "block" as const, label: "Always block", count: blacklistUsers.length },
 						{ key: "allow" as const, label: "Always allow", count: whitelistUsers.length },
-						{ key: "vouched" as const, label: "Vouched", count: null },
+						...(isAdmin ? [{ key: "vouched" as const, label: "Vouched", count: null as number | null }] : []),
 					]).map(({ key, label, count }) => (
 						<button
 							key={key}

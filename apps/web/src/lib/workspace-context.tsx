@@ -92,7 +92,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	const navigate = useNavigate();
 	const routerState = useRouterState();
 	const pathname = routerState.location.pathname;
-	const [repo, setRepoState] = useState<Repo | null>(null);
+	const [repo, setRepoState] = useState<Repo | null>(() => {
+		if (typeof window === "undefined") return null;
+		try {
+			const stored = localStorage.getItem("tw:activeRepo");
+			return stored ? JSON.parse(stored) : null;
+		} catch {
+			return null;
+		}
+	});
 
 	// Extract org from URL
 	const orgHandle = useMemo(() => extractOrgHandle(pathname), [pathname]);
@@ -136,11 +144,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		[reposQuery.data],
 	);
 
-	// Auto-select first repo when repos load or org changes
+	// Auto-select repo: prefer stored repo if it exists in this org's repos, else first
 	useEffect(() => {
-		if (repos.length > 0 && (!repo || !repos.find((r) => r.id === repo.id))) {
-			setRepoState(repos[0]);
-		}
+		if (repos.length === 0) return;
+		if (repo && repos.find((r) => r.id === repo.id)) return;
+		const fallback = repos[0];
+		setRepoState(fallback);
+		try { localStorage.setItem("tw:activeRepo", JSON.stringify(fallback)); } catch {}
 	}, [repos, repo]);
 
 	// Set active BA org when org changes
@@ -160,10 +170,17 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		[navigate, pathname, orgHandle],
 	);
 
-	// setRepo just updates state (repo is not in the URL)
+	// setRepo updates state and persists to localStorage
 	const setRepo = useCallback(
 		(newRepo: Repo | null) => {
 			setRepoState(newRepo);
+			try {
+				if (newRepo) {
+					localStorage.setItem("tw:activeRepo", JSON.stringify(newRepo));
+				} else {
+					localStorage.removeItem("tw:activeRepo");
+				}
+			} catch { /* SSR or storage full */ }
 		},
 		[],
 	);

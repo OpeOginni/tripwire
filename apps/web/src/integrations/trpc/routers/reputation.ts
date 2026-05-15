@@ -3,6 +3,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { authedProcedure } from "../init";
 import { assertRepoOwner, computeContributorScore } from "@tripwire/core";
 import { resetContributorScore } from "@tripwire/core";
+import { fetchUserContributions } from "@tripwire/github";
 import { db } from "@tripwire/db/client";
 import {
 	repositories,
@@ -212,5 +213,17 @@ export const reputationRouter = {
 				githubUserId: input.githubUserId,
 				reason: input.reason,
 			});
+		}),
+
+	/** Fetch GitHub contributions heatmap + pinned repos for a user */
+	getProfile: authedProcedure
+		.input(z.object({
+			repoId: z.string().uuid(),
+			username: z.string().min(1),
+		}))
+		.query(async ({ input }) => {
+			const token = await getTokenForRepo(input.repoId);
+			if (!token) return null;
+			return fetchUserContributions(token, input.username);
 		}),
 } satisfies TRPCRouterRecord;

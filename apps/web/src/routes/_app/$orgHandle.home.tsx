@@ -17,8 +17,17 @@ function HomePage() {
 	const { user } = useAuth();
 	const { repo } = useWorkspace();
 	const eventsPath = useWorkspacePath("events");
+	const rulesPath = useWorkspacePath("rules");
+	const integrationsPath = useWorkspacePath("integrations");
 	const trpc = useTRPC();
 	const navigate = useNavigate();
+
+	// Lightweight check for setup progress
+	const rulesCountQuery = useQuery({
+		...trpc.rules.countEnabled.queryOptions({ repoId: repo?.id ?? "" }),
+		enabled: !!repo?.id,
+		staleTime: 60_000,
+	});
 
 	// Fetch real events when repo is available
 	const digestQuery = useQuery({
@@ -145,15 +154,49 @@ function HomePage() {
 					</button>
 				)}
 
-				{/* Empty state */}
-				{!digestQuery.isPending && groups.length === 0 && repo && (
-					<div className="w-full text-center py-12 text-tw-text-muted">
-						<p className="text-[15px]">No flagged events in the last 48 hours</p>
-						<p className="text-[13px] mt-1">
-							Everything is running smoothly on {repo.name}
-						</p>
-					</div>
-				)}
+				{/* Empty state — setup checklist */}
+				{!digestQuery.isPending && groups.length === 0 && repo && (() => {
+					const enabledRules = rulesCountQuery.data?.enabled ?? 0;
+					const steps = [
+						{ done: true, label: "Connect a repository", to: integrationsPath },
+						{ done: enabledRules > 0, label: "Enable moderation rules", to: `${rulesPath}?tab=marketplace` },
+						{ done: false, label: "Add trusted contributors to allowlist", to: `${rulesPath}?tab=people` },
+						{ done: false, label: "Set up repo files (RULES.md, AGENTS.md)", to: `${rulesPath}?tab=files` },
+					];
+					return (
+						<div className="w-full flex flex-col gap-3 mt-2">
+							<div className="rounded-xl bg-tw-card p-1 flex flex-col gap-0.5">
+								{steps.map((step) => (
+									<Link
+										key={step.label}
+										to={step.to}
+										className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-tw-hover transition-colors group"
+									>
+										<div className="flex items-center gap-2.5">
+											{step.done ? (
+												<svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-tw-success shrink-0">
+													<circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
+													<path d="M4.5 7L6.5 9L9.5 5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+												</svg>
+											) : (
+												<div className="w-3.5 h-3.5 rounded-full border border-tw-border shrink-0" />
+											)}
+											<span className={`text-[13px] ${step.done ? "text-tw-text-tertiary" : "text-tw-text-primary"}`}>
+												{step.label}
+											</span>
+										</div>
+										<span className="text-[11px] text-tw-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity">
+											→
+										</span>
+									</Link>
+								))}
+							</div>
+							<p className="text-[11px] text-tw-text-tertiary px-1 m-0">
+								Flagged PRs, issues, and comments will show up here once rules are active.
+							</p>
+						</div>
+					);
+				})()}
 
 				{groups.length > 0 && (
 					<button

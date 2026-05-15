@@ -385,14 +385,14 @@ export function RepoFilesTree(props: RepoFilesTreeProps) {
 			{/* Tree + Editor (IDE-style split) */}
 			<div className="flex gap-0 rounded-xl overflow-hidden border border-tw-border-card min-h-[360px]">
 				{/* File tree sidebar */}
-				<div className="w-[220px] shrink-0 bg-tw-bg border-r border-tw-border-card">
+				<div className="w-[220px] shrink-0 bg-tw-card border-r border-tw-border-card">
 					<FileTree
 						model={model}
 						style={{
 							height: "100%",
 							fontSize: "13px",
-							background: "var(--color-tw-bg)",
-							"--trees-bg-override": "var(--color-tw-bg)",
+							background: "var(--color-tw-card)",
+							"--trees-bg-override": "var(--color-tw-card)",
 							paddingTop: 8,
 							"--trees-selected-bg-override": "var(--color-tw-card)",
 							"--trees-selected-focused-border-color-override": "transparent",

@@ -50,6 +50,7 @@ import { Route as AppOrgHandleAutomationsRouteImport } from './routes/_app/$orgH
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceSplatRouteImport } from './routes/[.well-known].oauth-protected-resource.$'
 import { Route as Char91DotwellKnownChar93OauthAuthorizationServerSplatRouteImport } from './routes/[.well-known].oauth-authorization-server.$'
 import { Route as AppOrgHandleEventsIndexRouteImport } from './routes/_app/$orgHandle.events.index'
+import { Route as AppOrgHandleUsersUsernameRouteImport } from './routes/_app/$orgHandle.users.$username'
 import { Route as AppOrgHandleEventsEventIdRouteImport } from './routes/_app/$orgHandle.events.$eventId'
 
 const VouchedRoute = VouchedRouteImport.update({
@@ -261,6 +262,12 @@ const AppOrgHandleEventsIndexRoute = AppOrgHandleEventsIndexRouteImport.update({
   path: '/events/',
   getParentRoute: () => AppOrgHandleRoute,
 } as any)
+const AppOrgHandleUsersUsernameRoute =
+  AppOrgHandleUsersUsernameRouteImport.update({
+    id: '/users/$username',
+    path: '/users/$username',
+    getParentRoute: () => AppOrgHandleRoute,
+  } as any)
 const AppOrgHandleEventsEventIdRoute =
   AppOrgHandleEventsEventIdRouteImport.update({
     id: '/events/$eventId',
@@ -309,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/request/$owner/$repo': typeof RequestOwnerRepoRoute
   '/events/': typeof AppEventsIndexRoute
   '/$orgHandle/events/$eventId': typeof AppOrgHandleEventsEventIdRoute
+  '/$orgHandle/users/$username': typeof AppOrgHandleUsersUsernameRoute
   '/$orgHandle/events/': typeof AppOrgHandleEventsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -352,6 +360,7 @@ export interface FileRoutesByTo {
   '/request/$owner/$repo': typeof RequestOwnerRepoRoute
   '/events': typeof AppEventsIndexRoute
   '/$orgHandle/events/$eventId': typeof AppOrgHandleEventsEventIdRoute
+  '/$orgHandle/users/$username': typeof AppOrgHandleUsersUsernameRoute
   '/$orgHandle/events': typeof AppOrgHandleEventsIndexRoute
 }
 export interface FileRoutesById {
@@ -397,6 +406,7 @@ export interface FileRoutesById {
   '/request/$owner/$repo': typeof RequestOwnerRepoRoute
   '/_app/events/': typeof AppEventsIndexRoute
   '/_app/$orgHandle/events/$eventId': typeof AppOrgHandleEventsEventIdRoute
+  '/_app/$orgHandle/users/$username': typeof AppOrgHandleUsersUsernameRoute
   '/_app/$orgHandle/events/': typeof AppOrgHandleEventsIndexRoute
 }
 export interface FileRouteTypes {
@@ -442,6 +452,7 @@ export interface FileRouteTypes {
     | '/request/$owner/$repo'
     | '/events/'
     | '/$orgHandle/events/$eventId'
+    | '/$orgHandle/users/$username'
     | '/$orgHandle/events/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -485,6 +496,7 @@ export interface FileRouteTypes {
     | '/request/$owner/$repo'
     | '/events'
     | '/$orgHandle/events/$eventId'
+    | '/$orgHandle/users/$username'
     | '/$orgHandle/events'
   id:
     | '__root__'
@@ -529,6 +541,7 @@ export interface FileRouteTypes {
     | '/request/$owner/$repo'
     | '/_app/events/'
     | '/_app/$orgHandle/events/$eventId'
+    | '/_app/$orgHandle/users/$username'
     | '/_app/$orgHandle/events/'
   fileRoutesById: FileRoutesById
 }
@@ -842,6 +855,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrgHandleEventsIndexRouteImport
       parentRoute: typeof AppOrgHandleRoute
     }
+    '/_app/$orgHandle/users/$username': {
+      id: '/_app/$orgHandle/users/$username'
+      path: '/users/$username'
+      fullPath: '/$orgHandle/users/$username'
+      preLoaderRoute: typeof AppOrgHandleUsersUsernameRouteImport
+      parentRoute: typeof AppOrgHandleRoute
+    }
     '/_app/$orgHandle/events/$eventId': {
       id: '/_app/$orgHandle/events/$eventId'
       path: '/events/$eventId'
@@ -859,6 +879,7 @@ interface AppOrgHandleRouteChildren {
   AppOrgHandleIntegrationsRoute: typeof AppOrgHandleIntegrationsRoute
   AppOrgHandleRulesRoute: typeof AppOrgHandleRulesRoute
   AppOrgHandleEventsEventIdRoute: typeof AppOrgHandleEventsEventIdRoute
+  AppOrgHandleUsersUsernameRoute: typeof AppOrgHandleUsersUsernameRoute
   AppOrgHandleEventsIndexRoute: typeof AppOrgHandleEventsIndexRoute
 }
 
@@ -869,6 +890,7 @@ const AppOrgHandleRouteChildren: AppOrgHandleRouteChildren = {
   AppOrgHandleIntegrationsRoute: AppOrgHandleIntegrationsRoute,
   AppOrgHandleRulesRoute: AppOrgHandleRulesRoute,
   AppOrgHandleEventsEventIdRoute: AppOrgHandleEventsEventIdRoute,
+  AppOrgHandleUsersUsernameRoute: AppOrgHandleUsersUsernameRoute,
   AppOrgHandleEventsIndexRoute: AppOrgHandleEventsIndexRoute,
 }
 
