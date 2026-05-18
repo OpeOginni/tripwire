@@ -35,8 +35,9 @@ export function createCreditMiddleware({
 		onUsage(_ctx, usage) {
 			totalPromptTokens += usage.promptTokens;
 			totalCompletionTokens += usage.completionTokens;
+			const totalTokens = totalPromptTokens + totalCompletionTokens;
 			console.log(
-				`[billing:iter] +${usage.promptTokens} in / +${usage.completionTokens} out (total: ${totalPromptTokens} in / ${totalCompletionTokens} out)`,
+				`[billing:iter] +${usage.promptTokens} in / +${usage.completionTokens} out (total: ${totalPromptTokens} in / ${totalCompletionTokens} out | context: ${totalTokens} tokens)`,
 			);
 		},
 

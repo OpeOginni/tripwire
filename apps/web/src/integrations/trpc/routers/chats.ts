@@ -92,18 +92,24 @@ export const chatsRouter = {
 		.input(
 			z.object({
 				limit: z.number().min(1).max(50).default(20),
+				repoId: z.string().uuid().optional(),
 			}),
 		)
 		.query(async ({ input, ctx }) => {
+			const conditions = [eq(conversations.userId, ctx.user.id)];
+			if (input.repoId) {
+				conditions.push(eq(conversations.repoId, input.repoId));
+			}
 			return db
 				.select({
 					id: conversations.id,
 					title: conversations.title,
+					repoId: conversations.repoId,
 					createdAt: conversations.createdAt,
 					updatedAt: conversations.updatedAt,
 				})
 				.from(conversations)
-				.where(eq(conversations.userId, ctx.user.id))
+				.where(and(...conditions))
 				.orderBy(desc(conversations.updatedAt))
 				.limit(input.limit);
 		}),

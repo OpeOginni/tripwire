@@ -241,10 +241,16 @@ export async function fetchUserPRs(
 	// Fetch from GitHub Search API
 	const stateFilter = state === "all" ? "" : `+is:${state}`;
 	const perPage = Math.max(limit, MIN_BATCH_SIZE);
-	const searchResult = await githubApi(
-		`/search/issues?q=author:${encodeURIComponent(username)}+type:pr${stateFilter}&sort=created&order=desc&per_page=${perPage}`,
-		token,
-	);
+	let searchResult: Record<string, unknown> | null = null;
+	try {
+		searchResult = await githubApi(
+			`/search/issues?q=author:${encodeURIComponent(username)}+type:pr${stateFilter}&sort=created&order=desc&per_page=${perPage}`,
+			token,
+		);
+	} catch {
+		// 422 = user has no searchable PR activity, other errors = API issue
+		return { items: [], totalCount: 0 };
+	}
 
 	const totalCount = (searchResult?.total_count as number) ?? 0;
 	const rawItems = (searchResult?.items as Record<string, unknown>[]) ?? [];
