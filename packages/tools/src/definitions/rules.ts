@@ -121,8 +121,6 @@ const updateRuleAction = defineTool({
 		});
 	},
 });
-
-
 const setMinMergedPrs = defineTool({
 	name: "set_min_merged_prs",
 	description:
@@ -317,8 +315,6 @@ const clearRuleScope = defineTool({
 		});
 	},
 });
-
-
 const copyRules = defineTool({
 	name: "copy_rules",
 	description:

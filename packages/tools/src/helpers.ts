@@ -11,22 +11,16 @@ import { normalizeRuleConfig } from '@tripwire/core';
 import { logEvent } from '@tripwire/core';
 import { assertRepoOwner } from '@tripwire/core';
 import type { MutationResult, ToolContext } from "./registry";
-
-
 import { RULE_META } from "@tripwire/db";
 export const RULE_NAMES: Record<RuleKey, string> = Object.fromEntries(
 	Object.entries(RULE_META).map(([k, v]) => [k, v.name]),
 ) as Record<RuleKey, string>;
-
-
 export function requireRepoId(ctx: ToolContext): string {
 	if (!ctx.repoId) {
 		throw new Error("repoId is required for this tool but missing from context");
 	}
 	return ctx.repoId;
 }
-
-
 export async function loadRuleConfig(repoId: string): Promise<RuleConfig> {
 	const [row] = await db
 		.select()
@@ -50,8 +44,6 @@ async function persistRuleConfig(repoId: string, config: RuleConfig): Promise<vo
 		await db.insert(ruleConfigs).values({ repoId, config: normalized });
 	}
 }
-
-
 export interface RuleMutationOpts {
 	ctx: ToolContext;
 	/** Human-readable summary for the event description. */
@@ -103,8 +95,6 @@ export async function applyRuleMutation(
 
 	return { ok: true, message: opts.summary };
 }
-
-
 export function describeScope(scope: {
 	pullRequests?: boolean;
 	issues?: boolean;

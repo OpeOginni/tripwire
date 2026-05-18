@@ -18,8 +18,6 @@ export interface ToolContext {
 	/** Required for tools with needsRepo !== false. */
 	repoId?: string;
 }
-
-
 export type ToolSurface = "mcp" | "chat";
 
 export const ALL_SURFACES = ["mcp", "chat"] as const satisfies readonly ToolSurface[];
@@ -47,8 +45,6 @@ export function makeSpec(type: string, props: Record<string, unknown>): JsonRend
 		},
 	};
 }
-
-
 export interface ToolDefinition<
 	TShape extends z.ZodRawShape = z.ZodRawShape,
 	TOutput = unknown,
@@ -130,8 +126,6 @@ export interface MutationResult {
 	/** Optional structured payload; included verbatim in MCP, ignored by default chat. */
 	data?: Record<string, unknown>;
 }
-
-
 export function filterToolsForSurface(
 	tools: readonly AnyToolDefinition[],
 	surface: ToolSurface,

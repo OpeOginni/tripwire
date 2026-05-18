@@ -1,7 +1,5 @@
 import { memo, useState, useRef, useEffect, useCallback } from "react";
 import { Handle, Position, useReactFlow, type NodeProps } from "@xyflow/react";
-
-
 function NodeShell({
 	children,
 	color,
@@ -190,8 +188,6 @@ function EditableText({
 		</div>
 	);
 }
-
-
 const icons = {
 	trigger: (
 		<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
@@ -242,8 +238,6 @@ const colors = {
 
 // Handle style matching the card border system — no colored circles
 const handleBase = "!w-2.5 !h-2.5 !rounded-sm !border !border-tw-border !bg-tw-card";
-
-
 const triggerLabels: Record<string, string> = {
 	pr_opened: "PR Opened",
 	pr_edited: "PR Edited",
@@ -287,8 +281,6 @@ const actionLabels: Record<string, string> = {
 	send_webhook: "Send Webhook",
 	request_review: "Request Review",
 };
-
-
 export const TriggerNode = memo(({ data, selected }: NodeProps) => {
 	const trigger = (data.trigger as string) ?? "pr_opened";
 	return (
@@ -457,8 +449,6 @@ export const TransformNode = memo(({ data, selected }: NodeProps) => {
 	);
 });
 TransformNode.displayName = "TransformNode";
-
-
 export const nodeTypes = {
 	trigger: TriggerNode,
 	rule: RuleNode,

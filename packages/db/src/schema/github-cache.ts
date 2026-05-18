@@ -9,8 +9,6 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-
-
 export interface CachedPR {
 	title: string;
 	number: number;
@@ -59,8 +57,6 @@ export interface CachedRepo {
 	size: number;
 	archived: boolean;
 }
-
-
 /**
  * Cached GitHub user data — stores enriched API responses (PRs with
  * details, repos, GraphQL profile) so repeat lookups are instant and

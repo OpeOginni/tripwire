@@ -12,12 +12,8 @@ import { githubApi } from "./app";
 import { fetchUserGraphQL, fetchUserContributions } from "./user";
 import type { GitHubUserGraphQL, PinnedRepo, ContributionsData } from "./user";
 import type { CachedPR, CachedRepo } from "@tripwire/db";
-
-
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 const MIN_BATCH_SIZE = 20; // always fetch at least this many for cache warmth
-
-
 export type { CachedPR as GitHubPR, CachedRepo as GitHubRepoDetail };
 
 export interface FetchOptions {
@@ -41,8 +37,6 @@ export interface ActivityResult {
 	pinned: PinnedRepo[];
 	graphql: GitHubUserGraphQL | null;
 }
-
-
 async function getDbDeps() {
 	const { eq, sql } = await import("drizzle-orm");
 	const { db } = await import("@tripwire/db/client");
@@ -119,8 +113,6 @@ async function upsertCache(
 		// Cache write failure — non-fatal
 	}
 }
-
-
 function transformSearchItemToPR(item: Record<string, unknown>): CachedPR {
 	const repoUrl = (item.repository_url as string) ?? "";
 	const repoFullName = repoUrl.replace("https://api.github.com/repos/", "");
@@ -213,8 +205,6 @@ function transformRepoItem(item: Record<string, unknown>): CachedRepo {
 		archived: (item.archived as boolean) ?? false,
 	};
 }
-
-
 /**
  * Fetch a user's pull requests with full details.
  * Defaults to 5 merged PRs. Cached for 1 hour.
@@ -271,8 +261,6 @@ export async function fetchUserPRs(
 
 	return { items: enriched, totalCount };
 }
-
-
 export interface CommentThreadResult {
 	comments: PRComment[];
 	totalCount: number;
@@ -340,8 +328,6 @@ export async function fetchComments(
 
 	return { comments: sorted.slice(0, limit), totalCount: sorted.length };
 }
-
-
 export interface PRComment {
 	id: number;
 	author: string;

@@ -26,8 +26,6 @@ import {
 } from "./node-types";
 import { RULE_KEYS } from "@tripwire/db";
 import Dither from "#/components/Dither";
-
-
 interface PaletteItem {
 	type: string;
 	label: string;
@@ -103,8 +101,6 @@ const paletteGroups: { title: string; items: PaletteItem[] }[] = [
 		})),
 	},
 ];
-
-
 function NodePalette({ search, setSearch }: { search: string; setSearch: (s: string) => void }) {
 	const onDragStart = (e: React.DragEvent, item: PaletteItem) => {
 		e.dataTransfer.setData("application/reactflow-type", item.type);
@@ -199,8 +195,6 @@ function NodePalette({ search, setSearch }: { search: string; setSearch: (s: str
 		</div>
 	);
 }
-
-
 type SimMode = "pass" | "fail" | "user";
 
 interface SimNodeResult {
@@ -372,8 +366,6 @@ function simulateWorkflow(nodes: Node[], edges: Edge[], mode: SimMode, userData:
 	}
 	return results;
 }
-
-
 function SimulationPanel({
 	nodes,
 	edges,
@@ -622,8 +614,6 @@ function SimulationPanel({
 		</div>
 	);
 }
-
-
 interface WorkflowEditorProps {
 	initialNodes?: Node[];
 	initialEdges?: Edge[];
