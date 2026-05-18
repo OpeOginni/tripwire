@@ -863,6 +863,109 @@ const getReputationLeaderboard = defineTool({
 		}),
 });
 
+// ─── Workflow tools ────────────────────────────────────────────
+
+const listWorkflows = defineTool({
+	name: "list_workflows",
+	description:
+		"List all automation workflows for the current repo. Shows name, node count, and active/draft status.",
+	inputSchema: z.object({}),
+	handler: async (_args, ctx) => {
+		const repoId = requireRepoId(ctx);
+		await assertRepoOwner(ctx.userId, repoId);
+		const { workflows } = await import("@tripwire/db");
+		const { desc } = await import("drizzle-orm");
+		const rows = await db
+			.select()
+			.from(workflows)
+			.where(eq(workflows.repoId, repoId))
+			.orderBy(desc(workflows.updatedAt));
+		return rows.map((wf) => ({
+			id: wf.id,
+			name: wf.name,
+			enabled: wf.enabled,
+			nodeCount: ((wf.definition as { nodes: unknown[] }).nodes ?? []).length,
+			updatedAt: wf.updatedAt.toISOString(),
+		}));
+	},
+	chatRender: (output) => {
+		if (output.length === 0) {
+			return makeSpec("Text", { content: "No workflows found for this repo." });
+		}
+		const lines = output.map((wf) =>
+			`${wf.enabled ? "Active" : "Draft"} — **${wf.name}** (${wf.nodeCount} nodes, updated ${new Date(wf.updatedAt).toLocaleDateString()})`,
+		);
+		return makeSpec("Text", { content: lines.join("\n") });
+	},
+});
+
+const describeWorkflow = defineTool({
+	name: "describe_workflow",
+	description:
+		"Describe a specific automation workflow — shows its trigger, rules, conditions, actions, and how they connect. Use when the user asks about a specific workflow.",
+	inputSchema: z.object({
+		name: z.string().min(1).describe("Workflow name (or partial match)"),
+	}),
+	handler: async ({ name }, ctx) => {
+		const repoId = requireRepoId(ctx);
+		await assertRepoOwner(ctx.userId, repoId);
+		const { workflows } = await import("@tripwire/db");
+		const { desc } = await import("drizzle-orm");
+		const rows = await db
+			.select()
+			.from(workflows)
+			.where(eq(workflows.repoId, repoId))
+			.orderBy(desc(workflows.updatedAt));
+
+		const nameLower = name.toLowerCase();
+		const wf = rows.find((w) => w.name.toLowerCase().includes(nameLower));
+		if (!wf) return { found: false, name };
+
+		const def = wf.definition as { nodes: Array<Record<string, unknown>>; edges: Array<Record<string, unknown>> };
+		const nodes = def.nodes ?? [];
+		const edges = def.edges ?? [];
+
+		return {
+			found: true,
+			id: wf.id,
+			name: wf.name,
+			enabled: wf.enabled,
+			nodes: nodes.map((n) => ({
+				id: n.id,
+				type: n.type,
+				data: n.data,
+			})),
+			edges: edges.map((e) => ({
+				source: e.source,
+				target: e.target,
+				sourceHandle: e.sourceHandle,
+			})),
+		};
+	},
+	chatRender: (output) => {
+		if (!output.found) {
+			return makeSpec("Text", { content: `No workflow matching "${output.name}" found.` });
+		}
+		const nodes = output.nodes as Array<{ id: string; type: string; data: Record<string, unknown> }>;
+		const lines = [
+			`**${output.name}** (${output.enabled ? "Active" : "Draft"})`,
+			"",
+			...nodes.map((n) => {
+				const label = n.type === "trigger" ? `Trigger: ${n.data.trigger}`
+					: n.type === "rule" ? `Rule: ${n.data.rule}${n.data.params ? ` (${JSON.stringify(n.data.params)})` : ""}`
+					: n.type === "condition" ? `Condition: ${n.data.field} ${n.data.operator} ${n.data.value}`
+					: n.type === "logic" ? `Logic: ${n.data.gate}`
+					: n.type === "action" ? `Action: ${n.data.action}${n.data.message ? ` — "${n.data.message}"` : ""}`
+					: n.type === "delay" ? `Delay: ${n.data.duration}`
+					: n.type === "transform" ? `Transform: ${n.data.transform}`
+					: n.type;
+				return `- ${label}`;
+			}),
+		];
+		return makeSpec("Text", { content: lines.join("\n") });
+	},
+});
+
 // ─── GitHub data factory tools ─────────────────────────────────
 
 const getUserPrs = defineTool({
@@ -1070,6 +1173,8 @@ export const readTools: AnyToolDefinition[] = [
 	lookupUser,
 	scoreBreakdown,
 	getReputationLeaderboard,
+	listWorkflows,
+	describeWorkflow,
 	getUserPrs,
 	getPrDetail,
 	getComments,

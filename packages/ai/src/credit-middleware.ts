@@ -53,9 +53,10 @@ export async function trackCreditUsage({
 	}
 
 	const cents = await computeCostCents(modelId, promptTokens, completionTokens);
+	const totalTokens = promptTokens + completionTokens;
 
 	console.log(
-		`[billing] ${modelId} | ${promptTokens} input + ${completionTokens} output = ${cents}c charged`,
+		`[billing] ${modelId} | ${promptTokens} input + ${completionTokens} output = ${cents}c charged | context: ${totalTokens} tokens`,
 	);
 
 	logAi({

@@ -1,126 +1,33 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { parseAsStringEnum, useQueryState } from "nuqs";
 import { useWorkspace } from "#/lib/workspace-context";
 import { useTRPC } from "#/integrations/trpc/react";
-import { WorkflowEditor } from "#/components/automations/workflow-editor";
+import { templates } from "#/components/automations/templates";
+import type { WorkflowTemplate } from "#/components/automations/templates";
 import type { Node, Edge } from "@xyflow/react";
 
-export const Route = createFileRoute("/_app/$orgHandle/automations")({
+export const Route = createFileRoute("/_app/$orgHandle/automations/")({
 	component: AutomationsPage,
 });
 
-// ─── Templates ─────────────────────────────────────────────────
-
-interface WorkflowTemplate {
-	id: string;
-	name: string;
-	description: string;
-	icon: string;
-	nodes: Node[];
-	edges: Edge[];
-}
-
-const edgeStyle = (color = "#9F9FA966") => ({ stroke: color, strokeWidth: 2 });
-
-const templates: WorkflowTemplate[] = [
-	{
-		id: "contributor_screening",
-		name: "Contributor Screening",
-		description: "Check account age and PR history, block or allow based on both passing.",
-		icon: "🛡",
-		nodes: [
-			{ id: "trigger_1", type: "trigger", position: { x: 300, y: 50 }, data: { trigger: "pr_opened" } },
-			{ id: "transform_1", type: "transform", position: { x: 270, y: 200 }, data: { transform: "fetch_github_user" } },
-			{ id: "rule_1", type: "rule", position: { x: 100, y: 370 }, data: { rule: "accountAge", params: { days: 30 } } },
-			{ id: "rule_2", type: "rule", position: { x: 420, y: 370 }, data: { rule: "minMergedPrs", params: { count: 5 } } },
-			{ id: "logic_1", type: "logic", position: { x: 270, y: 540 }, data: { gate: "AND" } },
-			{ id: "action_1", type: "action", position: { x: 180, y: 680 }, data: { action: "log", message: "Trusted contributor" } },
-			{ id: "action_2", type: "action", position: { x: 420, y: 680 }, data: { action: "block", message: "Account does not meet requirements" } },
-		],
-		edges: [
-			{ id: "e1", source: "trigger_1", target: "transform_1", animated: true, style: edgeStyle() },
-			{ id: "e2", source: "transform_1", target: "rule_1", animated: true, style: edgeStyle() },
-			{ id: "e3", source: "transform_1", target: "rule_2", animated: true, style: edgeStyle() },
-			{ id: "e4", source: "rule_1", sourceHandle: "pass", target: "logic_1", targetHandle: "a", animated: true, style: edgeStyle("#67E19F66") },
-			{ id: "e5", source: "rule_2", sourceHandle: "pass", target: "logic_1", targetHandle: "b", animated: true, style: edgeStyle("#67E19F66") },
-			{ id: "e6", source: "logic_1", target: "action_1", animated: true, style: edgeStyle() },
-			{ id: "e7", source: "rule_1", sourceHandle: "fail", target: "action_2", animated: true, style: edgeStyle("#F56D5D66") },
-		],
-	},
-	{
-		id: "spam_detector",
-		name: "Spam & AI Slop Filter",
-		description: "Detect AI-generated content and crypto address spam, auto-block offenders.",
-		icon: "🤖",
-		nodes: [
-			{ id: "trigger_1", type: "trigger", position: { x: 300, y: 50 }, data: { trigger: "pr_opened" } },
-			{ id: "rule_1", type: "rule", position: { x: 150, y: 220 }, data: { rule: "aiSlopDetection" } },
-			{ id: "rule_2", type: "rule", position: { x: 430, y: 220 }, data: { rule: "cryptoAddressDetection" } },
-			{ id: "logic_1", type: "logic", position: { x: 300, y: 390 }, data: { gate: "OR" } },
-			{ id: "action_1", type: "action", position: { x: 200, y: 540 }, data: { action: "block", message: "Spam detected" } },
-			{ id: "action_2", type: "action", position: { x: 420, y: 540 }, data: { action: "add_to_blacklist" } },
-		],
-		edges: [
-			{ id: "e1", source: "trigger_1", target: "rule_1", animated: true, style: edgeStyle() },
-			{ id: "e2", source: "trigger_1", target: "rule_2", animated: true, style: edgeStyle() },
-			{ id: "e3", source: "rule_1", sourceHandle: "fail", target: "logic_1", targetHandle: "a", animated: true, style: edgeStyle("#F56D5D66") },
-			{ id: "e4", source: "rule_2", sourceHandle: "fail", target: "logic_1", targetHandle: "b", animated: true, style: edgeStyle("#F56D5D66") },
-			{ id: "e5", source: "logic_1", target: "action_1", animated: true, style: edgeStyle() },
-			{ id: "e6", source: "logic_1", target: "action_2", animated: true, style: edgeStyle() },
-		],
-	},
-	{
-		id: "repo_history_scan",
-		name: "Repo History Scan",
-		description: "Scan your repo's past contributors to catch repeat offenders before they strike again.",
-		icon: "🔍",
-		nodes: [
-			{ id: "trigger_1", type: "trigger", position: { x: 300, y: 50 }, data: { trigger: "repo_scan" } },
-			{ id: "transform_1", type: "transform", position: { x: 300, y: 200 }, data: { transform: "fetch_github_user" } },
-			{ id: "condition_1", type: "condition", position: { x: 300, y: 370 }, data: { field: "score", operator: "<", value: 30 } },
-			{ id: "action_1", type: "action", position: { x: 150, y: 540 }, data: { action: "add_to_blacklist" } },
-			{ id: "action_2", type: "action", position: { x: 450, y: 540 }, data: { action: "log", message: "Flagged for review" } },
-		],
-		edges: [
-			{ id: "e1", source: "trigger_1", target: "transform_1", animated: true, style: edgeStyle() },
-			{ id: "e2", source: "transform_1", target: "condition_1", animated: true, style: edgeStyle() },
-			{ id: "e3", source: "condition_1", sourceHandle: "true", target: "action_1", animated: true, style: edgeStyle("#F56D5D66") },
-			{ id: "e4", source: "condition_1", sourceHandle: "false", target: "action_2", animated: true, style: edgeStyle("#67E19F66") },
-		],
-	},
-	{
-		id: "first_time_contributor",
-		name: "First-Time Contributor Gate",
-		description: "Extra scrutiny for first interactions — check profile, require vouches, or auto-label.",
-		icon: "👋",
-		nodes: [
-			{ id: "trigger_1", type: "trigger", position: { x: 300, y: 50 }, data: { trigger: "contributor_first_interaction" } },
-			{ id: "transform_1", type: "transform", position: { x: 300, y: 200 }, data: { transform: "fetch_github_user" } },
-			{ id: "rule_1", type: "rule", position: { x: 150, y: 370 }, data: { rule: "requireProfileReadme" } },
-			{ id: "rule_2", type: "rule", position: { x: 450, y: 370 }, data: { rule: "repoActivityMinimum", params: { minRepos: 3 } } },
-			{ id: "action_1", type: "action", position: { x: 150, y: 540 }, data: { action: "label", label: "needs-review" } },
-			{ id: "action_2", type: "action", position: { x: 450, y: 540 }, data: { action: "warn", message: "Please complete your GitHub profile" } },
-		],
-		edges: [
-			{ id: "e1", source: "trigger_1", target: "transform_1", animated: true, style: edgeStyle() },
-			{ id: "e2", source: "transform_1", target: "rule_1", animated: true, style: edgeStyle() },
-			{ id: "e3", source: "transform_1", target: "rule_2", animated: true, style: edgeStyle() },
-			{ id: "e4", source: "rule_1", sourceHandle: "pass", target: "action_1", animated: true, style: edgeStyle("#67E19F66") },
-			{ id: "e5", source: "rule_2", sourceHandle: "fail", target: "action_2", animated: true, style: edgeStyle("#F56D5D66") },
-		],
-	},
-];
 
 // ─── Page ───────────────────────────────────────────────────────
 
 function AutomationsPage() {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
+	const navigate = useNavigate();
+	const { orgHandle } = Route.useParams();
 	const { repo } = useWorkspace();
 
-	const [activeWorkflowId, setActiveWorkflowId] = useState<string | null>(null);
+	const [tab, setTab] = useQueryState(
+		"tab",
+		parseAsStringEnum(["workflows", "reports"] as const).withDefault("workflows"),
+	);
+
 	const [isCreating, setIsCreating] = useState(false);
 	const [newName, setNewName] = useState("");
 
@@ -139,16 +46,7 @@ function AutomationsPage() {
 	);
 	const wfList = workflowsQuery.data ?? [];
 
-	// Fetch active workflow
-	const activeWfQuery = useQuery(
-		trpc.workflows.get.queryOptions(
-			{ id: activeWorkflowId ?? "" },
-			{ enabled: !!activeWorkflowId },
-		),
-	);
-
 	const createWf = useMutation(trpc.workflows.create.mutationOptions());
-	const updateWf = useMutation(trpc.workflows.update.mutationOptions());
 	const deleteWf = useMutation(trpc.workflows.delete.mutationOptions());
 	const toggleWf = useMutation(trpc.workflows.update.mutationOptions());
 
@@ -162,65 +60,20 @@ function AutomationsPage() {
 			},
 			{
 				onSuccess: (wf) => {
-					setActiveWorkflowId(wf.id);
 					setIsCreating(false);
 					setNewName("");
 					queryClient.invalidateQueries({ queryKey: trpc.workflows.list.queryKey({ repoId: repo!.id }) });
+					navigate({ to: `/${orgHandle}/automations/${wf.id}` });
 				},
 			},
 		);
 	};
 
-	const handleCreateFromTemplate = (template: WorkflowTemplate) => {
-		if (!repo?.id) return;
-		createWf.mutate(
-			{
-				repoId: repo.id,
-				name: template.name,
-				definition: { nodes: template.nodes, edges: template.edges },
-			},
-			{
-				onSuccess: (wf) => {
-					setActiveWorkflowId(wf.id);
-					queryClient.invalidateQueries({ queryKey: trpc.workflows.list.queryKey({ repoId: repo!.id }) });
-				},
-			},
-		);
-	};
-
-	const handleSave = (nodes: Node[], edges: Edge[]) => {
-		if (!activeWorkflowId) return;
-		updateWf.mutate(
-			{
-				id: activeWorkflowId,
-				definition: {
-					nodes: nodes.map((n) => ({
-						id: n.id,
-						type: n.type as string,
-						position: n.position,
-						data: n.data as Record<string, unknown>,
-					})),
-					edges: edges.map((e) => ({
-						id: e.id,
-						source: e.source,
-						target: e.target,
-						sourceHandle: e.sourceHandle,
-						targetHandle: e.targetHandle,
-						label: typeof e.label === "string" ? e.label : undefined,
-						animated: e.animated,
-					})),
-				},
-			},
-			{
-				onSuccess: () => {
-					queryClient.invalidateQueries({ queryKey: trpc.workflows.list.queryKey({ repoId: repo!.id }) });
-				},
-			},
-		);
+	const handlePreviewTemplate = (template: WorkflowTemplate) => {
+		navigate({ to: `/${orgHandle}/automations/preview?template=${template.id}` });
 	};
 
 	const handleDelete = (id: string) => {
-		if (activeWorkflowId === id) setActiveWorkflowId(null);
 		deleteWf.mutate(
 			{ id },
 			{
@@ -275,56 +128,43 @@ function AutomationsPage() {
 		);
 	}
 
-	// Editing a workflow
-	if (activeWorkflowId && activeWfQuery.data) {
-		const wf = activeWfQuery.data;
-		const def = wf.definition;
-		return (
-			<div className="h-full flex flex-col">
-				<div className="flex items-center gap-3 px-4 py-3 border-b border-tw-border shrink-0">
-					<button
-						type="button"
-						onClick={() => setActiveWorkflowId(null)}
-						className="flex items-center justify-center size-7 rounded-lg hover:bg-tw-hover transition-colors"
-					>
-						<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-							<path d="M9 3L5 7L9 11" stroke="#9F9FA9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-						</svg>
-					</button>
-					<div className="flex flex-col min-w-0">
-						<span className="text-[14px] font-medium text-tw-text-primary truncate">{wf.name}</span>
-						{wf.description && (
-							<span className="text-[11px] text-tw-text-muted truncate">{wf.description}</span>
-						)}
-					</div>
-					<div className="ml-auto flex items-center gap-2">
-						<span className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${wf.enabled ? "bg-tw-success/10 text-tw-success" : "bg-[#FFFFFF08] text-tw-text-muted"}`}>
-							{wf.enabled ? "Active" : "Draft"}
-						</span>
-					</div>
-				</div>
-				<div className="flex-1 min-h-0">
-					<WorkflowEditor
-						initialNodes={def.nodes as Node[]}
-						initialEdges={def.edges as Edge[]}
-						onSave={handleSave}
-						repoId={repo?.id}
-					/>
-				</div>
-			</div>
-		);
-	}
-
-	// Workflow list
+	// List + Reports view
 	return (
 		<div className="p-6 max-w-3xl mx-auto">
-			<div className="flex items-center justify-between mb-6">
+			<div className="flex items-center justify-between mb-4">
 				<div>
 					<h2 className="text-lg font-medium text-tw-text-primary">Automations</h2>
 					<p className="text-[13px] text-tw-text-secondary mt-0.5">
 						Visual workflows that process contributors through rule chains, logic gates, and actions.
 					</p>
 				</div>
+			</div>
+
+			{/* Tabs */}
+			<div className="bg-tw-card rounded-[10px] p-1 flex items-center gap-1 mb-5 self-start w-fit">
+				{([
+					["workflows", "Workflows"] as const,
+					["reports", "Reports"] as const,
+				]).map(([t, label]) => (
+					<button
+						key={t}
+						type="button"
+						onClick={() => setTab(t)}
+						className={`flex items-center justify-center h-7 px-3 rounded-[6px] text-[12px] font-medium transition-colors cursor-pointer ${
+							tab === t
+								? "bg-[#FAFAFA1A] text-[#EEEEEE]"
+								: "text-[#9F9FA9] hover:text-[#EEEEEE]"
+						}`}
+					>
+						{label}
+					</button>
+				))}
+			</div>
+
+			{tab === "reports" && <ReportsPanel repoId={repo?.id} />}
+
+			{tab === "workflows" && <>
+			<div className="flex items-center justify-end mb-4">
 				{!isCreating && (
 					<button
 						type="button"
@@ -404,14 +244,11 @@ function AutomationsPage() {
 							<button
 								key={t.id}
 								type="button"
-								onClick={() => handleCreateFromTemplate(t)}
+								onClick={() => handlePreviewTemplate(t)}
 								disabled={createWf.isPending}
 								className="flex flex-col items-start gap-2 p-4 rounded-xl bg-tw-card border border-tw-border hover:border-[#FFFFFF1A] transition-all text-left group disabled:opacity-50"
 							>
-								<div className="flex items-center gap-2.5 w-full">
-									<span className="text-[18px] leading-none">{t.icon}</span>
-									<span className="text-[13px] font-medium text-tw-text-primary truncate">{t.name}</span>
-								</div>
+								<span className="text-[13px] font-medium text-tw-text-primary truncate">{t.name}</span>
 								<p className="text-[11px] text-tw-text-muted leading-relaxed">{t.description}</p>
 								<span className="text-[11px] text-tw-text-tertiary mt-auto">
 									{t.nodes.length} nodes · {t.edges.length} connections
@@ -432,7 +269,7 @@ function AutomationsPage() {
 								className={`group flex items-center gap-3 p-3 rounded-xl bg-tw-card border transition-colors cursor-pointer ${
 									isPending ? "border-tw-accent/30" : "border-tw-border hover:border-[#FFFFFF1A]"
 								}`}
-								onClick={() => setActiveWorkflowId(wf.id)}
+								onClick={() => navigate({ to: `/${orgHandle}/automations/${wf.id}` })}
 							>
 								<div className="flex items-center justify-center size-9 rounded-lg bg-[#FFFFFF08] shrink-0">
 									<svg width="16" height="16" viewBox="0 0 16 16" fill="#9F9FA9">
@@ -558,6 +395,256 @@ function AutomationsPage() {
 					)}
 				</AnimatePresence>
 			</div>
+			</>}
+		</div>
+	);
+}
+
+// ─── Reports Panel ─────────────────────────────────────────────
+
+function ReportsPanel({ repoId }: { repoId?: string }) {
+	const trpc = useTRPC();
+	const [kind, setKind] = useState<"user" | "pr" | "issue">("user");
+	const [username, setUsername] = useState("");
+	const [ref, setRef] = useState("");
+	const runReport = useMutation(trpc.workflows.runReport.mutationOptions());
+
+	const handleRun = () => {
+		if (!repoId || !username.trim()) return;
+		runReport.mutate({
+			repoId,
+			username: username.trim(),
+			kind,
+			ref: ref.trim() || undefined,
+		});
+	};
+
+	const report = runReport.data;
+	const userData = report?.userData;
+
+	const placeholders: Record<string, string> = {
+		user: "GitHub username...",
+		pr: "PR author username...",
+		issue: "Issue author username...",
+	};
+
+	return (
+		<div className="flex flex-col gap-4">
+			<div>
+				<p className="text-[13px] text-tw-text-secondary mb-3">
+					Run a user, PR, or issue through your active workflows.
+				</p>
+
+				{/* Kind selector */}
+				<div className="bg-tw-card rounded-[10px] p-1 flex items-center gap-1 mb-3 w-fit">
+					{([
+						["user", "User"] as const,
+						["pr", "Pull Request"] as const,
+						["issue", "Issue"] as const,
+					]).map(([k, label]) => (
+						<button
+							key={k}
+							type="button"
+							onClick={() => setKind(k)}
+							className={`flex items-center justify-center h-7 px-2.5 rounded-[6px] text-[12px] font-medium transition-colors cursor-pointer ${
+								kind === k
+									? "bg-[#FAFAFA1A] text-[#EEEEEE]"
+									: "text-[#9F9FA9] hover:text-[#EEEEEE]"
+							}`}
+						>
+							{label}
+						</button>
+					))}
+				</div>
+
+				<div className="flex gap-2">
+					{/* Username input */}
+					<div className="flex items-center gap-2 h-9 flex-1 rounded-[10px] bg-tw-card px-2.5">
+						<svg width="13" height="13" viewBox="0 0 16 16" fill="#6E6E6E">
+							<path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm5 7a5 5 0 0 0-10 0h10Z" />
+						</svg>
+						<input
+							type="text"
+							placeholder={placeholders[kind]}
+							value={username}
+							onChange={(e) => setUsername(e.target.value)}
+							onKeyDown={(e) => e.key === "Enter" && handleRun()}
+							className="flex-1 bg-transparent outline-none text-[13px] text-white placeholder:text-[#6E6E6E]"
+						/>
+					</div>
+
+					{/* Ref input (PR/issue number) */}
+					{kind !== "user" && (
+						<div className="flex items-center gap-1.5 h-9 w-28 rounded-[10px] bg-tw-card px-2.5">
+							<span className="text-[#6E6E6E] text-[13px]">#</span>
+							<input
+								type="text"
+								placeholder="Number"
+								value={ref}
+								onChange={(e) => setRef(e.target.value.replace(/\D/g, ""))}
+								onKeyDown={(e) => e.key === "Enter" && handleRun()}
+								className="flex-1 bg-transparent outline-none text-[13px] text-white placeholder:text-[#6E6E6E] w-full"
+							/>
+						</div>
+					)}
+
+					<button
+						type="button"
+						onClick={handleRun}
+						disabled={runReport.isPending || !username.trim()}
+						className="flex items-center gap-1.5 h-9 px-4 rounded-[10px] bg-[#363639] hover:bg-[#404044] text-[13px] font-medium text-tw-text-primary transition-colors disabled:opacity-50 shrink-0"
+					>
+						{runReport.isPending ? "Running..." : "Run"}
+					</button>
+				</div>
+			</div>
+
+			{runReport.isError && (
+				<div className="text-[13px] text-tw-error">
+					{runReport.error?.message ?? "Failed to run report"}
+				</div>
+			)}
+
+			{report && (
+				<div className="flex flex-col gap-3">
+					{/* User card */}
+					{userData && (
+						<div className="rounded-xl bg-tw-card p-1">
+							<div className="rounded-[10px] bg-tw-inner p-3 flex items-center gap-3">
+								<img src={userData.user.avatarUrl} alt="" className="size-10 rounded-full" />
+								<div className="flex-1 min-w-0">
+									<p className="text-[14px] font-medium text-tw-text-primary">
+										{userData.user.name ?? userData.user.login}
+									</p>
+									<p className="text-[12px] text-tw-text-muted">@{userData.user.login}</p>
+								</div>
+								<div
+									className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[13px] font-medium tabular-nums ${
+										(userData.data.score as number) >= 70 ? "text-tw-success bg-tw-success/10"
+										: (userData.data.score as number) >= 40 ? "text-tw-warning bg-tw-warning/10"
+										: "text-tw-error bg-tw-error/10"
+									}`}
+								>
+									{userData.data.score as number}/100
+								</div>
+							</div>
+						</div>
+					)}
+
+					{/* Content card (PR/issue) */}
+					{report.contentMeta && (
+						<div className="rounded-xl bg-tw-card p-1">
+							<div className="rounded-[10px] bg-tw-inner p-3 flex items-start gap-3">
+								<span className={`mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
+									report.contentMeta.state === "merged" ? "bg-[#A371F7]/10 text-[#A371F7]"
+									: report.contentMeta.state === "open" ? "bg-tw-success/10 text-tw-success"
+									: "bg-tw-error/10 text-tw-error"
+								}`}>
+									{report.contentMeta.state}
+								</span>
+								<div className="flex-1 min-w-0">
+									<p className="text-[13px] font-medium text-tw-text-primary">
+										{report.contentMeta.title}
+									</p>
+									<p className="text-[11px] text-tw-text-muted mt-0.5">
+										#{report.contentMeta.number}
+									</p>
+								</div>
+								<a
+									href={report.contentMeta.url}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-[11px] text-tw-accent hover:underline shrink-0"
+								>
+									View
+								</a>
+							</div>
+							{report.contentText && (
+								<div className="px-3 pb-2 pt-1">
+									<p className="text-[11px] text-tw-text-muted leading-relaxed line-clamp-3">
+										{report.contentText}
+									</p>
+								</div>
+							)}
+						</div>
+					)}
+
+					{/* No active workflows */}
+					{report.results.length === 0 && (
+						<div className="rounded-xl bg-tw-card p-4 text-center">
+							<p className="text-[13px] text-tw-text-muted">No active workflows to run against.</p>
+							<p className="text-[11px] text-tw-text-tertiary mt-1">Enable workflows in the Workflows tab first.</p>
+						</div>
+					)}
+
+					{/* Per-workflow results */}
+					{report.results.map((r) => {
+						const resultColor =
+							r.result === "blocked" ? "bg-tw-error/10 border-tw-error/20" :
+							r.result === "allowed" ? "bg-tw-success/10 border-tw-success/20" :
+							"bg-[#FFFFFF06] border-tw-border";
+						const resultLabel =
+							r.result === "blocked" ? "BLOCKED" :
+							r.result === "allowed" ? "ALLOWED" :
+							"NO ACTION";
+						const resultTextColor =
+							r.result === "blocked" ? "text-tw-error" :
+							r.result === "allowed" ? "text-tw-success" :
+							"text-tw-text-muted";
+
+						return (
+							<div key={r.workflowId} className="rounded-xl bg-tw-card p-1 flex flex-col gap-0.5">
+								{/* Workflow header */}
+								<div className="flex items-center justify-between px-3 pt-2.5 pb-1.5">
+									<div className="flex items-center gap-2 min-w-0">
+										<svg width="14" height="14" viewBox="0 0 16 16" fill="#9F9FA9">
+											<path d="M8.5 1.5a1 1 0 0 0-1.8-.6L2.6 7.4a1 1 0 0 0 .8 1.6h3.1l-1 5.5a1 1 0 0 0 1.8.6l4.1-6.5a1 1 0 0 0-.8-1.6H7.5l1-5.5Z" />
+										</svg>
+										<span className="text-[13px] font-medium text-tw-text-primary truncate">{r.workflowName}</span>
+										<span className="text-[11px] text-tw-text-muted">{r.outcomes.length} nodes</span>
+									</div>
+									<span className={`text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md border ${resultColor} ${resultTextColor}`}>
+										{resultLabel}
+									</span>
+								</div>
+
+								{/* Node trace */}
+								<div className="flex flex-col gap-0.5 px-1 pb-1">
+									{r.outcomes.map((o) => {
+										const dotClass =
+											o.status === "pass" ? "bg-tw-success" :
+											o.status === "fail" ? "bg-tw-error" :
+											o.status === "executed" ? "bg-tw-accent" :
+											"bg-tw-text-muted";
+										return (
+											<div key={o.nodeId} className="rounded-[10px] bg-tw-inner px-2.5 py-1.5 flex items-center gap-2.5">
+												<span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotClass}`} />
+												<span className="text-[12px] text-tw-text-secondary flex-1 truncate">
+													{o.label}
+												</span>
+												<span className="text-[11px] text-tw-text-muted truncate max-w-[200px]">
+													{o.detail}
+												</span>
+											</div>
+										);
+									})}
+								</div>
+
+								{/* Actions taken */}
+								{r.actions.length > 0 && (
+									<div className="px-3 pb-2 flex flex-wrap gap-1.5">
+										{r.actions.map((a, i) => (
+											<span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-[#FAFAFA08] text-tw-text-muted">
+												{a}
+											</span>
+										))}
+									</div>
+								)}
+							</div>
+						);
+					})}
+				</div>
+			)}
 		</div>
 	);
 }

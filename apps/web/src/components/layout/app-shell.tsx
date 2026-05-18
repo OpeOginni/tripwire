@@ -4,7 +4,7 @@ import { Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { TopNav } from "#/components/layout/top-nav";
 import { WorkspaceRedirect } from "#/components/layout/workspace-redirect";
-import { WorkspaceProvider } from "#/lib/workspace-context";
+import { WorkspaceProvider, useWorkspace } from "#/lib/workspace-context";
 import { AuthProvider } from '@tripwire/auth/components';
 import { ChatProvider, useAIChat } from '#/components/chat/chat-context';
 import { ChatThread } from "#/components/chat/chat-thread";
@@ -274,10 +274,11 @@ function SidebarRecentChats() {
 	const { loadChat, open } = useAIChat();
 	const [loadingId, setLoadingId] = useState<string | null>(null);
 	const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-	const chatsQuery = useQuery(trpc.chats.list.queryOptions({ limit: 3 }));
+	const { repo } = useWorkspace();
+	const chatsQuery = useQuery(trpc.chats.list.queryOptions({ limit: 3, repoId: repo?.id }));
 	const chats = chatsQuery.data ?? [];
 
-	const listQueryKey = trpc.chats.list.queryKey({ limit: 3 });
+	const listQueryKey = trpc.chats.list.queryKey({ limit: 3, repoId: repo?.id });
 	const deleteChat = useMutation(
 		trpc.chats.delete.mutationOptions({
 			onMutate: async ({ chatId }) => {

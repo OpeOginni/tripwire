@@ -1,5 +1,5 @@
-import { memo } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { memo, useState, useRef, useEffect, useCallback } from "react";
+import { Handle, Position, useReactFlow, type NodeProps } from "@xyflow/react";
 
 // ─── Shared node shell ──────────────────────────────────────────
 
@@ -53,6 +53,141 @@ function Param({ label, value }: { label: string; value: string }) {
 			<span className="text-[11px] text-tw-text-secondary font-mono bg-tw-inner px-1.5 py-0.5 rounded">
 				{value}
 			</span>
+		</div>
+	);
+}
+
+/** Editable numeric chip — click to edit, Enter/blur to commit, Escape to cancel. */
+function EditableParam({
+	label,
+	value,
+	nodeId,
+	paramKey,
+	/** If true, writes directly to data[paramKey] instead of data.params[paramKey] */
+	directData,
+}: {
+	label: string;
+	value: number;
+	nodeId: string;
+	paramKey: string;
+	directData?: boolean;
+}) {
+	const { setNodes } = useReactFlow();
+	const [editing, setEditing] = useState(false);
+	const [draft, setDraft] = useState<string>(String(value));
+	const inputRef = useRef<HTMLInputElement>(null);
+
+	useEffect(() => { setDraft(String(value)); }, [value]);
+	useEffect(() => { if (editing) { inputRef.current?.focus(); inputRef.current?.select(); } }, [editing]);
+
+	const commit = useCallback(() => {
+		const val = Number(draft);
+		if (draft !== "" && Number.isFinite(val) && val > 0 && val !== value) {
+			setNodes((nodes) =>
+				nodes.map((n) => {
+					if (n.id !== nodeId) return n;
+					if (directData) {
+						return { ...n, data: { ...n.data, [paramKey]: Math.floor(val) } };
+					}
+					const params = { ...((n.data.params as Record<string, unknown>) ?? {}), [paramKey]: Math.floor(val) };
+					return { ...n, data: { ...n.data, params } };
+				}),
+			);
+		} else {
+			setDraft(value);
+		}
+		setEditing(false);
+	}, [draft, value, nodeId, paramKey, directData, setNodes]);
+
+	return (
+		<div className="flex items-center justify-between gap-2 py-0.5">
+			<span className="text-[11px] text-tw-text-tertiary">{label}</span>
+			{editing ? (
+				<input
+					ref={inputRef}
+					type="text"
+					inputMode="numeric"
+					value={draft}
+					onChange={(e) => setDraft(e.target.value)}
+					onBlur={commit}
+					onKeyDown={(e) => {
+						if (e.key === "Enter") { e.preventDefault(); commit(); }
+						else if (e.key === "Escape") { e.preventDefault(); setDraft(String(value)); setEditing(false); }
+					}}
+					onClick={(e) => e.stopPropagation()}
+					className="w-14 px-2 py-0.5 rounded-md text-[11px] font-medium bg-tw-surface text-tw-text-primary border border-tw-accent/40 outline-none text-center"
+				/>
+			) : (
+				<button
+					type="button"
+					onClick={(e) => { e.stopPropagation(); setDraft(value); setEditing(true); }}
+					className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-tw-surface text-tw-text-secondary cursor-pointer hover:bg-tw-hover-light"
+					title={`Edit ${label.toLowerCase()}`}
+				>
+					{value}
+				</button>
+			)}
+		</div>
+	);
+}
+
+/** Editable text chip — click to edit inline text fields (message, label, url). */
+function EditableText({
+	label,
+	value,
+	nodeId,
+	fieldKey,
+	placeholder,
+}: {
+	label: string;
+	value: string;
+	nodeId: string;
+	fieldKey: string;
+	placeholder?: string;
+}) {
+	const { setNodes } = useReactFlow();
+	const [editing, setEditing] = useState(false);
+	const [draft, setDraft] = useState(value);
+	const inputRef = useRef<HTMLInputElement>(null);
+
+	useEffect(() => { setDraft(value); }, [value]);
+	useEffect(() => { if (editing) { inputRef.current?.focus(); inputRef.current?.select(); } }, [editing]);
+
+	const commit = useCallback(() => {
+		if (draft !== value) {
+			setNodes((nodes) => nodes.map((n) => n.id !== nodeId ? n : { ...n, data: { ...n.data, [fieldKey]: draft } }));
+		}
+		setEditing(false);
+	}, [draft, value, nodeId, fieldKey, setNodes]);
+
+	return (
+		<div className="flex items-center justify-between gap-2 py-0.5">
+			<span className="text-[11px] text-tw-text-tertiary shrink-0">{label}</span>
+			{editing ? (
+				<input
+					ref={inputRef}
+					type="text"
+					value={draft}
+					onChange={(e) => setDraft(e.target.value)}
+					onBlur={commit}
+					onKeyDown={(e) => {
+						if (e.key === "Enter") { e.preventDefault(); commit(); }
+						else if (e.key === "Escape") { e.preventDefault(); setDraft(value); setEditing(false); }
+					}}
+					onClick={(e) => e.stopPropagation()}
+					placeholder={placeholder}
+					className="flex-1 min-w-0 px-1.5 py-0.5 rounded-md text-[11px] bg-tw-surface text-tw-text-primary border border-tw-accent/40 outline-none"
+				/>
+			) : (
+				<button
+					type="button"
+					onClick={(e) => { e.stopPropagation(); setEditing(true); }}
+					className="text-[11px] text-tw-text-secondary font-mono bg-tw-inner px-1.5 py-0.5 rounded truncate max-w-[160px] text-left cursor-pointer hover:bg-tw-hover-light"
+					title={`Edit ${label.toLowerCase()}`}
+				>
+					{value || <span className="text-tw-text-tertiary italic">{placeholder ?? "empty"}</span>}
+				</button>
+			)}
 		</div>
 	);
 }
@@ -180,7 +315,7 @@ export const TriggerNode = memo(({ data, selected }: NodeProps) => {
 });
 TriggerNode.displayName = "TriggerNode";
 
-export const RuleNode = memo(({ data, selected }: NodeProps) => {
+export const RuleNode = memo(({ id, data, selected }: NodeProps) => {
 	const rule = (data.rule as string) ?? "accountAge";
 	const params = data.params as Record<string, unknown> | undefined;
 	return (
@@ -193,9 +328,12 @@ export const RuleNode = memo(({ data, selected }: NodeProps) => {
 				sublabel="Rule Check"
 				selected={selected}
 			>
-				{params && Object.entries(params).map(([k, v]) => (
-					<Param key={k} label={k} value={String(v)} />
-				))}
+				{params && Object.entries(params).map(([k, v]) => {
+					if (typeof v === "number") {
+						return <EditableParam key={k} label={k} value={v} nodeId={id} paramKey={k} />;
+					}
+					return <Param key={k} label={k} value={String(v)} />;
+				})}
 			</NodeShell>
 			<Handle type="source" position={Position.Bottom} id="pass" className={`${handleBase} !-bottom-1.5 !left-[30%] !bg-tw-success/20 !border-tw-success/40`} />
 			<Handle type="source" position={Position.Bottom} id="fail" className={`${handleBase} !-bottom-1.5 !left-[70%] !bg-tw-error/20 !border-tw-error/40`} />
@@ -204,10 +342,16 @@ export const RuleNode = memo(({ data, selected }: NodeProps) => {
 });
 RuleNode.displayName = "RuleNode";
 
-export const ConditionNode = memo(({ data, selected }: NodeProps) => {
+export const ConditionNode = memo(({ id, data, selected }: NodeProps) => {
 	const field = (data.field as string) ?? "score";
 	const op = (data.operator as string) ?? ">";
 	const val = data.value ?? "50";
+	const { setNodes } = useReactFlow();
+
+	const updateField = useCallback((key: string, newVal: string) => {
+		setNodes((nodes) => nodes.map((n) => n.id !== id ? n : { ...n, data: { ...n.data, [key]: newVal } }));
+	}, [id, setNodes]);
+
 	return (
 		<>
 			<Handle type="target" position={Position.Top} className={`${handleBase} !-top-1.5`} />
@@ -220,7 +364,7 @@ export const ConditionNode = memo(({ data, selected }: NodeProps) => {
 			>
 				<Param label="Field" value={String(field)} />
 				<Param label="Operator" value={String(op)} />
-				<Param label="Value" value={String(val)} />
+				<EditableParam label="Value" value={Number(val) || 0} nodeId={id} paramKey="value" directData />
 			</NodeShell>
 			<Handle type="source" position={Position.Bottom} id="true" className={`${handleBase} !-bottom-1.5 !left-[30%] !bg-tw-success/20 !border-tw-success/40`} />
 			<Handle type="source" position={Position.Bottom} id="false" className={`${handleBase} !-bottom-1.5 !left-[70%] !bg-tw-error/20 !border-tw-error/40`} />
@@ -248,8 +392,11 @@ export const LogicNode = memo(({ data, selected }: NodeProps) => {
 });
 LogicNode.displayName = "LogicNode";
 
-export const ActionNode = memo(({ data, selected }: NodeProps) => {
+export const ActionNode = memo(({ id, data, selected }: NodeProps) => {
 	const action = (data.action as string) ?? "block";
+	const showMessage = ["block", "warn", "comment", "log"].includes(action);
+	const showLabel = action === "label";
+	const showUrl = ["send_webhook", "notify_slack", "notify_discord"].includes(action);
 	return (
 		<>
 			<Handle type="target" position={Position.Top} className={`${handleBase} !-top-1.5`} />
@@ -260,9 +407,9 @@ export const ActionNode = memo(({ data, selected }: NodeProps) => {
 				sublabel="Action"
 				selected={selected}
 			>
-				{data.message ? <Param label="Message" value={String(data.message)} /> : null}
-				{data.label ? <Param label="Label" value={String(data.label)} /> : null}
-				{data.url ? <Param label="URL" value={String(data.url)} /> : null}
+				{showMessage && <EditableText label="Message" value={String(data.message ?? "")} nodeId={id} fieldKey="message" placeholder="Enter message..." />}
+				{showLabel && <EditableText label="Label" value={String(data.label ?? "")} nodeId={id} fieldKey="label" placeholder="label-name" />}
+				{showUrl && <EditableText label="URL" value={String(data.url ?? "")} nodeId={id} fieldKey="url" placeholder="https://..." />}
 			</NodeShell>
 		</>
 	);

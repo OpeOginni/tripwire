@@ -14,7 +14,7 @@ import {
 	BackgroundVariant,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTRPC } from "#/integrations/trpc/react";
 import {
 	nodeTypes,
@@ -23,6 +23,7 @@ import {
 	ruleLabels,
 	actionLabels,
 } from "./node-types";
+import Dither from "#/components/Dither";
 
 // ─── Palette items (drag to canvas) ────────────────────────────
 
@@ -127,8 +128,9 @@ function NodePalette({ search, setSearch }: { search: string; setSearch: (s: str
 	}, [search]);
 
 	return (
-		<div className="w-[220px] shrink-0 border-r border-tw-border bg-tw-surface overflow-auto">
-			<div className="p-2 border-b border-tw-border">
+		<div className="w-[220px] shrink-0 border-r border-tw-border bg-tw-surface flex flex-col relative">
+			{/* Search */}
+			<div className="p-2 border-b border-tw-border shrink-0">
 				<div className="flex items-center gap-2 h-8 rounded-[10px] bg-tw-card px-2.5">
 					<svg width="13" height="13" viewBox="0 0 16 16" fill="#6E6E6E">
 						<path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1ZM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0Z" />
@@ -142,38 +144,59 @@ function NodePalette({ search, setSearch }: { search: string; setSearch: (s: str
 					/>
 				</div>
 			</div>
-			<div className="p-1.5">
+
+			{/* Node list */}
+			<div className="flex-1 overflow-auto p-1.5 relative z-10">
 				{filtered.map((group) => (
-					<div key={group.title} className="mb-2">
-						<div className="text-[11px] uppercase tracking-[0.08em] text-tw-text-tertiary font-medium px-2 mb-1">
+					<div key={group.title} className="mb-3">
+						<div className="text-[11px] uppercase tracking-[0.08em] text-tw-text-tertiary font-medium px-2 mb-1.5">
 							{group.title}
 						</div>
-						<div className="flex flex-col gap-0.5">
+						<div className="rounded-[10px] bg-tw-card p-1 flex flex-col gap-px">
 							{group.items.map((item) => (
 								<div
 									key={`${item.type}-${item.label}`}
 									draggable
 									onDragStart={(e) => onDragStart(e, item)}
-									className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-grab active:cursor-grabbing hover:bg-[#ffffff08] transition-colors"
+									className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-grab active:cursor-grabbing hover:bg-tw-hover transition-colors"
 								>
-									<span style={{ color: item.color }} className="shrink-0 opacity-70">
-										<svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-											<rect width="10" height="10" rx="2.5" />
+									<span className="text-tw-text-muted shrink-0 opacity-60">
+										<svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
+											<circle cx="2" cy="2" r="1" />
+											<circle cx="6" cy="2" r="1" />
+											<circle cx="2" cy="6" r="1" />
+											<circle cx="6" cy="6" r="1" />
 										</svg>
 									</span>
-									<div className="flex flex-col min-w-0">
-										<span className="text-[12px] text-tw-text-primary leading-tight truncate">
-											{item.label}
-										</span>
-										<span className="text-[10px] text-tw-text-tertiary leading-tight truncate">
-											{item.sublabel}
-										</span>
-									</div>
+									<span className="text-[12px] text-tw-text-primary leading-tight truncate">
+										{item.label}
+									</span>
 								</div>
 							))}
 						</div>
 					</div>
 				))}
+			</div>
+
+			{/* Dither background at bottom */}
+			<div
+				className="pointer-events-none absolute inset-x-0 bottom-0 h-[150px] z-0"
+				style={{
+					maskImage: "linear-gradient(to bottom, transparent 0%, transparent 35%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0.4) 80%, black 100%)",
+					WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, transparent 35%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0.4) 80%, black 100%)",
+				}}
+			>
+				<Dither
+					waveColor={[0.4627450980392157, 0.4627450980392157, 0.4627450980392157]}
+					disableAnimation={false}
+					enableMouseInteraction={false}
+					mouseRadius={0.1}
+					colorNum={4}
+					pixelSize={2}
+					waveAmplitude={0.25}
+					waveFrequency={3}
+					waveSpeed={0.1}
+				/>
 			</div>
 		</div>
 	);
@@ -381,6 +404,15 @@ function SimulationPanel({
 
 	const fetchUser = useMutation(trpc.workflows.simulate.mutationOptions());
 
+	// Fetch recent users from events for suggestions
+	const suggestionsQuery = useQuery(
+		trpc.events.activeUsers.queryOptions(
+			{ repoId: repoId ?? "", days: 90 },
+			{ enabled: !!repoId && mode === "user", staleTime: 60_000 },
+		),
+	);
+	const suggestions = (suggestionsQuery.data ?? []).slice(0, 8);
+
 	// Animate step-by-step
 	useEffect(() => {
 		if (!isAnimating || !simResults) return;
@@ -447,19 +479,42 @@ function SimulationPanel({
 				</div>
 
 				{mode === "user" && (
-					<div className="flex items-center gap-2 h-8 rounded-[10px] bg-tw-card px-2.5 mb-2.5">
-						<svg width="13" height="13" viewBox="0 0 16 16" fill="#6E6E6E">
-							<path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm5 7a5 5 0 0 0-10 0h10Z" />
-						</svg>
-						<input
-							type="text"
-							placeholder="GitHub username..."
-							value={username}
-							onChange={(e) => setUsername(e.target.value)}
-							onKeyDown={(e) => e.key === "Enter" && runSim()}
-							className="flex-1 bg-transparent outline-none text-[13px] text-white placeholder:text-[#6E6E6E]"
-						/>
-					</div>
+					<>
+						<div className="flex items-center gap-2 h-8 rounded-[10px] bg-tw-card px-2.5 mb-2">
+							<svg width="13" height="13" viewBox="0 0 16 16" fill="#6E6E6E">
+								<path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm5 7a5 5 0 0 0-10 0h10Z" />
+							</svg>
+							<input
+								type="text"
+								placeholder="GitHub username..."
+								value={username}
+								onChange={(e) => setUsername(e.target.value)}
+								onKeyDown={(e) => e.key === "Enter" && runSim()}
+								className="flex-1 bg-transparent outline-none text-[13px] text-white placeholder:text-[#6E6E6E]"
+							/>
+						</div>
+						{suggestions.length > 0 && !username && (
+							<div className="flex flex-col gap-0.5 mb-2.5">
+								<div className="text-[10px] text-tw-text-tertiary px-1 mb-0.5">Recent contributors</div>
+								{suggestions.map((s) => (
+									<button
+										key={s.username}
+										type="button"
+										onClick={() => setUsername(s.username ?? "")}
+										className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-tw-card hover:bg-tw-hover transition-colors text-left"
+									>
+										<img
+											src={`https://github.com/${s.username}.png?size=32`}
+											alt=""
+											className="size-5 rounded-full"
+										/>
+										<span className="text-[12px] text-tw-text-secondary truncate">{s.username}</span>
+										<span className="text-[10px] text-tw-text-tertiary ml-auto tabular-nums">{s.count}</span>
+									</button>
+								))}
+							</div>
+						)}
+					</>
 				)}
 
 				{error && <p className="text-[11px] text-tw-error mb-2">{error}</p>}
@@ -486,11 +541,11 @@ function SimulationPanel({
 							<p className="text-[11px] text-tw-text-tertiary">@{userData.user.login}</p>
 						</div>
 						<div
-							className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[12px] font-medium tabular-nums"
-							style={{
-								color: userData.data.score >= 70 ? "#67E19F" : userData.data.score >= 40 ? "#D1BC00" : "#F56D5D",
-								backgroundColor: userData.data.score >= 70 ? "#67E19F20" : userData.data.score >= 40 ? "#D1BC0020" : "#F56D5D20",
-							}}
+							className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[12px] font-medium tabular-nums ${
+								userData.data.score >= 70 ? "text-tw-success bg-tw-success/10"
+								: userData.data.score >= 40 ? "text-tw-warning bg-tw-warning/10"
+								: "text-tw-error bg-tw-error/10"
+							}`}
 						>
 							{userData.data.score}/100
 						</div>
@@ -542,11 +597,11 @@ function SimulationPanel({
 								node?.type === "logic" ? (node.data.gate as string) :
 								node?.type === "condition" ? "Condition" :
 								node?.type ?? "Node";
-							const dotColor =
-								r.status === "pass" ? "#67E19F" :
-								r.status === "fail" ? "#F56D5D" :
-								r.status === "executed" ? "#34A6FF" :
-								"#9F9FA9";
+							const dotClass =
+								r.status === "pass" ? "bg-tw-success" :
+								r.status === "fail" ? "bg-tw-error" :
+								r.status === "executed" ? "bg-tw-accent" :
+								"bg-tw-text-muted";
 							const isLatest = i === visibleResults.length - 1 && isAnimating;
 							return (
 								<div
@@ -555,7 +610,7 @@ function SimulationPanel({
 										isLatest ? "bg-[#FAFAFA1A]" : "bg-tw-inner"
 									}`}
 								>
-									<span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: dotColor }} />
+									<span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${dotClass}`} />
 									<div className="min-w-0">
 										<p className="text-[13px] text-tw-text-primary leading-tight">{label}</p>
 										{r.detail && (
@@ -578,13 +633,13 @@ interface WorkflowEditorProps {
 	initialNodes?: Node[];
 	initialEdges?: Edge[];
 	onSave?: (nodes: Node[], edges: Edge[]) => void;
+	saveLabel?: string;
 	repoId?: string;
 }
 
-let nodeId = 0;
-const getId = () => `node_${++nodeId}`;
+const getId = () => `node_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
-export function WorkflowEditor({ initialNodes = [], initialEdges = [], onSave, repoId }: WorkflowEditorProps) {
+export function WorkflowEditor({ initialNodes = [], initialEdges = [], onSave, saveLabel, repoId }: WorkflowEditorProps) {
 	const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
 	const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 	const [search, setSearch] = useState("");
@@ -593,6 +648,12 @@ export function WorkflowEditor({ initialNodes = [], initialEdges = [], onSave, r
 	const [simStep, setSimStep] = useState(0);
 	const reactFlowWrapper = useRef<HTMLDivElement>(null);
 	const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
+	const initialSnapshot = useRef(JSON.stringify({ n: initialNodes.map((n) => ({ id: n.id, type: n.type, data: n.data })), e: initialEdges.map((e) => ({ id: e.id, source: e.source, target: e.target })) }));
+
+	const isDirty = useMemo(() => {
+		const current = JSON.stringify({ n: nodes.map((n) => ({ id: n.id, type: n.type, data: n.data })), e: edges.map((e) => ({ id: e.id, source: e.source, target: e.target })) });
+		return current !== initialSnapshot.current;
+	}, [nodes, edges]);
 
 	// Progressive node highlighting based on animation step
 	const visibleSteps = simResults?.slice(0, simStep) ?? [];
@@ -673,7 +734,10 @@ export function WorkflowEditor({ initialNodes = [], initialEdges = [], onSave, r
 		[rfInstance, setNodes],
 	);
 
-	const handleSave = () => { if (onSave) onSave(nodes, edges); };
+	const handleSave = () => {
+		if (onSave) onSave(nodes, edges);
+		initialSnapshot.current = JSON.stringify({ n: nodes.map((n) => ({ id: n.id, type: n.type, data: n.data })), e: edges.map((e) => ({ id: e.id, source: e.source, target: e.target })) });
+	};
 
 	return (
 		<div className="flex h-full w-full">
@@ -692,7 +756,7 @@ export function WorkflowEditor({ initialNodes = [], initialEdges = [], onSave, r
 					fitView
 					proOptions={{ hideAttribution: true }}
 					defaultEdgeOptions={{ animated: true, style: { stroke: "#27272A", strokeWidth: 1.5 } }}
-					style={{ background: "#0D0D0F" }}
+					className="!bg-tw-bg"
 				>
 					<Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#FFFFFF08" />
 					<Controls
@@ -733,9 +797,13 @@ export function WorkflowEditor({ initialNodes = [], initialEdges = [], onSave, r
 						<button
 							type="button"
 							onClick={handleSave}
-							className="flex items-center gap-1.5 h-8 px-3 rounded-[10px] bg-[#363639] hover:bg-[#404044] text-[13px] font-medium text-tw-text-primary transition-colors"
+							className={`flex items-center gap-1.5 h-8 px-3 rounded-[10px] text-[13px] font-medium transition-colors ${
+								isDirty || saveLabel
+									? "bg-tw-accent text-white hover:opacity-90"
+									: "bg-[#363639] hover:bg-[#404044] text-tw-text-primary"
+							}`}
 						>
-							Save
+							{saveLabel ?? "Save"}
 						</button>
 					)}
 				</div>
