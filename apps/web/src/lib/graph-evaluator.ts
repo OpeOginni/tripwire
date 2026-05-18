@@ -19,6 +19,8 @@ export interface SimUserData {
 	hasProfileReadme: boolean;
 	mergedPrs: number;
 	score: number;
+	filesChanged?: number;
+	username?: string;
 }
 
 function evaluateCondition(
@@ -28,7 +30,7 @@ function evaluateCondition(
 	userData: SimUserData,
 ): { pass: boolean; detail: string } {
 	const numVal = parseFloat(value);
-	const fieldMap: Record<string, number | boolean> = {
+	const fieldMap: Record<string, number | boolean | string | undefined> = {
 		score: userData.score,
 		accountAgeDays: userData.accountAgeDays,
 		publicRepos: userData.publicRepos,
@@ -37,14 +39,31 @@ function evaluateCondition(
 		following: userData.following,
 		publicGists: userData.publicGists,
 		hasProfileReadme: userData.hasProfileReadme,
+		mergedPrs: userData.mergedPrs,
+		filesChanged: userData.filesChanged,
+		username: userData.username,
 	};
 	const actual = fieldMap[field];
 	if (actual === undefined)
-		return { pass: true, detail: `${field} -- unknown field` };
+		return { pass: true, detail: `${field} -- unknown field, skipped` };
 
 	let pass: boolean;
 	if (typeof actual === "boolean") {
 		pass = actual === (value === "true");
+	} else if (typeof actual === "string") {
+		if (operator === "matches") {
+			try {
+				pass = new RegExp(value).test(actual);
+			} catch {
+				pass = actual.includes(value);
+			}
+		} else if (operator === "==") {
+			pass = actual === value;
+		} else if (operator === "!=") {
+			pass = actual !== value;
+		} else {
+			pass = true;
+		}
 	} else {
 		switch (operator) {
 			case ">":
@@ -122,8 +141,17 @@ function evaluateRule(
 				detail: `${pass ? "PASS" : "FAIL"} -- score is ${userData.score} (requires >= ${threshold})`,
 			};
 		}
-		case "maxFilesChanged":
-			return { pass: true, detail: "SKIP -- no file data in simulation" };
+		case "maxFilesChanged": {
+			if (userData.filesChanged === undefined) {
+				return { pass: true, detail: "SKIP -- no file data in simulation" };
+			}
+			const limit = (params?.limit as number) ?? 20;
+			const pass = userData.filesChanged <= limit;
+			return {
+				pass,
+				detail: `${pass ? "PASS" : "FAIL"} -- ${userData.filesChanged} files changed (limit: ${limit})`,
+			};
+		}
 		case "maxPrsPerDay":
 			return { pass: true, detail: "SKIP -- no PR rate data in simulation" };
 		case "cryptoAddressDetection":
@@ -151,6 +179,53 @@ function evaluateRule(
 	}
 }
 
+function evaluateTransform(
+	transform: string,
+	userData: SimUserData,
+): { detail: string; enriched: Record<string, unknown> } {
+	switch (transform) {
+		case "fetch_github_user":
+			return {
+				detail: `Fetched profile: @${userData.username ?? "unknown"}, ${userData.accountAgeDays}d old, ${userData.publicRepos} repos, ${userData.followers} followers`,
+				enriched: { ...userData },
+			};
+		case "compute_score":
+			return {
+				detail: `Computed score: ${userData.score}/100`,
+				enriched: { score: userData.score },
+			};
+		case "fetch_pr_files": {
+			const count = userData.filesChanged ?? 0;
+			return {
+				detail: count > 0
+					? `Fetched ${count} changed files`
+					: "No file data available in simulation",
+				enriched: { filesChanged: count },
+			};
+		}
+		case "scan_history":
+			return {
+				detail: "Scanned repo history for contributor events",
+				enriched: {},
+			};
+		case "detect_language":
+			return {
+				detail: "Language detection requires content text (skipped in simulation)",
+				enriched: {},
+			};
+		default:
+			return {
+				detail: `Transform: ${transform}`,
+				enriched: {},
+			};
+	}
+}
+
+function evaluateDelay(data: Record<string, unknown>): string {
+	const duration = (data.duration as string) ?? "5m";
+	return `Delay: wait ${duration} before continuing`;
+}
+
 export function simulateWorkflow(
 	nodes: Node[],
 	edges: Edge[],
@@ -171,7 +246,8 @@ export function simulateWorkflow(
 	const visited = new Set<string>();
 
 	for (const tid of triggers) {
-		results.push({ nodeId: tid.id, status: "executed", detail: "Triggered" });
+		const trigger = (tid.data.trigger as string) ?? "unknown";
+		results.push({ nodeId: tid.id, status: "executed", detail: `Triggered: ${trigger}` });
 		nodeOutcome.set(tid.id, true);
 	}
 
@@ -186,6 +262,7 @@ export function simulateWorkflow(
 			const sourceOutcome = nodeOutcome.get(current);
 			const sourceHandle = edge.sourceHandle;
 			const sourceNode = nodeMap.get(current);
+
 			if (
 				sourceNode &&
 				(sourceNode.type === "rule" || sourceNode.type === "condition")
@@ -195,8 +272,10 @@ export function simulateWorkflow(
 				if (sourceHandle === "true" && sourceOutcome === false) continue;
 				if (sourceHandle === "false" && sourceOutcome === true) continue;
 			}
+
 			let pass = true;
 			let detail = "";
+
 			switch (targetNode.type) {
 				case "rule": {
 					if (mode === "pass") {
@@ -268,11 +347,39 @@ export function simulateWorkflow(
 					});
 					break;
 				}
+				case "transform": {
+					const transform = (targetNode.data.transform as string) ?? "unknown";
+					if (mode === "user") {
+						const r = evaluateTransform(transform, userData);
+						detail = r.detail;
+					} else {
+						detail = `Transform: ${transform} (simulated)`;
+					}
+					results.push({
+						nodeId: edge.target,
+						edgeId: edge.id,
+						status: "executed",
+						detail,
+					});
+					break;
+				}
+				case "delay": {
+					detail = evaluateDelay(targetNode.data as Record<string, unknown>);
+					results.push({
+						nodeId: edge.target,
+						edgeId: edge.id,
+						status: "executed",
+						detail,
+					});
+					break;
+				}
 				case "action": {
 					const action = targetNode.data.action as string;
-					detail = `Would execute: ${actionLabels[action] ?? action}`;
-					if (targetNode.data.message)
-						detail += ` -- "${targetNode.data.message}"`;
+					const actionLabel = actionLabels[action] ?? action;
+					detail = `Execute: ${actionLabel}`;
+					if (targetNode.data.message) detail += ` -- "${targetNode.data.message}"`;
+					if (targetNode.data.label) detail += ` -- label "${targetNode.data.label}"`;
+					if (targetNode.data.url) detail += ` -- ${targetNode.data.url}`;
 					results.push({
 						nodeId: edge.target,
 						edgeId: edge.id,
@@ -286,7 +393,7 @@ export function simulateWorkflow(
 						nodeId: edge.target,
 						edgeId: edge.id,
 						status: "executed",
-						detail: "Processed",
+						detail: `Unknown node type: ${targetNode.type}`,
 					});
 					break;
 				}
@@ -295,5 +402,18 @@ export function simulateWorkflow(
 			queue.push(edge.target);
 		}
 	}
+
+	// Check for unreachable nodes (not connected to trigger chain)
+	const reachable = new Set(results.map((r) => r.nodeId));
+	for (const node of nodes) {
+		if (!reachable.has(node.id) && node.type !== "trigger") {
+			results.push({
+				nodeId: node.id,
+				status: "skipped",
+				detail: "Unreachable -- not connected to a trigger",
+			});
+		}
+	}
+
 	return results;
 }

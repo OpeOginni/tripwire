@@ -15,10 +15,11 @@ export type WorkflowTrigger =
 	| "issue_edited"
 	| "comment_created"
 	| "contributor_first_interaction"
+	| "schedule"
 	| "schedule_daily"
 	| "schedule_weekly"
 	| "manual"
-	| "repo_scan"; // scan repo history for past offenders
+	| "repo_scan";
 
 export type WorkflowNodeType =
 	| "trigger"

@@ -28,6 +28,9 @@ function computeAutoPosition(nodes: WorkflowNode[]): { x: number; y: number } {
 function buildDefaultData(type: string, subtype: string): Record<string, unknown> {
   switch (type) {
     case "trigger":
+      if (subtype === "schedule") {
+        return { trigger: "schedule", scheduleType: "daily", dailyTime: "09:00", timezone: "UTC" };
+      }
       return { trigger: subtype };
     case "rule":
       return { rule: subtype, params: {} };

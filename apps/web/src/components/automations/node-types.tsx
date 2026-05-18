@@ -1,32 +1,46 @@
 import { memo, useState, useRef, useEffect, useCallback } from "react";
-import { Handle, Position, useReactFlow, type NodeProps } from "@xyflow/react";
+import { Handle, Position, useStoreApi, type NodeProps } from "@xyflow/react";
+import { NODE_STYLE_MAP, HANDLE_COLORS, getNodeStyle } from "#/lib/node-styles";
+import { formatScheduleSublabel } from "#/lib/schedule-format";
+import {
+	TriggerIcon,
+	ScheduleIcon,
+	RuleIcon,
+	ConditionIcon,
+	LogicGateIcon,
+	ActionIcon,
+	DelayIcon,
+	TransformIcon,
+} from "#/components/icons/node-icons";
+
 function NodeShell({
 	children,
-	color,
+	type,
 	icon,
 	label,
 	sublabel,
 	selected,
 }: {
 	children?: React.ReactNode;
-	color: string;
+	type: string;
 	icon: React.ReactNode;
 	label: string;
 	sublabel?: string;
 	selected?: boolean;
 }) {
+	const style = getNodeStyle(type);
 	return (
 		<div
 			className={`rounded-xl bg-tw-card min-w-[200px] max-w-[260px] transition-shadow ${
 				selected ? "shadow-[0_0_0_2px_var(--color-tw-accent)]" : ""
 			}`}
-			style={{ border: `1px solid ${color}22` }}
+			style={{ border: `1px solid ${style.border}` }}
 		>
 			<div
 				className="flex items-center gap-2 px-3 py-2 border-b"
-				style={{ borderColor: `${color}12` }}
+				style={{ borderColor: style.border }}
 			>
-				<span style={{ color }} className="shrink-0 opacity-80">{icon}</span>
+				<span style={{ color: style.accent }} className="shrink-0">{icon}</span>
 				<div className="flex flex-col min-w-0">
 					<span className="text-[13px] font-medium text-tw-text-primary leading-tight truncate">
 						{label}
@@ -54,13 +68,11 @@ function Param({ label, value }: { label: string; value: string }) {
 	);
 }
 
-/** Editable numeric chip — click to edit, Enter/blur to commit, Escape to cancel. */
 function EditableParam({
 	label,
 	value,
 	nodeId,
 	paramKey,
-	/** If true, writes directly to data[paramKey] instead of data.params[paramKey] */
 	directData,
 }: {
 	label: string;
@@ -69,7 +81,7 @@ function EditableParam({
 	paramKey: string;
 	directData?: boolean;
 }) {
-	const { setNodes } = useReactFlow();
+	const store = useStoreApi();
 	const [editing, setEditing] = useState(false);
 	const [draft, setDraft] = useState<string>(String(value));
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -82,7 +94,8 @@ function EditableParam({
 	const commit = useCallback(() => {
 		const val = Number(draft);
 		if (draft !== "" && Number.isFinite(val) && val > 0 && val !== value) {
-			setNodes((nodes) =>
+			const { nodes, setNodes } = store.getState();
+			setNodes(
 				nodes.map((n) => {
 					if (n.id !== nodeId) return n;
 					if (directData) {
@@ -93,10 +106,10 @@ function EditableParam({
 				}),
 			);
 		} else {
-			setDraft(value);
+			setDraft(String(value));
 		}
 		setEditing(false);
-	}, [draft, value, nodeId, paramKey, directData, setNodes]);
+	}, [draft, value, nodeId, paramKey, directData, store]);
 
 	return (
 		<div className="flex items-center justify-between gap-2 py-0.5">
@@ -119,7 +132,7 @@ function EditableParam({
 			) : (
 				<button
 					type="button"
-					onClick={(e) => { e.stopPropagation(); setDraft(value); setEditing(true); }}
+					onClick={(e) => { e.stopPropagation(); setDraft(String(value)); setEditing(true); }}
 					className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-tw-surface text-tw-text-secondary cursor-pointer hover:bg-tw-hover-light"
 					title={`Edit ${label.toLowerCase()}`}
 				>
@@ -130,7 +143,6 @@ function EditableParam({
 	);
 }
 
-/** Editable text chip — click to edit inline text fields (message, label, url). */
 function EditableText({
 	label,
 	value,
@@ -144,20 +156,25 @@ function EditableText({
 	fieldKey: string;
 	placeholder?: string;
 }) {
-	const { setNodes } = useReactFlow();
+	const store = useStoreApi();
 	const [editing, setEditing] = useState(false);
 	const [draft, setDraft] = useState(value);
+	const prevValueRef = useRef(value);
 	const inputRef = useRef<HTMLInputElement>(null);
 
-	useEffect(() => { setDraft(value); }, [value]);
+	if (prevValueRef.current !== value) {
+		prevValueRef.current = value;
+		setDraft(value);
+	}
 	useEffect(() => { if (editing) { inputRef.current?.focus(); inputRef.current?.select(); } }, [editing]);
 
 	const commit = useCallback(() => {
 		if (draft !== value) {
-			setNodes((nodes) => nodes.map((n) => n.id !== nodeId ? n : { ...n, data: { ...n.data, [fieldKey]: draft } }));
+			const { nodes, setNodes } = store.getState();
+			setNodes(nodes.map((n) => n.id !== nodeId ? n : { ...n, data: { ...n.data, [fieldKey]: draft } }));
 		}
 		setEditing(false);
-	}, [draft, value, nodeId, fieldKey, setNodes]);
+	}, [draft, value, nodeId, fieldKey, store]);
 
 	return (
 		<div className="flex items-center justify-between gap-2 py-0.5">
@@ -191,55 +208,57 @@ function EditableText({
 	);
 }
 const icons = {
-	trigger: (
-		<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-			<path d="M8.5 1.5a1 1 0 0 0-1.8-.6L2.6 7.4a1 1 0 0 0 .8 1.6h3.1l-1 5.5a1 1 0 0 0 1.8.6l4.1-6.5a1 1 0 0 0-.8-1.6H7.5l1-5.5Z" />
-		</svg>
-	),
-	rule: (
-		<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-			<path d="M8 1a1 1 0 0 1 .7.3l5 5a1 1 0 0 1 0 1.4l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 0 1 0-1.4l5-5A1 1 0 0 1 8 1Z" />
-		</svg>
-	),
-	condition: (
-		<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-			<path d="M3 2.5A1.5 1.5 0 0 1 4.5 1h7A1.5 1.5 0 0 1 13 2.5v2.382a1.5 1.5 0 0 1-.44 1.06L9.5 9.005v4.245a.75.75 0 0 1-1.2.6l-2-1.5a.75.75 0 0 1-.3-.6V9.005l-3.06-3.063A1.5 1.5 0 0 1 3 4.882V2.5Z" />
-		</svg>
-	),
-	logic: (
-		<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-			<path d="M6.5 2a.5.5 0 0 0 0 1h.5v3.5a.5.5 0 0 0 .146.354L9.793 9.5l-2.647 2.646A.5.5 0 0 0 7 12.5V14h-.5a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1H9v-1.293l2.854-2.853a.5.5 0 0 0 0-.708L9 6.293V3h.5a.5.5 0 0 0 0-1h-3Z" />
-		</svg>
-	),
-	action: (
-		<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-			<path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14Zm2.78-9.78a.75.75 0 0 0-1.06 0L7 7.94 6.28 7.22a.75.75 0 0 0-1.06 1.06l1.25 1.25a.75.75 0 0 0 1.06 0l3.25-3.25a.75.75 0 0 0 0-1.06Z" />
-		</svg>
-	),
-	delay: (
-		<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-			<path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14Zm-.75-10.5v4c0 .2.08.39.22.53l2 2a.75.75 0 1 0 1.06-1.06L8.75 8.19V4.5a.75.75 0 0 0-1.5 0Z" />
-		</svg>
-	),
-	transform: (
-		<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-			<path d="M0 8a4 4 0 0 1 7.465-2H14a.5.5 0 0 1 .354.146l1.5 1.5a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0L11 10.207l-1.146 1.147a.5.5 0 0 1-.708 0L8 10.207 7.465 10A4 4 0 0 1 0 8Zm4-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z" />
-		</svg>
-	),
+	trigger: <TriggerIcon />,
+	schedule: <ScheduleIcon />,
+	rule: <RuleIcon />,
+	condition: <ConditionIcon />,
+	logic: <LogicGateIcon />,
+	action: <ActionIcon />,
+	delay: <DelayIcon />,
+	transform: <TransformIcon />,
 };
 
 const colors = {
-	trigger: "#34A6FF",
-	rule: "#D4A843",
-	condition: "#B07FDB",
-	logic: "#9F9FA9",
-	action: "#67E19F",
-	delay: "#E19F67",
-	transform: "#67B8E1",
+	trigger: NODE_STYLE_MAP.trigger.accent,
+	rule: NODE_STYLE_MAP.rule.accent,
+	condition: NODE_STYLE_MAP.condition.accent,
+	logic: NODE_STYLE_MAP.logic.accent,
+	action: NODE_STYLE_MAP.action.accent,
+	delay: NODE_STYLE_MAP.delay.accent,
+	transform: NODE_STYLE_MAP.transform.accent,
 };
 
-// Handle style matching the card border system — no colored circles
 const handleBase = "!w-2.5 !h-2.5 !rounded-sm !border !border-tw-border !bg-tw-card";
+
+function BranchHandles() {
+	return (
+		<>
+			<div className="absolute -bottom-4 left-[30%] -translate-x-1/2 flex flex-col items-center">
+				<Handle type="source" position={Position.Bottom} id="pass" className="!w-3 !h-3 !rounded-sm !border-0 !relative !transform-none !inset-0" style={{ backgroundColor: HANDLE_COLORS.pass.bg }} />
+				<span className="text-[8px] font-bold mt-0.5 select-none" style={{ color: HANDLE_COLORS.pass.bg }}>T</span>
+			</div>
+			<div className="absolute -bottom-4 left-[70%] -translate-x-1/2 flex flex-col items-center">
+				<Handle type="source" position={Position.Bottom} id="fail" className="!w-3 !h-3 !rounded-sm !border-0 !relative !transform-none !inset-0" style={{ backgroundColor: HANDLE_COLORS.fail.bg }} />
+				<span className="text-[8px] font-bold mt-0.5 select-none" style={{ color: HANDLE_COLORS.fail.bg }}>F</span>
+			</div>
+		</>
+	);
+}
+
+function ConditionBranchHandles() {
+	return (
+		<>
+			<div className="absolute -bottom-4 left-[30%] -translate-x-1/2 flex flex-col items-center">
+				<Handle type="source" position={Position.Bottom} id="true" className="!w-3 !h-3 !rounded-sm !border-0 !relative !transform-none !inset-0" style={{ backgroundColor: HANDLE_COLORS.pass.bg }} />
+				<span className="text-[8px] font-bold mt-0.5 select-none" style={{ color: HANDLE_COLORS.pass.bg }}>T</span>
+			</div>
+			<div className="absolute -bottom-4 left-[70%] -translate-x-1/2 flex flex-col items-center">
+				<Handle type="source" position={Position.Bottom} id="false" className="!w-3 !h-3 !rounded-sm !border-0 !relative !transform-none !inset-0" style={{ backgroundColor: HANDLE_COLORS.fail.bg }} />
+				<span className="text-[8px] font-bold mt-0.5 select-none" style={{ color: HANDLE_COLORS.fail.bg }}>F</span>
+			</div>
+		</>
+	);
+}
 const triggerLabels: Record<string, string> = {
 	pr_opened: "PR Opened",
 	pr_edited: "PR Edited",
@@ -247,6 +266,7 @@ const triggerLabels: Record<string, string> = {
 	issue_edited: "Issue Edited",
 	comment_created: "Comment Created",
 	contributor_first_interaction: "First Interaction",
+	schedule: "Schedule",
 	schedule_daily: "Daily Schedule",
 	schedule_weekly: "Weekly Schedule",
 	manual: "Manual Run",
@@ -262,7 +282,6 @@ import {
 	getOperatorsForType,
 } from "@tripwire/core/rules/signal-registry";
 
-/** Rule labels derived from the single source of truth in @tripwire/db */
 const ruleLabels: Record<string, string> = new Proxy(
 	Object.fromEntries(Object.entries(RULE_META).map(([k, v]) => [k, v.name])),
 	{ get(target, prop, receiver) {
@@ -273,7 +292,6 @@ const ruleLabels: Record<string, string> = new Proxy(
 
 const RULE_KEYS = Object.keys(RULE_META) as string[];
 
-/** Rules hidden from the workflow palette */
 const HIDDEN_RULES = new Set(
 	Object.entries(RULE_META).filter(([, v]) => v.comingSoon).map(([k]) => k),
 );
@@ -296,13 +314,17 @@ const actionLabels: Record<string, string> = {
 };
 export const TriggerNode = memo(({ data, selected }: NodeProps) => {
 	const trigger = (data.trigger as string) ?? "pr_opened";
+	const isSchedule = trigger === "schedule" || trigger === "schedule_daily" || trigger === "schedule_weekly";
+	const sublabel = isSchedule
+		? formatScheduleSublabel(data as Record<string, unknown>)
+		: "Trigger";
 	return (
 		<>
 			<NodeShell
-				color={colors.trigger}
-				icon={icons.trigger}
+				type="trigger"
+				icon={isSchedule ? icons.schedule : icons.trigger}
 				label={triggerLabels[trigger] ?? trigger}
-				sublabel="Trigger"
+				sublabel={sublabel}
 				selected={selected}
 			>
 				{data.filters ? (
@@ -322,7 +344,7 @@ export const RuleNode = memo(({ id, data, selected }: NodeProps) => {
 		<>
 			<Handle type="target" position={Position.Top} className={`${handleBase} !-top-1.5`} />
 			<NodeShell
-				color={colors.rule}
+				type="rule"
 				icon={icons.rule}
 				label={ruleLabels[rule] ?? rule}
 				sublabel="Rule Check"
@@ -335,8 +357,7 @@ export const RuleNode = memo(({ id, data, selected }: NodeProps) => {
 					return <Param key={k} label={k} value={String(v)} />;
 				})}
 			</NodeShell>
-			<Handle type="source" position={Position.Bottom} id="pass" className={`${handleBase} !-bottom-1.5 !left-[30%] !bg-tw-success/20 !border-tw-success/40`} />
-			<Handle type="source" position={Position.Bottom} id="fail" className={`${handleBase} !-bottom-1.5 !left-[70%] !bg-tw-error/20 !border-tw-error/40`} />
+			<BranchHandles />
 		</>
 	);
 });
@@ -344,11 +365,12 @@ RuleNode.displayName = "RuleNode";
 
 export const ConditionNode = memo(({ id, data, selected }: NodeProps) => {
 	const signalMode = data.signalMode === true;
-	const { setNodes } = useReactFlow();
+	const store = useStoreApi();
 
 	const updateData = useCallback((patch: Record<string, unknown>) => {
-		setNodes((nodes) => nodes.map((n) => n.id !== id ? n : { ...n, data: { ...n.data, ...patch } }));
-	}, [id, setNodes]);
+		const { nodes, setNodes } = store.getState();
+		setNodes(nodes.map((n) => n.id !== id ? n : { ...n, data: { ...n.data, ...patch } }));
+	}, [id, store]);
 
 	if (!signalMode) {
 		const field = (data.field as string) ?? "score";
@@ -358,7 +380,7 @@ export const ConditionNode = memo(({ id, data, selected }: NodeProps) => {
 			<>
 				<Handle type="target" position={Position.Top} className={`${handleBase} !-top-1.5`} />
 				<NodeShell
-					color={colors.condition}
+					type="condition"
 					icon={icons.condition}
 					label="Condition"
 					sublabel={`${field} ${op} ${val}`}
@@ -368,8 +390,8 @@ export const ConditionNode = memo(({ id, data, selected }: NodeProps) => {
 					<Param label="Operator" value={String(op)} />
 					<EditableParam label="Value" value={Number(val) || 0} nodeId={id} paramKey="value" directData />
 				</NodeShell>
-				<Handle type="source" position={Position.Bottom} id="true" className={`${handleBase} !-bottom-1.5 !left-[30%] !bg-tw-success/20 !border-tw-success/40`} />
-				<Handle type="source" position={Position.Bottom} id="false" className={`${handleBase} !-bottom-1.5 !left-[70%] !bg-tw-error/20 !border-tw-error/40`} />
+				<Handle type="source" position={Position.Bottom} id="true" className={`${handleBase} !-bottom-1.5 !left-[30%]`} style={{ backgroundColor: HANDLE_COLORS.pass.bg, borderColor: HANDLE_COLORS.pass.border }} />
+				<Handle type="source" position={Position.Bottom} id="false" className={`${handleBase} !-bottom-1.5 !left-[70%]`} style={{ backgroundColor: HANDLE_COLORS.fail.bg, borderColor: HANDLE_COLORS.fail.border }} />
 			</>
 		);
 	}
@@ -386,7 +408,7 @@ export const ConditionNode = memo(({ id, data, selected }: NodeProps) => {
 		<>
 			<Handle type="target" position={Position.Top} className={`${handleBase} !-top-1.5`} />
 			<NodeShell
-				color={colors.condition}
+				type="condition"
 				icon={icons.condition}
 				label="Signal Condition"
 				sublabel={sublabel}
@@ -468,8 +490,7 @@ export const ConditionNode = memo(({ id, data, selected }: NodeProps) => {
 					)}
 				</div>
 			</NodeShell>
-			<Handle type="source" position={Position.Bottom} id="true" className={`${handleBase} !-bottom-1.5 !left-[30%] !bg-tw-success/20 !border-tw-success/40`} />
-			<Handle type="source" position={Position.Bottom} id="false" className={`${handleBase} !-bottom-1.5 !left-[70%] !bg-tw-error/20 !border-tw-error/40`} />
+			<ConditionBranchHandles />
 		</>
 	);
 });
@@ -482,7 +503,7 @@ export const LogicNode = memo(({ data, selected }: NodeProps) => {
 			<Handle type="target" position={Position.Top} id="a" className={`${handleBase} !-top-1.5 !left-[30%]`} />
 			<Handle type="target" position={Position.Top} id="b" className={`${handleBase} !-top-1.5 !left-[70%]`} />
 			<NodeShell
-				color={colors.logic}
+				type="logic"
 				icon={icons.logic}
 				label={gate}
 				sublabel="Logic Gate"
@@ -503,7 +524,7 @@ export const ActionNode = memo(({ id, data, selected }: NodeProps) => {
 		<>
 			<Handle type="target" position={Position.Top} className={`${handleBase} !-top-1.5`} />
 			<NodeShell
-				color={colors.action}
+				type="action"
 				icon={icons.action}
 				label={actionLabels[action] ?? action}
 				sublabel="Action"
@@ -524,7 +545,7 @@ export const DelayNode = memo(({ id, data, selected }: NodeProps) => {
 		<>
 			<Handle type="target" position={Position.Top} className={`${handleBase} !-top-1.5`} />
 			<NodeShell
-				color={colors.delay}
+				type="delay"
 				icon={icons.delay}
 				label="Delay"
 				sublabel={`Wait ${duration}`}
@@ -553,7 +574,7 @@ export const TransformNode = memo(({ data, selected }: NodeProps) => {
 		<>
 			<Handle type="target" position={Position.Top} className={`${handleBase} !-top-1.5`} />
 			<NodeShell
-				color={colors.transform}
+				type="transform"
 				icon={icons.transform}
 				label={transformLabels[transform] ?? transform}
 				sublabel="Transform / Enrich"

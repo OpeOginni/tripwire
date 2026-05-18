@@ -81,6 +81,14 @@ export const workflowsRouter = {
 		}))
 		.mutation(async ({ ctx, input }) => {
 			await assertRepoAccess(ctx.user.id, input.repoId);
+
+			const triggerCount = (input.definition.nodes as Array<{ type?: string }>).filter(
+				(n) => n.type === "trigger",
+			).length;
+			if (triggerCount > 1) {
+				throw new Error("A workflow can only have one trigger");
+			}
+
 			const [wf] = await db
 				.insert(workflows)
 				.values({
@@ -105,6 +113,15 @@ export const workflowsRouter = {
 			const [existing] = await db.select().from(workflows).where(eq(workflows.id, input.id)).limit(1);
 			if (!existing) throw new Error("Workflow not found");
 			await assertRepoAccess(ctx.user.id, existing.repoId);
+
+			if (input.definition) {
+				const triggerCount = (input.definition.nodes as Array<{ type?: string }>).filter(
+					(n) => n.type === "trigger",
+				).length;
+				if (triggerCount > 1) {
+					throw new Error("A workflow can only have one trigger");
+				}
+			}
 
 			const [wf] = await db
 				.update(workflows)

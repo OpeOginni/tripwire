@@ -94,8 +94,9 @@ function AppShellInner() {
 	const currentPath = routerState.location.pathname;
 	const isHomePage = currentPath === "/home" || currentPath === "/" || currentPath.endsWith("/home");
 	const isChatRoute = currentPath.startsWith("/chat/");
+	const isAutomationEditor = /\/automations\/[^/]+$/.test(currentPath);
 
-	const showSidePanel = !isHomePage && !isChatRoute && isOpen;
+	const showSidePanel = !isHomePage && !isChatRoute && !isAutomationEditor && isOpen;
 
 	return (
 		<div className="h-screen flex flex-col overflow-hidden bg-tw-bg tw-root antialiased">

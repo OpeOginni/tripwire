@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useWorkspace } from "#/lib/workspace-context";
@@ -24,6 +25,32 @@ function AutomationEditorPage() {
 	);
 
 	const updateWf = useMutation(trpc.workflows.update.mutationOptions());
+
+	const [editingName, setEditingName] = useState(false);
+	const [nameDraft, setNameDraft] = useState("");
+	const nameInputRef = useRef<HTMLInputElement>(null);
+
+	useEffect(() => {
+		if (editingName) {
+			nameInputRef.current?.focus();
+			nameInputRef.current?.select();
+		}
+	}, [editingName]);
+
+	const commitName = () => {
+		const trimmed = nameDraft.trim();
+		if (trimmed && trimmed !== wfQuery.data?.name) {
+			updateWf.mutate({ id: automationId, name: trimmed }, {
+				onSuccess: () => {
+					if (repo?.id) {
+						queryClient.invalidateQueries({ queryKey: trpc.workflows.list.queryKey({ repoId: repo.id }) });
+					}
+					queryClient.invalidateQueries({ queryKey: trpc.workflows.get.queryKey({ id: automationId }) });
+				},
+			});
+		}
+		setEditingName(false);
+	};
 
 	const handleSave = (nodes: Node[], edges: Edge[]) => {
 		updateWf.mutate(
@@ -93,7 +120,28 @@ function AutomationEditorPage() {
 					</svg>
 				</button>
 				<div className="flex flex-col min-w-0">
-					<span className="text-[14px] font-medium text-tw-text-primary truncate">{wf.name}</span>
+					{editingName ? (
+						<input
+							ref={nameInputRef}
+							type="text"
+							value={nameDraft}
+							onChange={(e) => setNameDraft(e.target.value)}
+							onBlur={commitName}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") { e.preventDefault(); commitName(); }
+								if (e.key === "Escape") { e.preventDefault(); setEditingName(false); }
+							}}
+							className="text-[14px] font-medium text-tw-text-primary bg-transparent border-b border-tw-accent outline-none px-0 py-0"
+						/>
+					) : (
+						<button
+							type="button"
+							onClick={() => { setNameDraft(wf.name); setEditingName(true); }}
+							className="text-[14px] font-medium text-tw-text-primary truncate text-left hover:text-tw-accent transition-colors cursor-text"
+						>
+							{wf.name}
+						</button>
+					)}
 					{wf.description && (
 						<span className="text-[11px] text-tw-text-muted truncate">{wf.description}</span>
 					)}
@@ -110,6 +158,7 @@ function AutomationEditorPage() {
 					initialNodes={def.nodes as Node[]}
 					initialEdges={def.edges as Edge[]}
 					onSave={handleSave}
+					isSaving={updateWf.isPending}
 					repoId={repo?.id}
 					workflowId={automationId}
 					onRemoteUpdate={handleRemoteUpdate}

@@ -28,6 +28,10 @@ import {
 } from "#/lib/workflow-events";
 
 
+export interface WorkflowContext {
+	workflowId: string;
+}
+
 interface ChatContextValue {
 	// State
 	messages: UIMessage[];
@@ -36,6 +40,7 @@ interface ChatContextValue {
 	error: Error | null;
 	isQuotaExhausted: boolean;
 	conversationId: string;
+	workflowContext: WorkflowContext | null;
 
 	// Actions
 	sendMessage: (content: string) => void;
@@ -46,9 +51,9 @@ interface ChatContextValue {
 	clearChat: () => void;
 	loadChat: (chatId: string, messages: UIMessage[]) => void;
 	newChat: () => void;
+	setWorkflowContext: (ctx: WorkflowContext | null) => void;
 }
 
-// Default no-op context for SSR
 const defaultContextValue: ChatContextValue = {
 	messages: [],
 	isLoading: false,
@@ -56,6 +61,7 @@ const defaultContextValue: ChatContextValue = {
 	error: null,
 	isQuotaExhausted: false,
 	conversationId: "",
+	workflowContext: null,
 	sendMessage: () => {},
 	respondToToolApproval: () => {},
 	open: () => {},
@@ -64,6 +70,7 @@ const defaultContextValue: ChatContextValue = {
 	clearChat: () => {},
 	loadChat: () => {},
 	newChat: () => {},
+	setWorkflowContext: () => {},
 };
 
 const ChatContext = createContext<ChatContextValue>(defaultContextValue);
@@ -128,6 +135,8 @@ function ChatProviderClient({ children }: ChatProviderProps) {
 		return id;
 	});
 
+	const [workflowContext, setWorkflowContext] = useState<WorkflowContext | null>(null);
+
 	// When a persisted chat is loaded, pin to the repoId it was created against
 	// so subsequent /api/chat requests target that repo even if the user has
 	// since switched workspace. `null` means "fall back to current workspace
@@ -151,11 +160,13 @@ function ChatProviderClient({ children }: ChatProviderProps) {
 		repoId: effectiveRepoId,
 		conversationId,
 		currentPage: currentPath,
+		workflowId: workflowContext?.workflowId ?? undefined,
 	});
 	requestBodyRef.current = {
 		repoId: effectiveRepoId,
 		conversationId,
 		currentPage: currentPath,
+		workflowId: workflowContext?.workflowId ?? undefined,
 	};
 
 	// The AI SDK keeps the Chat instance stable, so keep transport stable too
@@ -333,6 +344,7 @@ function ChatProviderClient({ children }: ChatProviderProps) {
 		error: isQuotaExhausted ? null : combinedError,
 		isQuotaExhausted,
 		conversationId,
+		workflowContext,
 		sendMessage,
 		respondToToolApproval,
 		open,
@@ -341,6 +353,7 @@ function ChatProviderClient({ children }: ChatProviderProps) {
 		clearChat,
 		loadChat,
 		newChat,
+		setWorkflowContext,
 	};
 
 	return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
