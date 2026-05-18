@@ -34,6 +34,8 @@ export function mergeMessagesPreservingResults(
 type MessageLike = {
 	id?: string;
 	role?: string;
+	text?: string;
+	content?: string;
 	parts?: Array<{ type?: string; text?: string; content?: string }>;
 };
 
@@ -54,10 +56,12 @@ function getMessageId(message: unknown): string | undefined {
 }
 
 function getMessageText(message: unknown): string {
-	return (message as MessageLike | undefined)?.parts
+	const messageLike = message as MessageLike | undefined;
+	const partsText = messageLike?.parts
 		?.filter((p) => p.type === "text")
 		.map((p) => p.text ?? p.content ?? "")
 		.join("") ?? "";
+	return partsText || messageLike?.text || messageLike?.content || "";
 }
 
 function clone<T>(value: T): T {

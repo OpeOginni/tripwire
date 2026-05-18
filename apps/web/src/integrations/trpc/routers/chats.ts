@@ -233,13 +233,6 @@ export const chatsRouter = {
 					.filter((id): id is string => typeof id === "string"),
 			);
 			if (input.messages.length === 0) {
-				await upsertMessages(
-					input.chatId,
-					ctx.user.id,
-					existing?.repoId ?? input.repoId,
-					[],
-					"New chat",
-				);
 				return;
 			}
 			const append = input.messages.filter((message) => {

@@ -43,8 +43,8 @@ export function CommandPalette({
 							type="button"
 							onMouseDown={(event) => {
 								event.preventDefault();
-								onSelect(cmd);
 							}}
+							onClick={() => onSelect(cmd)}
 							onMouseEnter={() => onHover(i)}
 							className={`w-full text-left px-3 py-1.5 flex items-baseline gap-2.5 transition-colors ${
 								isActive ? "bg-tw-hover" : ""
