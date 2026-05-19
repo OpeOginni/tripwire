@@ -374,7 +374,12 @@ function EventsPage() {
           { key: "success", label: "Allowed", dot: "bg-tw-success" },
           { key: "error", label: "Blocked", dot: "bg-tw-error" },
           { key: "warning", label: "Near Misses", dot: "bg-tw-warning" },
-          { key: "workflow", label: "Workflows", dot: "bg-[#34A6FF]", count: actionCounts?.workflow_run },
+          {
+            key: "workflow",
+            label: "Workflows",
+            dot: "bg-[#34A6FF]",
+            count: actionCounts?.workflow_run,
+          },
           { key: "info", label: "Other", dot: "bg-tw-accent" },
         ].map((item, i, arr) => (
           <div
@@ -388,7 +393,10 @@ function EventsPage() {
               </span>
             </div>
             <span className="text-xl leading-7 font-semibold text-[#FFFFFFCC] tabular-nums">
-              {("count" in item && item.count !== undefined ? item.count : (severityCounts[item.key] ?? 0)).toLocaleString()}
+              {("count" in item && item.count !== undefined
+                ? item.count
+                : (severityCounts[item.key] ?? 0)
+              ).toLocaleString()}
             </span>
           </div>
         ))}
