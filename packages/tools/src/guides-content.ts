@@ -96,11 +96,11 @@ Call get_guide({ topic: "..." }) for deeper conceptual docs. Topics:
 - "rules" — what each rule checks + recommended thresholds.
 - "lists" — whitelist/blacklist semantics, identity, conflict rules.
 - "events" — event taxonomy, severities, reputation scoring.
-`.trim();
+`.trim()
 
 export const GUIDES: Record<string, string> = {
-	"tripwire-mcp-instructions": SERVER_INSTRUCTIONS,
-	rules: `
+  "tripwire-mcp-instructions": SERVER_INSTRUCTIONS,
+  rules: `
 # Tripwire rules
 
 Each rule has \`enabled\` (bool), \`action\` (block | warn | log | threshold),
@@ -153,7 +153,7 @@ when evaluating a rule, the pipeline treats it as "unable to verify"
 and emits pipeline_warned (does NOT allow the content through). For
 warn/log, lookup failures fail open.
 `.trim(),
-	lists: `
+  lists: `
 # Whitelist & blacklist
 
 Both tables are scoped per-repo. A user can be on the whitelist OR the
@@ -191,7 +191,7 @@ blacklist for a given repo, never both.
 - For someone who looks suspicious but isn't clearly spam: leave both
   alone and let warn / threshold rules do their thing.
 `.trim(),
-	events: `
+  events: `
 # Events
 
 Every moderator-visible action in Tripwire emits an event. The events
@@ -237,4 +237,4 @@ Only pipeline_blocked and blacklist_blocked increment totalBlocks.
 pipeline_warned and pipeline_logged are NOT counted as blocks — they're
 informational.
 `.trim(),
-};
+}

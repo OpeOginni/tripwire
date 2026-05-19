@@ -1,4 +1,4 @@
-import type { BlockDefinition } from "./index";
+import type { BlockDefinition } from "./index"
 
 export const actionDefinitions: Record<string, BlockDefinition> = {
   block: {
@@ -57,4 +57,4 @@ export const actionDefinitions: Record<string, BlockDefinition> = {
     summary: "Requests a review from a specified user or team.",
     example: "Auto-assign a reviewer when a PR touches sensitive files.",
   },
-} as const;
+} as const

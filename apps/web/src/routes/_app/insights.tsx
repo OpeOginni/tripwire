@@ -1,11 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useOrgRedirect } from "#/lib/use-org-redirect";
+import { createFileRoute } from "@tanstack/react-router"
+import { useOrgRedirect } from "#/lib/use-org-redirect"
 
 function InsightsRedirect() {
-	useOrgRedirect((slug) => `/${slug}/insights`);
-	return null;
+  useOrgRedirect((slug) => `/${slug}/insights`)
+  return null
 }
 
 export const Route = createFileRoute("/_app/insights")({
-	component: InsightsRedirect,
-});
+  component: InsightsRedirect,
+})

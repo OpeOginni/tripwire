@@ -1,4 +1,4 @@
-import type { BlockDefinition } from "./index";
+import type { BlockDefinition } from "./index"
 
 export const logicDefinitions: Record<string, BlockDefinition> = {
   AND: {
@@ -13,4 +13,4 @@ export const logicDefinitions: Record<string, BlockDefinition> = {
     summary: "Inverts the result of its input.",
     example: "Flip a passing rule into a fail condition for exclusion logic.",
   },
-} as const;
+} as const

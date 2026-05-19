@@ -1,4 +1,4 @@
-import type { BlockDefinition } from "./index";
+import type { BlockDefinition } from "./index"
 
 export const triggerDefinitions: Record<string, BlockDefinition> = {
   pr_opened: {
@@ -7,7 +7,8 @@ export const triggerDefinitions: Record<string, BlockDefinition> = {
   },
   pr_edited: {
     summary: "Fires when an existing pull request is edited.",
-    example: "Re-evaluate a PR after the author updates the title or description.",
+    example:
+      "Re-evaluate a PR after the author updates the title or description.",
   },
   issue_opened: {
     summary: "Fires when a new issue is created.",
@@ -37,4 +38,4 @@ export const triggerDefinitions: Record<string, BlockDefinition> = {
     summary: "Scans repo history to find past offenders.",
     example: "Retroactively check existing PRs against new rules.",
   },
-} as const;
+} as const

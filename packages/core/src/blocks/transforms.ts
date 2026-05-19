@@ -1,4 +1,4 @@
-import type { BlockDefinition } from "./index";
+import type { BlockDefinition } from "./index"
 
 export const transformDefinitions: Record<string, BlockDefinition> = {
   fetch_github_user: {
@@ -21,4 +21,4 @@ export const transformDefinitions: Record<string, BlockDefinition> = {
     summary: "Analyzes the content language of the PR or issue.",
     example: "Use before a language rule to detect non-English contributions.",
   },
-} as const;
+} as const

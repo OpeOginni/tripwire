@@ -1,7 +1,7 @@
 export interface NodeStyleEntry {
-  accent: string;
-  bg: string;
-  border: string;
+  accent: string
+  bg: string
+  border: string
 }
 
 export const NODE_STYLE_MAP: Record<string, NodeStyleEntry> = {
@@ -12,13 +12,13 @@ export const NODE_STYLE_MAP: Record<string, NodeStyleEntry> = {
   action: { accent: "#67E19F", bg: "#132E20", border: "#3D8A60" },
   delay: { accent: "#E19F67", bg: "#2E2014", border: "#8A6A3D" },
   transform: { accent: "#67B8E1", bg: "#132430", border: "#3D7A9A" },
-} as const;
+} as const
 
 export const HANDLE_COLORS = {
   pass: { bg: "#2D4A3A", border: "#3D6B50" },
   fail: { bg: "#4A2D2D", border: "#6B3D3D" },
-} as const;
+} as const
 
 export function getNodeStyle(type: string): NodeStyleEntry {
-  return NODE_STYLE_MAP[type] ?? NODE_STYLE_MAP.logic;
+  return NODE_STYLE_MAP[type] ?? NODE_STYLE_MAP.logic
 }

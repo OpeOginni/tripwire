@@ -1,21 +1,17 @@
-import { eq } from "drizzle-orm";
-import { z } from "zod";
-import { db } from "@tripwire/db/client";
-import { workflows } from "@tripwire/db";
+import { eq } from "drizzle-orm"
+import { z } from "zod"
+import { db } from "@tripwire/db/client"
+import { workflows } from "@tripwire/db"
 import {
   assertRepoOwner,
   getNodesByCategory,
   NODE_REGISTRY,
   applyWorkflowOperations,
-} from "@tripwire/core";
-import { workflowOperationsArraySchema } from "@tripwire/core";
-import { logEvent } from "@tripwire/core";
-import {
-  type AnyToolDefinition,
-  defineTool,
-  makeSpec,
-} from "../registry";
-import { requireRepoId } from "../helpers";
+} from "@tripwire/core"
+import { workflowOperationsArraySchema } from "@tripwire/core"
+import { logEvent } from "@tripwire/core"
+import { type AnyToolDefinition, defineTool, makeSpec } from "../registry"
+import { requireRepoId } from "../helpers"
 
 const getNodeTypes = defineTool({
   name: "get_node_types",
@@ -28,60 +24,78 @@ const getNodeTypes = defineTool({
       .string()
       .optional()
       .describe(
-        "Filter by category name: Triggers, Rules, Conditions, Logic Gates, Actions, Delays, or Transforms",
+        "Filter by category name: Triggers, Rules, Conditions, Logic Gates, Actions, Delays, or Transforms"
       ),
   }),
   handler: async ({ category }) => {
     if (category) {
-      const map = getNodesByCategory(category);
-      const entries = map.get(category);
+      const map = getNodesByCategory(category)
+      const entries = map.get(category)
       if (!entries || entries.length === 0) {
-        return { categories: {}, hint: `No nodes found for category "${category}". Available: Triggers, Rules, Conditions, Logic Gates, Actions, Delays, Transforms.` };
+        return {
+          categories: {},
+          hint: `No nodes found for category "${category}". Available: Triggers, Rules, Conditions, Logic Gates, Actions, Delays, Transforms.`,
+        }
       }
-      return { categories: { [category]: entries } };
+      return { categories: { [category]: entries } }
     }
-    const map = getNodesByCategory();
-    const categories: Record<string, typeof NODE_REGISTRY> = {};
+    const map = getNodesByCategory()
+    const categories: Record<string, typeof NODE_REGISTRY> = {}
     for (const [cat, entries] of map) {
-      categories[cat] = entries;
+      categories[cat] = entries
     }
-    return { categories };
+    return { categories }
   },
   chatRender: (output) => {
     type Entry = {
-      name: string;
-      subtype: string;
-      type: string;
-      description?: string;
-      params?: Array<{ key: string; name: string; type: string; default?: unknown; options?: Array<{ label: string; value: string }> }>;
-      handles?: Array<{ id: string; type: string; position: string; label?: string }>;
-    };
+      name: string
+      subtype: string
+      type: string
+      description?: string
+      params?: Array<{
+        key: string
+        name: string
+        type: string
+        default?: unknown
+        options?: Array<{ label: string; value: string }>
+      }>
+      handles?: Array<{
+        id: string
+        type: string
+        position: string
+        label?: string
+      }>
+    }
     const text = Object.entries(output.categories)
       .map(([cat, entries]) => {
         const lines = (entries as Entry[]).map((e) => {
-          let line = `  **${e.name}** \`${e.type}/${e.subtype}\``;
-          if (e.description) line += ` - ${e.description}`;
+          let line = `  **${e.name}** \`${e.type}/${e.subtype}\``
+          if (e.description) line += ` - ${e.description}`
           if (e.params && e.params.length > 0) {
-            const paramStr = e.params.map((p) => {
-              let s = `${p.key}: ${p.type}`;
-              if (p.default !== undefined) s += ` = ${JSON.stringify(p.default)}`;
-              if (p.options) s += ` [${p.options.map((o) => o.value).join("|")}]`;
-              return s;
-            }).join(", ");
-            line += `\n    data: { ${paramStr} }`;
+            const paramStr = e.params
+              .map((p) => {
+                let s = `${p.key}: ${p.type}`
+                if (p.default !== undefined)
+                  s += ` = ${JSON.stringify(p.default)}`
+                if (p.options)
+                  s += ` [${p.options.map((o) => o.value).join("|")}]`
+                return s
+              })
+              .join(", ")
+            line += `\n    data: { ${paramStr} }`
           }
-          const outputs = e.handles?.filter((h) => h.type === "source") ?? [];
+          const outputs = e.handles?.filter((h) => h.type === "source") ?? []
           if (outputs.length > 1) {
-            line += `\n    outputs: ${outputs.map((h) => h.label ?? h.id).join(", ")}`;
+            line += `\n    outputs: ${outputs.map((h) => h.label ?? h.id).join(", ")}`
           }
-          return line;
-        });
-        return `**${cat}**\n${lines.join("\n")}`;
+          return line
+        })
+        return `**${cat}**\n${lines.join("\n")}`
       })
-      .join("\n\n");
-    return makeSpec("Text", { content: text });
+      .join("\n\n")
+    return makeSpec("Text", { content: text })
   },
-});
+})
 
 const createWorkflow = defineTool({
   name: "create_workflow",
@@ -93,8 +107,8 @@ const createWorkflow = defineTool({
     description: z.string().optional().describe("Optional description"),
   }),
   handler: async ({ name, description }, ctx) => {
-    const repoId = requireRepoId(ctx);
-    await assertRepoOwner(ctx.userId, repoId);
+    const repoId = requireRepoId(ctx)
+    await assertRepoOwner(ctx.userId, repoId)
 
     const [row] = await db
       .insert(workflows)
@@ -105,7 +119,7 @@ const createWorkflow = defineTool({
         definition: { nodes: [], edges: [] },
         enabled: false,
       })
-      .returning({ id: workflows.id });
+      .returning({ id: workflows.id })
 
     await logEvent({
       repoId,
@@ -117,11 +131,15 @@ const createWorkflow = defineTool({
         updatedBy: ctx.userName ?? null,
         viaTool: true,
       },
-    });
+    })
 
-    return { ok: true, message: `Workflow "${name}" created.`, data: { workflowId: row.id } };
+    return {
+      ok: true,
+      message: `Workflow "${name}" created.`,
+      data: { workflowId: row.id },
+    }
   },
-});
+})
 
 const editWorkflow = defineTool({
   name: "edit_workflow",
@@ -153,55 +171,59 @@ Always provide an explicit id for each add_node.`,
   inputSchema: z.object({
     workflowId: z.string().uuid().describe("Workflow ID"),
     operations: workflowOperationsArraySchema.describe(
-      "Array of operations to apply (add_node, edit_node, delete_node, add_edge, delete_edge)",
+      "Array of operations to apply (add_node, edit_node, delete_node, add_edge, delete_edge)"
     ),
   }),
   handler: async ({ workflowId, operations }, ctx) => {
-    const repoId = requireRepoId(ctx);
-    await assertRepoOwner(ctx.userId, repoId);
+    const repoId = requireRepoId(ctx)
+    await assertRepoOwner(ctx.userId, repoId)
 
     const [wf] = await db
       .select()
       .from(workflows)
       .where(eq(workflows.id, workflowId))
-      .limit(1);
+      .limit(1)
 
     if (!wf) {
-      return { ok: false, message: `Workflow "${workflowId}" not found.` };
+      return { ok: false, message: `Workflow "${workflowId}" not found.` }
     }
     if (wf.repoId !== repoId) {
-      return { ok: false, message: "Workflow does not belong to this repo." };
+      return { ok: false, message: "Workflow does not belong to this repo." }
     }
 
-    const current = wf.definition ?? { nodes: [], edges: [] };
-    const { state: next, errors, warnings } = applyWorkflowOperations(current, operations);
+    const current = wf.definition ?? { nodes: [], edges: [] }
+    const {
+      state: next,
+      errors,
+      warnings,
+    } = applyWorkflowOperations(current, operations)
 
     if (errors.length > 0) {
       return {
         ok: false,
         message: `Operations failed: ${errors.join("; ")}`,
         data: { errors, warnings },
-      };
+      }
     }
 
     await db
       .update(workflows)
       .set({ definition: next, updatedAt: new Date() })
-      .where(eq(workflows.id, workflowId));
+      .where(eq(workflows.id, workflowId))
 
-    const addedNodes = operations.filter((o) => o.op === "add_node").length;
-    const editedNodes = operations.filter((o) => o.op === "edit_node").length;
-    const deletedNodes = operations.filter((o) => o.op === "delete_node").length;
-    const addedEdges = operations.filter((o) => o.op === "add_edge").length;
-    const deletedEdges = operations.filter((o) => o.op === "delete_edge").length;
+    const addedNodes = operations.filter((o) => o.op === "add_node").length
+    const editedNodes = operations.filter((o) => o.op === "edit_node").length
+    const deletedNodes = operations.filter((o) => o.op === "delete_node").length
+    const addedEdges = operations.filter((o) => o.op === "add_edge").length
+    const deletedEdges = operations.filter((o) => o.op === "delete_edge").length
 
-    const parts: string[] = [];
-    if (addedNodes) parts.push(`${addedNodes} node(s) added`);
-    if (editedNodes) parts.push(`${editedNodes} node(s) edited`);
-    if (deletedNodes) parts.push(`${deletedNodes} node(s) deleted`);
-    if (addedEdges) parts.push(`${addedEdges} edge(s) added`);
-    if (deletedEdges) parts.push(`${deletedEdges} edge(s) deleted`);
-    const summary = parts.join(", ") || "No changes";
+    const parts: string[] = []
+    if (addedNodes) parts.push(`${addedNodes} node(s) added`)
+    if (editedNodes) parts.push(`${editedNodes} node(s) edited`)
+    if (deletedNodes) parts.push(`${deletedNodes} node(s) deleted`)
+    if (addedEdges) parts.push(`${addedEdges} edge(s) added`)
+    if (deletedEdges) parts.push(`${deletedEdges} edge(s) deleted`)
+    const summary = parts.join(", ") || "No changes"
 
     await logEvent({
       repoId,
@@ -214,9 +236,19 @@ Always provide an explicit id for each add_node.`,
         updatedBy: ctx.userName ?? null,
         viaTool: true,
       },
-    });
+    })
 
-    const nodeIds = next.nodes.map((n) => ({ id: n.id, type: n.type, subtype: (n.data as Record<string, string>).trigger ?? (n.data as Record<string, string>).rule ?? (n.data as Record<string, string>).action ?? (n.data as Record<string, string>).gate ?? (n.data as Record<string, string>).transform ?? n.type }));
+    const nodeIds = next.nodes.map((n) => ({
+      id: n.id,
+      type: n.type,
+      subtype:
+        (n.data as Record<string, string>).trigger ??
+        (n.data as Record<string, string>).rule ??
+        (n.data as Record<string, string>).action ??
+        (n.data as Record<string, string>).gate ??
+        (n.data as Record<string, string>).transform ??
+        n.type,
+    }))
 
     return {
       ok: true,
@@ -228,9 +260,9 @@ Always provide an explicit id for each add_node.`,
         nodes: nodeIds,
         warnings: warnings.length > 0 ? warnings : undefined,
       },
-    };
+    }
   },
-});
+})
 
 const deleteWorkflow = defineTool({
   name: "delete_workflow",
@@ -240,23 +272,27 @@ const deleteWorkflow = defineTool({
     workflowId: z.string().uuid().describe("Workflow ID to delete"),
   }),
   handler: async ({ workflowId }, ctx) => {
-    const repoId = requireRepoId(ctx);
-    await assertRepoOwner(ctx.userId, repoId);
+    const repoId = requireRepoId(ctx)
+    await assertRepoOwner(ctx.userId, repoId)
 
     const [wf] = await db
-      .select({ id: workflows.id, name: workflows.name, repoId: workflows.repoId })
+      .select({
+        id: workflows.id,
+        name: workflows.name,
+        repoId: workflows.repoId,
+      })
       .from(workflows)
       .where(eq(workflows.id, workflowId))
-      .limit(1);
+      .limit(1)
 
     if (!wf) {
-      return { ok: false, message: `Workflow "${workflowId}" not found.` };
+      return { ok: false, message: `Workflow "${workflowId}" not found.` }
     }
     if (wf.repoId !== repoId) {
-      return { ok: false, message: "Workflow does not belong to this repo." };
+      return { ok: false, message: "Workflow does not belong to this repo." }
     }
 
-    await db.delete(workflows).where(eq(workflows.id, workflowId));
+    await db.delete(workflows).where(eq(workflows.id, workflowId))
 
     await logEvent({
       repoId,
@@ -268,11 +304,11 @@ const deleteWorkflow = defineTool({
         updatedBy: ctx.userName ?? null,
         viaTool: true,
       },
-    });
+    })
 
-    return { ok: true, message: `Workflow "${wf.name}" deleted.` };
+    return { ok: true, message: `Workflow "${wf.name}" deleted.` }
   },
-});
+})
 
 const enableWorkflow = defineTool({
   name: "enable_workflow",
@@ -283,28 +319,32 @@ const enableWorkflow = defineTool({
     enabled: z.boolean().describe("true to enable, false to disable"),
   }),
   handler: async ({ workflowId, enabled }, ctx) => {
-    const repoId = requireRepoId(ctx);
-    await assertRepoOwner(ctx.userId, repoId);
+    const repoId = requireRepoId(ctx)
+    await assertRepoOwner(ctx.userId, repoId)
 
     const [wf] = await db
-      .select({ id: workflows.id, name: workflows.name, repoId: workflows.repoId })
+      .select({
+        id: workflows.id,
+        name: workflows.name,
+        repoId: workflows.repoId,
+      })
       .from(workflows)
       .where(eq(workflows.id, workflowId))
-      .limit(1);
+      .limit(1)
 
     if (!wf) {
-      return { ok: false, message: `Workflow "${workflowId}" not found.` };
+      return { ok: false, message: `Workflow "${workflowId}" not found.` }
     }
     if (wf.repoId !== repoId) {
-      return { ok: false, message: "Workflow does not belong to this repo." };
+      return { ok: false, message: "Workflow does not belong to this repo." }
     }
 
     await db
       .update(workflows)
       .set({ enabled, updatedAt: new Date() })
-      .where(eq(workflows.id, workflowId));
+      .where(eq(workflows.id, workflowId))
 
-    const action = enabled ? "enabled" : "disabled";
+    const action = enabled ? "enabled" : "disabled"
 
     await logEvent({
       repoId,
@@ -317,11 +357,11 @@ const enableWorkflow = defineTool({
         updatedBy: ctx.userName ?? null,
         viaTool: true,
       },
-    });
+    })
 
-    return { ok: true, message: `Workflow "${wf.name}" ${action}.` };
+    return { ok: true, message: `Workflow "${wf.name}" ${action}.` }
   },
-});
+})
 
 const getWorkflow = defineTool({
   name: "get_workflow",
@@ -331,20 +371,20 @@ const getWorkflow = defineTool({
     workflowId: z.string().uuid().describe("Workflow ID"),
   }),
   handler: async ({ workflowId }, ctx) => {
-    const repoId = requireRepoId(ctx);
-    await assertRepoOwner(ctx.userId, repoId);
+    const repoId = requireRepoId(ctx)
+    await assertRepoOwner(ctx.userId, repoId)
 
     const [wf] = await db
       .select()
       .from(workflows)
       .where(eq(workflows.id, workflowId))
-      .limit(1);
+      .limit(1)
 
     if (!wf) {
-      return { found: false, workflowId };
+      return { found: false, workflowId }
     }
     if (wf.repoId !== repoId) {
-      return { found: false, workflowId };
+      return { found: false, workflowId }
     }
 
     return {
@@ -355,20 +395,23 @@ const getWorkflow = defineTool({
       enabled: wf.enabled,
       definition: wf.definition,
       updatedAt: wf.updatedAt.toISOString(),
-    };
+    }
   },
   chatRender: (output) => {
     if (!output.found) {
-      return makeSpec("Text", { content: `Workflow not found.` });
+      return makeSpec("Text", { content: `Workflow not found.` })
     }
-    const def = output.definition as { nodes: Array<Record<string, unknown>>; edges: Array<Record<string, unknown>> };
-    const nodeCount = (def.nodes ?? []).length;
-    const edgeCount = (def.edges ?? []).length;
+    const def = output.definition as {
+      nodes: Array<Record<string, unknown>>
+      edges: Array<Record<string, unknown>>
+    }
+    const nodeCount = (def.nodes ?? []).length
+    const edgeCount = (def.edges ?? []).length
     return makeSpec("Text", {
       content: `**${output.name}** (${output.enabled ? "Active" : "Draft"})\n${nodeCount} nodes, ${edgeCount} edges`,
-    });
+    })
   },
-});
+})
 
 export const workflowTools: AnyToolDefinition[] = [
   getNodeTypes,
@@ -377,4 +420,4 @@ export const workflowTools: AnyToolDefinition[] = [
   deleteWorkflow,
   enableWorkflow,
   getWorkflow,
-];
+]

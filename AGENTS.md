@@ -19,7 +19,7 @@ You are a professional software engineer. All code must follow best practices: a
 3. Type Safety First: TypeScript interfaces for all props, state, return types
 4. No Helpers in Components: Put utility functions in `apps/web/src/lib/` or `packages/*/src/`, never inside component or tool files
 5. Never use raw html components (<button>, <input>, <select><option></select>, etc). Always use their react counterparts defined in `apps/web/src/components/ui` (shared primitives such as `Button` live in `@tripwire/ui` and are re-exported under `#/components/ui` for the app).
-If you're unable to find the right component, explore the coss ui directory. `https://coss.com/ui/docs`
+   If you're unable to find the right component, explore the coss ui directory. `https://coss.com/ui/docs`
 6. Never define a raw vector (`<svg`) outside `apps/web/src/components/icons/` (for the app) or `packages/ui/src/icons/` (for shared UI). Import icon components from there and follow the same patterns as existing icons.
 
 ### Root Structure
@@ -75,11 +75,11 @@ Use path aliases. `#/` maps to `apps/web/src/`.
 
 ```typescript
 // Good
-import { useTRPC } from "#/integrations/trpc/react";
-import { formatCamelCase } from "#/lib/format";
+import { useTRPC } from "#/integrations/trpc/react"
+import { formatCamelCase } from "#/lib/format"
 
 // Bad
-import { useTRPC } from "../../../integrations/trpc/react";
+import { useTRPC } from "../../../integrations/trpc/react"
 ```
 
 Use `import type { X }` for type-only imports. This is critical for the server/client boundary.
@@ -104,11 +104,14 @@ Use `import type { X }` for type-only imports. This is critical for the server/c
 
 ```typescript
 interface ComponentProps {
-  requiredProp: string;
-  optionalProp?: boolean;
+  requiredProp: string
+  optionalProp?: boolean
 }
 
-export function Component({ requiredProp, optionalProp = false }: ComponentProps) {
+export function Component({
+  requiredProp,
+  optionalProp = false,
+}: ComponentProps) {
   // Order: refs -> external hooks -> state -> useMemo -> useCallback -> return
 }
 ```
@@ -175,9 +178,9 @@ const operations = [
   { op: "add_node", type: "trigger", subtype: "pr_opened" },
   { op: "add_node", type: "rule", subtype: "accountAge", data: { days: 30 } },
   { op: "add_edge", source: "node-1", target: "node-2", sourceHandle: "pass" },
-];
+]
 
-const result = applyWorkflowOperations(currentState, operations);
+const result = applyWorkflowOperations(currentState, operations)
 // result: { state, errors[], warnings[] }
 ```
 
@@ -227,7 +230,7 @@ Create: `mdn create --title "Description" --status todo --priority medium --agen
 - Prefer casual, human-sounding writing; avoid polished AI patterns.
 - Avoid em dashes and formulaic contrast phrasing like "it's not X, it's Y."
 - When showing tightly related counters in UI, prefer one plain sentence that partitions the numbers once instead of repeating the same figure in multiple ratio fragments.
-- For SVG markup that uses fill="currentColor", set visible color via Tailwind text-* (CSS color).
+- For SVG markup that uses fill="currentColor", set visible color via Tailwind text-\* (CSS color).
 - Tailwind only emits utilities it can see as literal class substrings at build time; do not rely on template strings that build arbitrary pixel width classes from variables.
 
 ## Learned Workspace Facts

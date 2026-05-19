@@ -1,5 +1,5 @@
-tripwire
----
+## tripwire
+
 Open source moderation for GitHub.
 
 Tripwire watches your repos for low-signal activity (spammy issues, drive-by PRs, suspicious accounts, etc.) and lets you flag, filter, or block it with a configurable rules system. You install it as a GitHub App, point it at your repos, and enable rules.
@@ -13,6 +13,7 @@ Tripwire watches your repos for low-signal activity (spammy issues, drive-by PRs
 **Events:** every webhook, rule decision, list change, and config change is logged.
 
 **Contributor score (0–100):**
+
 - Global reputation (40): age, followers, merged PRs, merge ratio, repos, gists
 - Community signals (30): GitHub achievements, Sponsors, badges, profile completeness
 - Repo history (20): allowed, blocked, near-miss events on your repo

@@ -1,4 +1,4 @@
-import type { BlockDefinition } from "./index";
+import type { BlockDefinition } from "./index"
 
 export const ruleDefinitions: Record<string, BlockDefinition> = {
   accountAge: {
@@ -7,7 +7,8 @@ export const ruleDefinitions: Record<string, BlockDefinition> = {
   },
   minMergedPrs: {
     summary: "Checks if the contributor has enough merged PRs across GitHub.",
-    example: "Require at least 15 merged PRs to prove real contribution history.",
+    example:
+      "Require at least 15 merged PRs to prove real contribution history.",
   },
   requireProfileReadme: {
     summary: "Checks if the contributor has a profile README.",
@@ -26,7 +27,8 @@ export const ruleDefinitions: Record<string, BlockDefinition> = {
     example: "Set limit to 20 files to catch bulk-edit spam PRs.",
   },
   language: {
-    summary: "Checks if the PR or issue content is written in the required language.",
+    summary:
+      "Checks if the PR or issue content is written in the required language.",
     example: "Set to English to filter non-English contributions.",
   },
   crypto: {
@@ -39,6 +41,7 @@ export const ruleDefinitions: Record<string, BlockDefinition> = {
   },
   aiHoneypot: {
     summary: "Detects AI-generated PRs using honeypot signals in repo files.",
-    example: "Add a CONTRIBUTING.md with hidden instructions that AI tools follow.",
+    example:
+      "Add a CONTRIBUTING.md with hidden instructions that AI tools follow.",
   },
-} as const;
+} as const

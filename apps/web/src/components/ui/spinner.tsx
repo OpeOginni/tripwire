@@ -1,1 +1,1 @@
-export { Spinner } from "@tripwire/ui/spinner";
+export { Spinner } from "@tripwire/ui/spinner"
