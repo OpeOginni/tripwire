@@ -15,6 +15,8 @@ import {
   trackCreditUsage,
 } from "@tripwire/ai/credit-middleware"
 import { buildSystemPrompt } from "@tripwire/ai"
+import { memoryProvider } from "@tripwire/ai/memory"
+import { createTripwireAgent } from "@tripwire/ai/agent"
 import { createContext, assertRepoOwner } from "#/integrations/trpc/init"
 import { autumn } from "@tripwire/auth/autumn"
 import { db } from "@tripwire/db/client"
@@ -222,11 +224,22 @@ export const Route = createFileRoute("/api/chat")({
             .where(eq(repositories.id, resolvedRepoId))
             .limit(1)
 
-          const systemPrompt = buildSystemPrompt({
+          let systemPrompt = buildSystemPrompt({
             repoName: repo?.fullName ?? "Unknown Repository",
             userName: user.name ?? user.email ?? "User",
             currentPage: currentPage ?? "/home",
           })
+
+          const wm = await memoryProvider
+            .getWorkingMemory({
+              userId: user.id,
+              chatId: conversationId,
+              scope: "user",
+            })
+            .catch(() => null)
+          if (wm?.content) {
+            systemPrompt += `\n\n<working-memory>\n${wm.content}\n</working-memory>`
+          }
 
           const aiModel = process.env.TRIPWIRE_AI_MODEL || "openai/gpt-5.4"
 
@@ -306,10 +319,34 @@ export const Route = createFileRoute("/api/chat")({
             compatibility: "strict",
           })
 
+          const orModel = openrouter.chat(aiModel, {
+            plugins: [{ id: "web", max_results: 3 }],
+          })
+
+          if (process.env.TRIPWIRE_USE_AGENT === "true") {
+            const lastUserMessage = messages
+              .filter((m: UIMessage) => m.role === "user")
+              .pop()
+            if (!lastUserMessage) {
+              return jsonError(400, { error: "No user message found" })
+            }
+            const agent = createTripwireAgent({
+              model: orModel,
+              tools,
+              systemPrompt,
+              userId: user.id,
+              userName: user.name ?? user.email ?? "User",
+              userEmail: user.email ?? undefined,
+              conversationId:
+                typeof conversationId === "string" ? conversationId : "",
+              repoId: resolvedRepoId,
+              modelId: aiModel,
+            })
+            return agent.toUIMessageStream(lastUserMessage)
+          }
+
           const result = streamText({
-            model: openrouter.chat(aiModel, {
-              plugins: [{ id: "web", max_results: 3 }],
-            }),
+            model: orModel,
             messages: modelMessages,
             tools,
             system: systemPrompt,
@@ -360,7 +397,8 @@ export const Route = createFileRoute("/api/chat")({
             },
             onFinish: async ({ messages: finishedMessages }) => {
               if (typeof conversationId !== "string") return
-              await db
+
+              const persistConversation = db
                 .insert(conversations)
                 .values({
                   id: conversationId,
@@ -381,6 +419,31 @@ export const Route = createFileRoute("/api/chat")({
                 .catch((err) => {
                   console.error("[chat] Failed to persist server stream:", err)
                 })
+
+              const persistMemory = Promise.all(
+                finishedMessages.slice(-2).map((msg) => {
+                  const textParts = msg.parts
+                    ?.filter(
+                      (p): p is { type: "text"; text: string } =>
+                        (p as Record<string, unknown>).type === "text"
+                    )
+                    .map((p) => p.text)
+                    .join("") ?? ""
+                  return memoryProvider
+                    .saveMessage({
+                      chatId: conversationId,
+                      userId: user.id,
+                      role: msg.role as "user" | "assistant" | "system",
+                      content: textParts || JSON.stringify(msg.parts),
+                      timestamp: new Date(),
+                    })
+                    .catch((err: unknown) => {
+                      console.error("[chat] Failed to persist memory message:", err)
+                    })
+                })
+              )
+
+              await Promise.all([persistConversation, persistMemory])
             },
             consumeSseStream: consumeStream,
           })

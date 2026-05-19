@@ -85,7 +85,7 @@ function LandingPage() {
   }, [gameActive, transitioning])
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-black antialiased [font-synthesis:none]">
+    <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-tw-bg antialiased [font-synthesis:none]">
       {/* Terminal — the game renders INSIDE it via the gameCanvas texture */}
       <div className="absolute inset-0 z-0">
         <FaultyTerminal

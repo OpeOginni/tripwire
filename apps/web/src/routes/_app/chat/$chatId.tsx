@@ -12,9 +12,14 @@ import { useSlashCommandRunner } from "#/lib/use-chat-command-runner"
 import { CommandConfirmation } from "#/components/chat/command-confirmation"
 import { ChevronLeftStrokeIcon14 } from "#/components/icons/app-chrome-icons"
 import { uiMessagesFromStored } from "#/lib/conversation-stored"
+import { Provider as ChatStoreProvider } from "@ai-sdk-tools/store"
 
 export const Route = createFileRoute("/_app/chat/$chatId")({
-  component: ChatPage,
+  component: () => (
+    <ChatStoreProvider>
+      <ChatPage />
+    </ChatStoreProvider>
+  ),
 })
 
 function ChatPage() {

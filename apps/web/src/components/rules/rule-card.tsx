@@ -30,7 +30,7 @@ export function RuleCard({
         role="switch"
         aria-checked={enabled}
         onClick={() => onToggle(!enabled)}
-        className={`relative h-[22px] w-10 shrink-0 cursor-pointer rounded-[11px] border-none transition-colors ${
+        className={`relative w-10 shrink-0 cursor-pointer rounded-[11px] border-none transition-colors ${
           enabled ? "bg-tw-accent" : "bg-[#FFFFFF14]"
         }`}
       >

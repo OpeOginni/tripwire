@@ -8,16 +8,18 @@
     "./registry": "./src/registry.ts",
     "./chat-adapter": "./src/chat-adapter.ts",
     "./helpers": "./src/helpers.ts",
-    "./guides-content": "./src/guides-content.ts"
+    "./guides-content": "./src/guides-content.ts",
+    "./cache": "./src/cache.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "ai": "^6.0.184",
+    "@ai-sdk-tools/cache": "2.0.0-beta.0",
     "@tripwire/core": "workspace:*",
     "@tripwire/db": "workspace:*",
     "@tripwire/github": "workspace:*",
+    "ai": "^6.0.184",
     "drizzle-orm": "^0.45.1",
     "evlog": "^2.17.0",
     "zod": "^4.3.6"

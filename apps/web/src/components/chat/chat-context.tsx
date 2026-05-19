@@ -8,7 +8,7 @@ import {
   useRef,
   type ReactNode,
 } from "react"
-import { useChat } from "@ai-sdk/react"
+import { useChat, Provider as ChatStoreProvider } from "@ai-sdk-tools/store"
 import {
   DefaultChatTransport,
   lastAssistantMessageIsCompleteWithApprovalResponses,
@@ -86,7 +86,11 @@ interface ChatProviderProps {
 }
 
 export function ChatProvider({ children }: ChatProviderProps) {
-  return <ChatProviderClient>{children}</ChatProviderClient>
+  return (
+    <ChatStoreProvider>
+      <ChatProviderClient>{children}</ChatProviderClient>
+    </ChatStoreProvider>
+  )
 }
 
 const STORAGE_KEY_CONV = "tw.askConversationId"

@@ -5,8 +5,19 @@ import { evlogErrorHandler } from "evlog/nitro/v3";
 import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
 import { AnchoredToastProvider, ToastProvider } from "#/components/ui/toast";
 import RootProvider from "#/integrations/tanstack-query/root-provider";
+import { useEffect, useState } from "react";
 import { isReactGrabEnabled, isReactScanEnabled } from "#/lib/feature-flags";
 import appCss from "../styles.css?url";
+
+function ClientOnlyDevtools() {
+	const [Devtools, setDevtools] = useState<React.ComponentType | null>(null);
+	useEffect(() => {
+		import("@ai-sdk-tools/devtools").then((m) => {
+			setDevtools(() => m.AIDevtools);
+		});
+	}, []);
+	return Devtools ? <Devtools /> : null;
+}
 
 export const Route = createRootRoute({
 	server: {
@@ -23,16 +34,6 @@ export const Route = createRootRoute({
 		],
 		links: [
 			{ rel: "icon", type: "image/png", href: "/favicon.png" },
-			{ rel: "preconnect", href: "https://fonts.googleapis.com" },
-			{
-				rel: "preconnect",
-				href: "https://fonts.gstatic.com",
-				crossOrigin: "anonymous",
-			},
-			{
-				rel: "stylesheet",
-				href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;520;600;700&display=swap",
-			},
 			{ rel: "stylesheet", href: appCss },
 		],
 	}),
@@ -74,6 +75,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 					/>
 				) : null}
 				<Scripts />
+				{process.env.NODE_ENV === "development" && <ClientOnlyDevtools />}
 			</body>
 		</html>
 	);

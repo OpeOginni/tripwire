@@ -57,7 +57,7 @@ export function Sidebar() {
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          className="fixed inset-0 z-40 bg-tw-bg/50 md:hidden"
           onClick={close}
         />
       )}

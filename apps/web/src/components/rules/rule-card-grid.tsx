@@ -207,8 +207,7 @@ export function RuleCardGrid({
             {onActionChange && actionEditing ? (
               <div className="flex items-center gap-1">
                 {(["block", "warn", "log"] as const).map((a) => (
-                  <Button
-                    variant="ghost"
+                  <button
                     key={a}
                     type="button"
                     onClick={(e) => {
@@ -223,10 +222,9 @@ export function RuleCardGrid({
                     }`}
                   >
                     {ACTION_LABELS[a]}
-                  </Button>
+                  </button>
                 ))}
-                <Button
-                  variant="ghost"
+                <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation()
@@ -236,11 +234,10 @@ export function RuleCardGrid({
                   aria-label="Close action picker"
                 >
                   ✕
-                </Button>
+                </button>
               </div>
             ) : (
-              <Button
-                variant="ghost"
+              <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation()
@@ -256,7 +253,7 @@ export function RuleCardGrid({
                 title={onActionChange ? "Change action" : undefined}
               >
                 {ACTION_LABELS[action]}
-              </Button>
+              </button>
             )}
             {numericConfig &&
               (numericEditing ? (
@@ -281,8 +278,7 @@ export function RuleCardGrid({
                   className="w-14 rounded-md border border-tw-accent/40 bg-tw-surface px-2 py-0.5 text-center text-[11px] font-medium text-tw-text-primary outline-none"
                 />
               ) : (
-                <Button
-                  variant="ghost"
+                <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation()
@@ -293,7 +289,7 @@ export function RuleCardGrid({
                   title={`Edit ${numericConfig.label.toLowerCase()}`}
                 >
                   {numericConfig.value}
-                </Button>
+                </button>
               ))}
           </div>
         )}

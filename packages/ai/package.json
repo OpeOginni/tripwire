@@ -9,19 +9,29 @@
     "./credit-schema": "./src/credit-schema.ts",
     "./prompt": "./src/prompt.ts",
     "./components": "./src/components/index.ts",
-    "./model-config": "./src/model-config.ts"
+    "./model-config": "./src/model-config.ts",
+    "./memory": "./src/memory.ts",
+    "./agent": "./src/agent.ts",
+    "./artifacts": "./src/artifacts.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk-tools/agents": "2.0.0-beta.0",
+    "@ai-sdk-tools/artifacts": "2.0.0-beta.0",
+    "@ai-sdk-tools/memory": "2.0.0-beta.0",
     "@tripwire/auth": "workspace:*",
+    "@tripwire/db": "workspace:*",
     "@tripwire/env": "workspace:*",
+    "ai": "^6.0.184",
+    "drizzle-orm": "^0.45.1",
     "autumn-js": "^1.2.12",
     "evlog": "^2.17.0",
     "nitro": "^3.0.260311-beta",
     "react": "^19.2.0",
-    "tokenlens": "^2.0.0-alpha.3"
+    "tokenlens": "^2.0.0-alpha.3",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

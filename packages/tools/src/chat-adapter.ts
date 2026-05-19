@@ -1,4 +1,4 @@
-import { tool as aiTool, type ToolSet } from "ai"
+import { tool as aiTool, type Tool, type ToolSet } from "ai"
 import { z } from "zod"
 import {
   type AnyToolDefinition,
@@ -8,6 +8,7 @@ import {
   filterToolsForSurface,
   makeSpec,
 } from "./registry"
+import { cached } from "./cache"
 
 /**
  * Run a tool's handler and apply its chatRender (or the default presenter).
@@ -60,7 +61,7 @@ function buildChatTool<TShape extends z.ZodRawShape, TOutput>(
   tool: ToolDefinition<TShape, TOutput>,
   ctx: ToolContext
 ) {
-  return aiTool({
+  const sdkTool = aiTool({
     description: tool.description,
     inputSchema: tool.inputSchema,
     outputSchema: specSchema,
@@ -80,6 +81,9 @@ function buildChatTool<TShape extends z.ZodRawShape, TOutput>(
       }
     },
   })
+
+  const isReadOnly = !tool.needsApproval
+  return isReadOnly ? cached(sdkTool as Tool) : sdkTool
 }
 
 /**
