@@ -307,7 +307,10 @@ export const Route = createFileRoute("/api/chat")({
             originalMessages: messages,
             messageMetadata: ({ part }) => {
               if (part.type === "finish") {
-                return { usage: (part as Record<string, unknown>).usage, modelId: aiModel }
+                return {
+                  usage: (part as Record<string, unknown>).usage,
+                  modelId: aiModel,
+                }
               }
               return undefined
             },
