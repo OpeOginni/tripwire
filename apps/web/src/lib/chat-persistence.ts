@@ -6,64 +6,65 @@
  * able to create or rewrite assistant/tool history, especially approvals.
  */
 export function mergeMessagesPreservingResults(
-	input: unknown[],
-	existing: unknown[],
+  input: unknown[],
+  existing: unknown[]
 ): unknown[] {
-	if (existing.length === 0) {
-		return input.filter(isUserMessage).map(clone);
-	}
+  if (existing.length === 0) {
+    return input.filter(isUserMessage).map(clone)
+  }
 
-	const merged = existing.map(clone);
-	const knownIds = new Set(
-		merged
-			.map((message) => getMessageId(message))
-			.filter((id): id is string => typeof id === "string"),
-	);
+  const merged = existing.map(clone)
+  const knownIds = new Set(
+    merged
+      .map((message) => getMessageId(message))
+      .filter((id): id is string => typeof id === "string")
+  )
 
-	for (const message of input) {
-		if (!isUserMessage(message)) continue;
-		const id = getMessageId(message);
-		if (id && knownIds.has(id)) continue;
-		merged.push(clone(message));
-		if (id) knownIds.add(id);
-	}
+  for (const message of input) {
+    if (!isUserMessage(message)) continue
+    const id = getMessageId(message)
+    if (id && knownIds.has(id)) continue
+    merged.push(clone(message))
+    if (id) knownIds.add(id)
+  }
 
-	return merged;
+  return merged
 }
 
 type MessageLike = {
-	id?: string;
-	role?: string;
-	text?: string;
-	content?: string;
-	parts?: Array<{ type?: string; text?: string; content?: string }>;
-};
+  id?: string
+  role?: string
+  text?: string
+  content?: string
+  parts?: Array<{ type?: string; text?: string; content?: string }>
+}
 
 export function extractChatTitle(messages: unknown[]): string {
-	const firstUser = messages.find(isUserMessage) as MessageLike | undefined;
-	if (!firstUser) return "New chat";
-	const text = getMessageText(firstUser);
-	return text.slice(0, 80) || "New chat";
+  const firstUser = messages.find(isUserMessage) as MessageLike | undefined
+  if (!firstUser) return "New chat"
+  const text = getMessageText(firstUser)
+  return text.slice(0, 80) || "New chat"
 }
 
 function isUserMessage(message: unknown): boolean {
-	return (message as MessageLike | undefined)?.role === "user";
+  return (message as MessageLike | undefined)?.role === "user"
 }
 
 function getMessageId(message: unknown): string | undefined {
-	const id = (message as MessageLike | undefined)?.id;
-	return typeof id === "string" ? id : undefined;
+  const id = (message as MessageLike | undefined)?.id
+  return typeof id === "string" ? id : undefined
 }
 
 function getMessageText(message: unknown): string {
-	const messageLike = message as MessageLike | undefined;
-	const partsText = messageLike?.parts
-		?.filter((p) => p.type === "text")
-		.map((p) => p.text ?? p.content ?? "")
-		.join("") ?? "";
-	return partsText || messageLike?.text || messageLike?.content || "";
+  const messageLike = message as MessageLike | undefined
+  const partsText =
+    messageLike?.parts
+      ?.filter((p) => p.type === "text")
+      .map((p) => p.text ?? p.content ?? "")
+      .join("") ?? ""
+  return partsText || messageLike?.text || messageLike?.content || ""
 }
 
 function clone<T>(value: T): T {
-	return JSON.parse(JSON.stringify(value));
+  return JSON.parse(JSON.stringify(value))
 }

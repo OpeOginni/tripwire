@@ -1,10 +1,11 @@
-import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router";
+import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { createMiddleware } from "@tanstack/react-start";
-import { evlogErrorHandler } from "evlog/nitro/v3";
-import RootProvider from "#/integrations/tanstack-query/root-provider";
 import { AutumnProvider } from "autumn-js/react";
+import { evlogErrorHandler } from "evlog/nitro/v3";
 import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
-import { ToastProvider, AnchoredToastProvider } from "#/components/ui/toast";
+import { AnchoredToastProvider, ToastProvider } from "#/components/ui/toast";
+import RootProvider from "#/integrations/tanstack-query/root-provider";
+import { isReactGrabEnabled, isReactScanEnabled } from "#/lib/feature-flags";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
@@ -42,6 +43,18 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
+				{isReactScanEnabled ? (
+					<script
+						crossOrigin="anonymous"
+						src="https://unpkg.com/react-scan/dist/auto.global.js"
+					/>
+				) : null}
+				{isReactGrabEnabled ? (
+					<script
+						crossOrigin="anonymous"
+						src="https://unpkg.com/react-grab/dist/index.global.js"
+					/>
+				) : null}
 				<HeadContent />
 			</head>
 			<body>
@@ -49,13 +62,17 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 					<NuqsAdapter>
 						<AutumnProvider useBetterAuth>
 							<ToastProvider>
-								<AnchoredToastProvider>
-									{children}
-								</AnchoredToastProvider>
+								<AnchoredToastProvider>{children}</AnchoredToastProvider>
 							</ToastProvider>
 						</AutumnProvider>
 					</NuqsAdapter>
 				</RootProvider>
+				{isReactGrabEnabled ? (
+					<script
+						async
+						src="https://unpkg.com/@react-grab/cursor/dist/client.global.js"
+					/>
+				) : null}
 				<Scripts />
 			</body>
 		</html>
