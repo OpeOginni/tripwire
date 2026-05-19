@@ -734,11 +734,11 @@ function SimulationPanel({
       <div className="mt-auto px-3 pb-3">
         {error && <p className="mb-2 text-[11px] text-tw-error">{error}</p>}
         <Button
-          variant="secondary"
+          variant="default"
           size="sm"
           onClick={runSim}
           disabled={fetchUser.isPending}
-          className="w-full rounded-[10px]"
+          className="w-full"
         >
           Run test
         </Button>

@@ -389,6 +389,7 @@ export const eventsRouter = {
         rule_config_updated: counts["rule_config_updated"] ?? 0,
         blacklist_blocked: counts["blacklist_blocked"] ?? 0,
         whitelist_bypass: counts["whitelist_bypass"] ?? 0,
+        workflow_run: counts["workflow_run"] ?? 0,
       }
     }),
 } satisfies TRPCRouterRecord

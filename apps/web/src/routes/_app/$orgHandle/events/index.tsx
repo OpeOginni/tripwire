@@ -56,6 +56,7 @@ const ACTION_LABELS = {
   whitelist_removed: "Whitelist −",
   blacklist_added: "Blacklist +",
   blacklist_removed: "Blacklist −",
+  workflow_run: "Workflow Run",
 } as const
 
 type FilterAction = keyof typeof ACTION_LABELS
@@ -373,6 +374,7 @@ function EventsPage() {
           { key: "success", label: "Allowed", dot: "bg-tw-success" },
           { key: "error", label: "Blocked", dot: "bg-tw-error" },
           { key: "warning", label: "Near Misses", dot: "bg-tw-warning" },
+          { key: "workflow", label: "Workflows", dot: "bg-[#34A6FF]", count: actionCounts?.workflow_run },
           { key: "info", label: "Other", dot: "bg-tw-accent" },
         ].map((item, i, arr) => (
           <div
@@ -386,7 +388,7 @@ function EventsPage() {
               </span>
             </div>
             <span className="text-xl leading-7 font-semibold text-[#FFFFFFCC] tabular-nums">
-              {(severityCounts[item.key] ?? 0).toLocaleString()}
+              {("count" in item && item.count !== undefined ? item.count : (severityCounts[item.key] ?? 0)).toLocaleString()}
             </span>
           </div>
         ))}
@@ -432,6 +434,17 @@ function EventsPage() {
             setFilters((f) => ({
               ...f,
               action: f.action === "rule_near_miss" ? null : "rule_near_miss",
+            }))
+          }
+        />
+        <FilterTab
+          label="Workflows"
+          active={filters.action === "workflow_run"}
+          count={actionCounts?.workflow_run}
+          onClick={() =>
+            setFilters((f) => ({
+              ...f,
+              action: f.action === "workflow_run" ? null : "workflow_run",
             }))
           }
         />
