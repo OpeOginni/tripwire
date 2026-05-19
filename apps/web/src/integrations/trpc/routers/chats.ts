@@ -1,10 +1,7 @@
 import { z } from "zod"
 import type { UIMessage } from "ai"
 import { eq, and, desc } from "drizzle-orm"
-import {
-  assertRepoOwner,
-  authedProcedure,
-} from "../init"
+import { assertRepoOwner, authedProcedure } from "../init"
 import { db } from "@tripwire/db/client"
 import { conversations } from "@tripwire/db"
 import type { TRPCRouterRecord } from "@trpc/server"
@@ -204,7 +201,6 @@ export const chatsRouter = {
           },
           setWhere: eq(conversations.userId, ctx.user.id),
         })
-
     }),
 
   runSlashCommand: authedProcedure
@@ -308,8 +304,7 @@ export const chatsRouter = {
             }),
           ]
         } catch (error) {
-          const message =
-            error instanceof Error ? error.message : String(error)
+          const message = error instanceof Error ? error.message : String(error)
           appended = [
             ...appended,
             makeToolMessage({
@@ -335,7 +330,7 @@ export const chatsRouter = {
         ctx.user.id,
         repoId,
         nextMessages,
-        slashSyncTitle,
+        slashSyncTitle
       )
 
       return { messages: appended, replace: false }
@@ -386,9 +381,8 @@ export const chatsRouter = {
         ctx.user.id,
         existing?.repoId ?? input.repoId,
         nextMessages,
-        appendSyncTitle,
+        appendSyncTitle
       )
-
     }),
 
   list: authedProcedure
@@ -422,7 +416,7 @@ export const chatsRouter = {
       z.object({
         chatId: z.string().uuid(),
         messageText: z.string().min(1),
-      }),
+      })
     )
     .mutation(async ({ input, ctx }) => {
       const apiKey = process.env.OPENROUTER_API_KEY
@@ -450,7 +444,10 @@ export const chatsRouter = {
         })
 
         const raw = result.text
-        const title = raw.trim().replace(/^["']|["']$/g, "").slice(0, 50)
+        const title = raw
+          .trim()
+          .replace(/^["']|["']$/g, "")
+          .slice(0, 50)
         if (!title) {
           return { title: null }
         }
@@ -461,8 +458,8 @@ export const chatsRouter = {
           .where(
             and(
               eq(conversations.id, input.chatId),
-              eq(conversations.userId, ctx.user.id),
-            ),
+              eq(conversations.userId, ctx.user.id)
+            )
           )
 
         void trackCreditUsage({

@@ -28,7 +28,7 @@ export function UserMentionChip({
         alt=""
         className="size-3.5 shrink-0 rounded-full bg-[#3a3a3e] ring-1 ring-white/10"
       />
-      <span className="min-w-0 max-w-[140px] truncate px-0.5 text-[12px] leading-tight font-medium text-[#FAFAFA]">
+      <span className="max-w-[140px] min-w-0 truncate px-0.5 text-[12px] leading-tight font-medium text-[#FAFAFA]">
         @{username}
       </span>
       {onRemove ? (

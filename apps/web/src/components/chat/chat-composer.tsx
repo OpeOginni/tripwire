@@ -43,7 +43,9 @@ interface ChatComposerProps {
    * of `onSend`. Return `done` to clear the composer; `error` keeps the text.
    */
   slashCommandRunner?: {
-    run: (raw: string) => Promise<{ status: "done" | "error"; message?: string }>
+    run: (
+      raw: string
+    ) => Promise<{ status: "done" | "error"; message?: string }>
   }
 }
 
@@ -383,8 +385,7 @@ export function ChatComposer({
     triggerKey !== dismissedTriggerKey &&
     (mentionSelectableRows.length > 0 || showGithubResolveLoading)
 
-  const showSuggestionsEffective =
-    showMentionSuggestions && !showSlashPalette
+  const showSuggestionsEffective = showMentionSuggestions && !showSlashPalette
 
   const activeSuggestion = showSuggestionsEffective
     ? mentionSelectableRows[highlightedIndex]
@@ -394,9 +395,7 @@ export function ChatComposer({
     ? `${suggestionListId}-${activeSuggestion.list}-${activeSuggestion.githubUsername.toLowerCase()}`
     : undefined
 
-  const parsedSlashLine = slashCommandRunner
-    ? parseCommand(text.trim())
-    : null
+  const parsedSlashLine = slashCommandRunner ? parseCommand(text.trim()) : null
   const showSlashArgHint =
     Boolean(slashCommandRunner) &&
     !slashInput.showPalette &&
@@ -604,7 +603,7 @@ export function ChatComposer({
           <div
             ref={inlineComposeRef}
             className={cn(
-              "min-h-9 min-w-0 w-full",
+              "min-h-9 w-full min-w-0",
               showInlineChipsRow && "flex flex-nowrap items-center gap-1.5"
             )}
           >
@@ -631,7 +630,7 @@ export function ChatComposer({
               className={cn(
                 "min-h-8 rounded-md bg-transparent px-1.5 text-[14px] text-tw-text-primary outline-none placeholder:text-tw-text-tertiary disabled:opacity-50",
                 showInlineChipsRow
-                  ? "h-8 min-w-[8rem] shrink flex-1"
+                  ? "h-8 min-w-[8rem] flex-1 shrink"
                   : "h-8 w-full min-w-0 shrink-0"
               )}
             />

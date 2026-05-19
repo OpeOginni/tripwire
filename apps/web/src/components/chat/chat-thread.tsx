@@ -710,7 +710,7 @@ function ReasoningBlock({ content }: { content: string }) {
         <ThoughtCollapsibleChevronIcon10
           className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
         />
-        <span className="text-tw-text-secondary text-[13px]">Thinking</span>
+        <span className="text-[13px] text-tw-text-secondary">Thinking</span>
       </Button>
       {isOpen && (
         <div className="border-l border-[#27272A] pl-4 text-[12px] leading-[18px] text-tw-text-muted/70">

@@ -244,14 +244,17 @@ function ChatProviderClient({ children }: ChatProviderProps) {
   const isLoading = status === "submitted" || status === "streaming"
 
   // Hydrate from server when opening a stored conversation (not mid-send).
+  // Check isFetching instead of isPending so cache hits hydrate immediately
+  // even when the query key just changed (e.g. after loadChat).
   useEffect(() => {
-    if (convQuery.isPending) return
+    if (convQuery.isFetching && !convQuery.data) return
     if (persistedMessages.length === 0) return
     if (messages.length > 0) return
     setMessages(persistedMessages)
   }, [
     conversationId,
-    convQuery.isPending,
+    convQuery.isFetching,
+    convQuery.data,
     persistedMessages,
     messages.length,
     setMessages,

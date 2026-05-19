@@ -4,37 +4,202 @@
   "title": "Design System: Tripwire",
   "extensions": {
     "colorMeta": {
-      "blackout": { "role": "neutral", "displayName": "Blackout", "canonical": "oklch(7.5% 0.005 285)", "tonalRamp": ["oklch(5% 0.005 285)", "oklch(7.5% 0.005 285)", "oklch(12% 0.005 285)", "oklch(18% 0.005 285)", "oklch(28% 0.005 285)", "oklch(42% 0.005 285)", "oklch(62% 0.005 285)", "oklch(85% 0.005 285)"] },
-      "gunmetal": { "role": "neutral", "displayName": "Gunmetal", "canonical": "oklch(12% 0.005 285)", "tonalRamp": ["oklch(5% 0.005 285)", "oklch(8% 0.005 285)", "oklch(12% 0.005 285)", "oklch(18% 0.005 285)", "oklch(28% 0.005 285)", "oklch(42% 0.005 285)", "oklch(62% 0.005 285)", "oklch(85% 0.005 285)"] },
-      "charcoal": { "role": "neutral", "displayName": "Charcoal", "canonical": "oklch(18% 0.005 285)", "tonalRamp": ["oklch(5% 0.005 285)", "oklch(8% 0.005 285)", "oklch(12% 0.005 285)", "oklch(18% 0.005 285)", "oklch(28% 0.005 285)", "oklch(42% 0.005 285)", "oklch(62% 0.005 285)", "oklch(85% 0.005 285)"] },
-      "signal-blue": { "role": "primary", "displayName": "Signal Blue", "canonical": "oklch(70% 0.15 240)", "tonalRamp": ["oklch(15% 0.08 240)", "oklch(25% 0.10 240)", "oklch(35% 0.12 240)", "oklch(45% 0.14 240)", "oklch(58% 0.15 240)", "oklch(70% 0.15 240)", "oklch(80% 0.12 240)", "oklch(92% 0.06 240)"] },
-      "clear-green": { "role": "semantic", "displayName": "Clear Green", "canonical": "oklch(82% 0.14 155)", "tonalRamp": ["oklch(15% 0.06 155)", "oklch(25% 0.08 155)", "oklch(35% 0.10 155)", "oklch(48% 0.12 155)", "oklch(62% 0.14 155)", "oklch(75% 0.14 155)", "oklch(82% 0.14 155)", "oklch(94% 0.06 155)"] },
-      "alert-red": { "role": "semantic", "displayName": "Alert Red", "canonical": "oklch(68% 0.18 25)", "tonalRamp": ["oklch(15% 0.08 25)", "oklch(25% 0.10 25)", "oklch(35% 0.14 25)", "oklch(48% 0.16 25)", "oklch(58% 0.18 25)", "oklch(68% 0.18 25)", "oklch(78% 0.14 25)", "oklch(92% 0.06 25)"] },
-      "warning-gold": { "role": "semantic", "displayName": "Warning Gold", "canonical": "oklch(78% 0.14 95)", "tonalRamp": ["oklch(15% 0.06 95)", "oklch(25% 0.08 95)", "oklch(38% 0.10 95)", "oklch(50% 0.12 95)", "oklch(62% 0.14 95)", "oklch(78% 0.14 95)", "oklch(85% 0.10 95)", "oklch(94% 0.04 95)"] },
-      "text-primary": { "role": "neutral", "displayName": "Text Primary", "canonical": "oklch(94% 0.005 285)" },
-      "text-secondary": { "role": "neutral", "displayName": "Text Secondary", "canonical": "oklch(76% 0.005 285)" },
-      "text-muted": { "role": "neutral", "displayName": "Text Muted", "canonical": "oklch(68% 0.008 280)" },
-      "text-tertiary": { "role": "neutral", "displayName": "Text Tertiary", "canonical": "oklch(50% 0.005 285)" }
+      "blackout": {
+        "role": "neutral",
+        "displayName": "Blackout",
+        "canonical": "oklch(7.5% 0.005 285)",
+        "tonalRamp": [
+          "oklch(5% 0.005 285)",
+          "oklch(7.5% 0.005 285)",
+          "oklch(12% 0.005 285)",
+          "oklch(18% 0.005 285)",
+          "oklch(28% 0.005 285)",
+          "oklch(42% 0.005 285)",
+          "oklch(62% 0.005 285)",
+          "oklch(85% 0.005 285)"
+        ]
+      },
+      "gunmetal": {
+        "role": "neutral",
+        "displayName": "Gunmetal",
+        "canonical": "oklch(12% 0.005 285)",
+        "tonalRamp": [
+          "oklch(5% 0.005 285)",
+          "oklch(8% 0.005 285)",
+          "oklch(12% 0.005 285)",
+          "oklch(18% 0.005 285)",
+          "oklch(28% 0.005 285)",
+          "oklch(42% 0.005 285)",
+          "oklch(62% 0.005 285)",
+          "oklch(85% 0.005 285)"
+        ]
+      },
+      "charcoal": {
+        "role": "neutral",
+        "displayName": "Charcoal",
+        "canonical": "oklch(18% 0.005 285)",
+        "tonalRamp": [
+          "oklch(5% 0.005 285)",
+          "oklch(8% 0.005 285)",
+          "oklch(12% 0.005 285)",
+          "oklch(18% 0.005 285)",
+          "oklch(28% 0.005 285)",
+          "oklch(42% 0.005 285)",
+          "oklch(62% 0.005 285)",
+          "oklch(85% 0.005 285)"
+        ]
+      },
+      "signal-blue": {
+        "role": "primary",
+        "displayName": "Signal Blue",
+        "canonical": "oklch(70% 0.15 240)",
+        "tonalRamp": [
+          "oklch(15% 0.08 240)",
+          "oklch(25% 0.10 240)",
+          "oklch(35% 0.12 240)",
+          "oklch(45% 0.14 240)",
+          "oklch(58% 0.15 240)",
+          "oklch(70% 0.15 240)",
+          "oklch(80% 0.12 240)",
+          "oklch(92% 0.06 240)"
+        ]
+      },
+      "clear-green": {
+        "role": "semantic",
+        "displayName": "Clear Green",
+        "canonical": "oklch(82% 0.14 155)",
+        "tonalRamp": [
+          "oklch(15% 0.06 155)",
+          "oklch(25% 0.08 155)",
+          "oklch(35% 0.10 155)",
+          "oklch(48% 0.12 155)",
+          "oklch(62% 0.14 155)",
+          "oklch(75% 0.14 155)",
+          "oklch(82% 0.14 155)",
+          "oklch(94% 0.06 155)"
+        ]
+      },
+      "alert-red": {
+        "role": "semantic",
+        "displayName": "Alert Red",
+        "canonical": "oklch(68% 0.18 25)",
+        "tonalRamp": [
+          "oklch(15% 0.08 25)",
+          "oklch(25% 0.10 25)",
+          "oklch(35% 0.14 25)",
+          "oklch(48% 0.16 25)",
+          "oklch(58% 0.18 25)",
+          "oklch(68% 0.18 25)",
+          "oklch(78% 0.14 25)",
+          "oklch(92% 0.06 25)"
+        ]
+      },
+      "warning-gold": {
+        "role": "semantic",
+        "displayName": "Warning Gold",
+        "canonical": "oklch(78% 0.14 95)",
+        "tonalRamp": [
+          "oklch(15% 0.06 95)",
+          "oklch(25% 0.08 95)",
+          "oklch(38% 0.10 95)",
+          "oklch(50% 0.12 95)",
+          "oklch(62% 0.14 95)",
+          "oklch(78% 0.14 95)",
+          "oklch(85% 0.10 95)",
+          "oklch(94% 0.04 95)"
+        ]
+      },
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "Text Primary",
+        "canonical": "oklch(94% 0.005 285)"
+      },
+      "text-secondary": {
+        "role": "neutral",
+        "displayName": "Text Secondary",
+        "canonical": "oklch(76% 0.005 285)"
+      },
+      "text-muted": {
+        "role": "neutral",
+        "displayName": "Text Muted",
+        "canonical": "oklch(68% 0.008 280)"
+      },
+      "text-tertiary": {
+        "role": "neutral",
+        "displayName": "Text Tertiary",
+        "canonical": "oklch(50% 0.005 285)"
+      }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "Landing page headlines, hero moments. Playfair Display only. Never in the dashboard." },
-      "headline": { "displayName": "Headline", "purpose": "Page titles, section headings inside the app." },
-      "title": { "displayName": "Title", "purpose": "Card titles, dialog titles, secondary headings." },
-      "body": { "displayName": "Body", "purpose": "All readable content: descriptions, chat messages, form labels." },
-      "label": { "displayName": "Label", "purpose": "Stat labels, metadata, nav items, chips. Tight tracking for small sizes." }
+      "display": {
+        "displayName": "Display",
+        "purpose": "Landing page headlines, hero moments. Playfair Display only. Never in the dashboard."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page titles, section headings inside the app."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card titles, dialog titles, secondary headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All readable content: descriptions, chat messages, form labels."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Stat labels, metadata, nav items, chips. Tight tracking for small sizes."
+      }
     },
     "shadows": [
-      { "name": "overlay", "value": "0 25px 50px -12px rgba(0, 0, 0, 0.25)", "purpose": "Dialogs, dropdown menus, popovers. Diffuse, low-opacity." },
-      { "name": "button-ambient", "value": "0 1px 2px 0 rgba(52, 166, 255, 0.24)", "purpose": "Primary buttons at rest. Faint Signal Blue glow. The only decorative shadow." },
-      { "name": "button-press", "value": "inset 0 1px 2px 0 rgba(0, 0, 0, 0.08)", "purpose": "Active/pressed state on buttons. Pushes the surface inward." },
-      { "name": "button-highlight", "value": "inset 0 1px 0 0 rgba(255, 255, 255, 0.16)", "purpose": "Top-edge highlight on primary buttons at rest." }
+      {
+        "name": "overlay",
+        "value": "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+        "purpose": "Dialogs, dropdown menus, popovers. Diffuse, low-opacity."
+      },
+      {
+        "name": "button-ambient",
+        "value": "0 1px 2px 0 rgba(52, 166, 255, 0.24)",
+        "purpose": "Primary buttons at rest. Faint Signal Blue glow. The only decorative shadow."
+      },
+      {
+        "name": "button-press",
+        "value": "inset 0 1px 2px 0 rgba(0, 0, 0, 0.08)",
+        "purpose": "Active/pressed state on buttons. Pushes the surface inward."
+      },
+      {
+        "name": "button-highlight",
+        "value": "inset 0 1px 0 0 rgba(255, 255, 255, 0.16)",
+        "purpose": "Top-edge highlight on primary buttons at rest."
+      }
     ],
     "motion": [
-      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default easing for state transitions (hover, focus, color changes)." },
-      { "name": "ease-decelerate", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Toast entrances, dialog entrances. Fast start, gentle landing." },
-      { "name": "duration-fast", "value": "100ms", "purpose": "Instant feedback: hover color shifts, opacity toggles." },
-      { "name": "duration-normal", "value": "200ms", "purpose": "Standard transitions: dialog open/close, dropdown appear." },
-      { "name": "duration-slow", "value": "500ms", "purpose": "Toast slide-in, staggered list entrances." }
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Default easing for state transitions (hover, focus, color changes)."
+      },
+      {
+        "name": "ease-decelerate",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Toast entrances, dialog entrances. Fast start, gentle landing."
+      },
+      {
+        "name": "duration-fast",
+        "value": "100ms",
+        "purpose": "Instant feedback: hover color shifts, opacity toggles."
+      },
+      {
+        "name": "duration-normal",
+        "value": "200ms",
+        "purpose": "Standard transitions: dialog open/close, dropdown appear."
+      },
+      {
+        "name": "duration-slow",
+        "value": "500ms",
+        "purpose": "Toast slide-in, staggered list entrances."
+      }
     ],
     "breakpoints": [
       { "name": "sm", "value": "640px" },
@@ -112,9 +277,21 @@
       "Flat by default. Shadows reserved for overlays that break the plane."
     ],
     "rules": [
-      { "name": "The Signal Rule", "body": "Saturated color means something happened. Blue is the system's voice. Green is a pass. Red is a flag. Gold is a maybe. If a color appears without conveying a verdict or enabling an action, remove it.", "section": "colors" },
-      { "name": "The 13px Rule", "body": "Body text is 13px, not 14px or 16px. The dashboard is dense and utilitarian. Larger body text wastes vertical space and softens the tone.", "section": "typography" },
-      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat at rest. If you're reaching for box-shadow, the element had better be floating above the page (popover, dialog, toast). Tonal layering handles everything else.", "section": "elevation" }
+      {
+        "name": "The Signal Rule",
+        "body": "Saturated color means something happened. Blue is the system's voice. Green is a pass. Red is a flag. Gold is a maybe. If a color appears without conveying a verdict or enabling an action, remove it.",
+        "section": "colors"
+      },
+      {
+        "name": "The 13px Rule",
+        "body": "Body text is 13px, not 14px or 16px. The dashboard is dense and utilitarian. Larger body text wastes vertical space and softens the tone.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Surfaces are flat at rest. If you're reaching for box-shadow, the element had better be floating above the page (popover, dialog, toast). Tonal layering handles everything else.",
+        "section": "elevation"
+      }
     ],
     "dos": [
       "Do use tonal layering (Blackout, Gunmetal, Charcoal, Inner Wash) for depth. Four steps maximum.",

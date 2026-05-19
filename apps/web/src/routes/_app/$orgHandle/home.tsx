@@ -1,3 +1,5 @@
+// biome-ignore-all lint/correctness/noRestrictedElements: needed here because ui breaks without... todo: fix????
+
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
 import { Button } from "#/components/ui/button"
@@ -319,10 +321,7 @@ function HomeFloatingBar() {
             const chatId = crypto.randomUUID()
             try {
               await createChat.mutateAsync({ id: chatId, repoId: repo?.id })
-              window.sessionStorage.setItem(
-                `tw.chat.init.${chatId}`,
-                trimmed
-              )
+              window.sessionStorage.setItem(`tw.chat.init.${chatId}`, trimmed)
               navigate({
                 to: "/chat/$chatId",
                 params: { chatId },
@@ -369,7 +368,7 @@ function RecentChats() {
         queryClient.setQueryData(
           listQueryKey,
           (old: typeof chats | undefined) =>
-            old ? old.filter((c) => c.id !== chatId) : [],
+            old ? old.filter((c) => c.id !== chatId) : []
         )
         return { previous }
       },
@@ -381,7 +380,7 @@ function RecentChats() {
       onSettled: () => {
         queryClient.invalidateQueries({ queryKey: listQueryKey })
       },
-    }),
+    })
   )
 
   if (chats.length === 0) return null
@@ -430,7 +429,6 @@ function RecentChats() {
                     </span>
                     {isConfirming ? (
                       <>
-                      {/* biome-ignore lint/correctness/noRestrictedElements: needed here because ui breaks without... todo: fix???? */}
                         <button
                           type="button"
                           onClick={(e) => {
@@ -442,7 +440,6 @@ function RecentChats() {
                         >
                           <SmallCheckStrokeIcon12 />
                         </button>
-                        {/* biome-ignore lint/correctness/noRestrictedElements */}
                         <button
                           type="button"
                           onClick={(e) => {
@@ -456,7 +453,6 @@ function RecentChats() {
                         </button>
                       </>
                     ) : (
-                      // biome-ignore lint/correctness/noRestrictedElements: needed here because ui breaks without... todo: fix????
                       <button
                         type="button"
                         onClick={(e) => {

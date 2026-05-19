@@ -25,8 +25,8 @@ You are a professional software engineer. All code must follow best practices: a
 5. Never use raw html components (<button>, <input>, <select><option></select>, etc). Always use their react counterparts defined in `apps/web/src/components/ui` (shared primitives such as `Button` live in `@tripwire/ui` and are re-exported under `#/components/ui` for the app).
    If you're unable to find the right component, explore the coss ui directory. `https://coss.com/ui/docs`
 6. Never define a raw vector (`<svg`) outside `apps/web/src/components/icons/` (for the app) or `packages/ui/src/icons/` (for shared UI). Import icon components from there and follow the same patterns as existing icons.
-7. Never introduce a raw inline type to a component-level or route-level file. Keep it scoped to a generally existing file which the majority of other similar types live. 
-8. Absolutely do not spam single line comments above every change. Comments should be sparce, contain no em dashes or overly verbose language patterns, and should ONLY be used to give important context about programmatic decisions, nuance, etc. Never to just explain what a line does, especially given that every function, const, etc should be highly readable as is. 
+7. Never introduce a raw inline type to a component-level or route-level file. Keep it scoped to a generally existing file which the majority of other similar types live.
+8. Absolutely do not spam single line comments above every change. Comments should be sparce, contain no em dashes or overly verbose language patterns, and should ONLY be used to give important context about programmatic decisions, nuance, etc. Never to just explain what a line does, especially given that every function, const, etc should be highly readable as is.
 
 ### Root Structure
 

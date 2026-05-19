@@ -102,12 +102,7 @@ export function usePersistedChat({
     if (!initialMessages?.length) return
     if (messages.length > 0) return
     setMessages(initialMessages)
-  }, [
-    initialMessagesVersion,
-    initialMessages,
-    messages.length,
-    setMessages,
-  ])
+  }, [initialMessagesVersion, initialMessages, messages.length, setMessages])
 
   const sendMessage = useCallback(
     (content: string) => {

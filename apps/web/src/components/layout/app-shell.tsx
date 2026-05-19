@@ -3,7 +3,12 @@ import { parseCommand } from "#/lib/chat-commands"
 import { useSlashCommandRunner } from "#/lib/use-chat-command-runner"
 import { CommandConfirmation } from "#/components/chat/command-confirmation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
+import {
+  Link,
+  Outlet,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { TopNav } from "#/components/layout/top-nav"
 import { WorkspaceRedirect } from "#/components/layout/workspace-redirect"
@@ -89,10 +94,7 @@ function AppShellInner() {
   const isAutomationEditor = /\/automations\/[^/]+$/.test(currentPath)
 
   const needsInstall =
-    !isChatRoute &&
-    !workspaceLoading &&
-    orgs.length > 0 &&
-    repos.length === 0
+    !isChatRoute && !workspaceLoading && orgs.length > 0 && repos.length === 0
 
   const handleConfirmMutation = async () => {
     if (!pendingConfirmation) return
@@ -249,13 +251,19 @@ function AppShellInner() {
                           userId: "",
                           repoId: chatRepoId ?? null,
                           title: null,
-                          messages: chatMessages as unknown as Record<string, unknown>[],
+                          messages: chatMessages as unknown as Record<
+                            string,
+                            unknown
+                          >[],
                           createdAt: new Date(),
                           updatedAt: new Date(),
                         }
                       )
                       close()
-                      navigate({ to: "/chat/$chatId", params: { chatId: conversationId } })
+                      navigate({
+                        to: "/chat/$chatId",
+                        params: { chatId: conversationId },
+                      })
                     }}
                     type="button"
                     className="flex size-6 items-center justify-center rounded-md transition-colors hover:bg-tw-hover"
@@ -494,7 +502,7 @@ function SidebarRecentChats() {
                 type="button"
                 disabled={loadingId !== null}
                 onClick={() => handleLoadChat(chat.id)}
-                className="flex min-w-0 flex-1 items-center gap-2 disabled:opacity-50 justify-start"
+                className="flex min-w-0 flex-1 items-center justify-start gap-2 disabled:opacity-50"
               >
                 {isLoading ? (
                   <UnicodeSpinner
