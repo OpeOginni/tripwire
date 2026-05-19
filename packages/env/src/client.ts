@@ -13,6 +13,8 @@ export const env = createEnv({
   clientPrefix: "VITE_",
   client: {
     VITE_GITHUB_APP_SLUG: z.string().min(1).optional(),
+    VITE_REACT_SCAN_ENABLED: z.string().optional(),
+    VITE_REACT_GRAB_ENABLED: z.string().optional(),
   },
   runtimeEnv: import.meta.env,
   emptyStringAsUndefined: true,

@@ -15,10 +15,9 @@ import { cn } from "@tripwire/ui/utils"
 import { useWorkspace } from "#/lib/workspace-context"
 import {
   buildListedUserSuggestions,
-  composeMentionMessage,
   getMentionTrigger,
   replaceMentionTrigger,
-  type ListedUserMention,
+  type ListedUserSuggestion,
 } from "#/lib/chat/mentions"
 
 interface ChatComposerProps {
@@ -30,8 +29,8 @@ interface ChatComposerProps {
   onSend: (message: string) => void
 }
 
-function statusClasses(status: ListedUserMention["status"]) {
-  return status === "blacklisted"
+function listClasses(list: ListedUserSuggestion["list"]) {
+  return list === "blacklist"
     ? "border-[#F56D5D26] bg-[#F56D5D14] text-[#F2A39A]"
     : "border-[#67E19F26] bg-[#67E19F14] text-[#A7E9C3]"
 }
@@ -40,26 +39,18 @@ function MentionAvatar({
   user,
   size = "size-5",
 }: {
-  user: ListedUserMention
+  user: ListedUserSuggestion
   size?: string
 }) {
-  if (user.avatarUrl) {
-    return (
-      <img
-        src={user.avatarUrl}
-        alt=""
-        className={`${size} shrink-0 rounded-full bg-tw-inner`}
-        loading="lazy"
-      />
-    )
-  }
-
+  const src =
+    user.avatarUrl ?? `https://github.com/${user.githubUsername}.png?size=40`
   return (
-    <span
-      className={`${size} flex shrink-0 items-center justify-center rounded-full bg-tw-inner text-[10px] text-tw-text-tertiary`}
-    >
-      {user.username.slice(0, 1).toUpperCase()}
-    </span>
+    <img
+      src={src}
+      alt=""
+      className={`${size} shrink-0 rounded-full bg-tw-inner`}
+      loading="lazy"
+    />
   )
 }
 
@@ -77,22 +68,16 @@ export function ChatComposer({
   const inputRef = useRef<HTMLInputElement>(null)
   const [text, setText] = useState("")
   const [cursorPosition, setCursorPosition] = useState(0)
-  const [mentions, setMentions] = useState<ListedUserMention[]>([])
+  const [mentions, setMentions] = useState<ListedUserSuggestion[]>([])
   const [highlightedIndex, setHighlightedIndex] = useState(0)
   const [dismissedTriggerKey, setDismissedTriggerKey] = useState<string | null>(
     null
   )
 
-  const whitelistQuery = useQuery(
-    trpc.whitelist.list.queryOptions(
+  const mentionsQuery = useQuery(
+    trpc.whitelist.mentions.queryOptions(
       { repoId: repo?.id ?? "" },
-      { enabled: !!repo?.id }
-    )
-  )
-  const blacklistQuery = useQuery(
-    trpc.blacklist.list.queryOptions(
-      { repoId: repo?.id ?? "" },
-      { enabled: !!repo?.id }
+      { enabled: !!repo?.id, staleTime: 60_000 }
     )
   )
 
@@ -102,77 +87,66 @@ export function ChatComposer({
     : null
 
   const suggestions = useMemo(() => {
-    if (!trigger) return []
+    if (!trigger || !mentionsQuery.data) return []
 
-    const blacklist: ListedUserMention[] = (blacklistQuery.data ?? []).map(
-      (entry) => ({
-        username: entry.githubUsername,
-        avatarUrl: entry.avatarUrl,
-        status: "blacklisted",
-      })
-    )
-    const whitelist: ListedUserMention[] = (whitelistQuery.data ?? []).map(
-      (entry) => ({
-        username: entry.githubUsername,
-        avatarUrl: entry.avatarUrl,
-        status: "whitelisted",
-      })
-    )
+    const users: ListedUserSuggestion[] = [
+      ...mentionsQuery.data.blacklisted.map((u) => ({
+        ...u,
+        list: "blacklist" as const,
+      })),
+      ...mentionsQuery.data.whitelisted.map((u) => ({
+        ...u,
+        list: "whitelist" as const,
+      })),
+    ]
 
-    return buildListedUserSuggestions(
-      blacklist,
-      whitelist,
-      trigger.query,
-      mentions.map((mention) => mention.username)
-    )
-  }, [blacklistQuery.data, mentions, trigger, whitelistQuery.data])
+    return buildListedUserSuggestions(users, trigger.query)
+  }, [mentionsQuery.data, trigger])
 
   const showSuggestions =
     !disabled &&
     !!trigger &&
     triggerKey !== dismissedTriggerKey &&
     suggestions.length > 0
-  const composedMessage = composeMentionMessage(mentions, text)
+  const composedMessage = [
+    ...mentions.map((m) => `@${m.githubUsername}`),
+    text.trim(),
+  ]
+    .filter(Boolean)
+    .join(" ")
   const activeSuggestion = showSuggestions
     ? suggestions[highlightedIndex]
     : undefined
   const activeSuggestionId = activeSuggestion
-    ? `${suggestionListId}-${activeSuggestion.status}-${activeSuggestion.username.toLowerCase()}`
+    ? `${suggestionListId}-${activeSuggestion.list}-${activeSuggestion.githubUsername.toLowerCase()}`
     : undefined
 
   function updateCursor(element: HTMLInputElement) {
     setCursorPosition(element.selectionStart ?? element.value.length)
   }
 
-  function selectMention(user: ListedUserMention) {
+  function selectMention(user: ListedUserSuggestion) {
     if (!trigger) return
 
-    const nextText = replaceMentionTrigger(text, trigger)
-    const beforeTrigger = text.slice(0, trigger.start).trimEnd()
-    const afterTrigger = text.slice(trigger.end).trimStart()
-    const nextCursorPosition =
-      beforeTrigger.length > 0 && afterTrigger.length > 0
-        ? beforeTrigger.length + 1
-        : beforeTrigger.length
+    const next = replaceMentionTrigger(text, trigger, user.githubUsername)
 
     setDismissedTriggerKey(null)
     setMentions((current) => [...current, user])
-    setText(nextText)
+    setText(next.value)
     setHighlightedIndex(0)
     window.requestAnimationFrame(() => {
       const input = inputRef.current
       if (!input) return
       input.focus()
-      const nextPosition = Math.min(nextCursorPosition, input.value.length)
-      input.setSelectionRange(nextPosition, nextPosition)
-      setCursorPosition(nextPosition)
+      input.setSelectionRange(next.cursorPosition, next.cursorPosition)
+      setCursorPosition(next.cursorPosition)
     })
   }
 
   function removeMention(username: string) {
     setMentions((current) =>
       current.filter(
-        (mention) => mention.username.toLowerCase() !== username.toLowerCase()
+        (m) => m.githubUsername.toLowerCase() !== username.toLowerCase()
       )
     )
   }
@@ -221,7 +195,7 @@ export function ChatComposer({
     }
 
     if (event.key === "Backspace" && text.length === 0 && mentions.length > 0) {
-      removeMention(mentions[mentions.length - 1].username)
+      removeMention(mentions[mentions.length - 1].githubUsername)
       return
     }
 
@@ -245,7 +219,7 @@ export function ChatComposer({
           className="absolute right-1.5 bottom-full left-1.5 z-20 mb-1.5 overflow-hidden rounded-2xl bg-tw-card p-1.5 shadow-[0_8px_24px_#00000040,0_1px_2px_#0000001a]"
         >
           {suggestions.map((user, index) => {
-            const optionId = `${suggestionListId}-${user.status}-${user.username.toLowerCase()}`
+            const optionId = `${suggestionListId}-${user.list}-${user.githubUsername.toLowerCase()}`
 
             return (
               <Button
@@ -268,12 +242,12 @@ export function ChatComposer({
               >
                 <MentionAvatar user={user} />
                 <span className="min-w-0 flex-1 truncate text-[13px] text-tw-text-primary">
-                  @{user.username}
+                  @{user.githubUsername}
                 </span>
                 <span
-                  className={`rounded-md border px-1.5 py-0.5 text-[10px] font-medium capitalize ${statusClasses(user.status)}`}
+                  className={`rounded-md border px-1.5 py-0.5 text-[10px] font-medium capitalize ${listClasses(user.list)}`}
                 >
-                  {user.status}
+                  {user.list}
                 </span>
               </Button>
             )
@@ -284,17 +258,19 @@ export function ChatComposer({
       <div className="flex min-h-9 w-full flex-wrap items-center gap-1.5">
         {mentions.map((user) => (
           <span
-            key={`${user.status}-${user.username}`}
-            className={`inline-flex h-8 items-center gap-1.5 rounded-[10px] border px-1.5 pr-1 text-[12px] ${statusClasses(user.status)}`}
+            key={`${user.list}-${user.githubUsername}`}
+            className={`inline-flex h-8 items-center gap-1.5 rounded-[10px] border px-1.5 pr-1 text-[12px] ${listClasses(user.list)}`}
           >
             <MentionAvatar user={user} size="size-4" />
-            <span className="max-w-[120px] truncate">@{user.username}</span>
+            <span className="max-w-[120px] truncate">
+              @{user.githubUsername}
+            </span>
             <Button
               variant="ghost"
               type="button"
-              onClick={() => removeMention(user.username)}
+              onClick={() => removeMention(user.githubUsername)}
               className="flex size-4 items-center justify-center rounded-md text-current opacity-70 transition-opacity hover:opacity-100"
-              aria-label={`Remove @${user.username}`}
+              aria-label={`Remove @${user.githubUsername}`}
             >
               <CloseIcon className="size-2.5" />
             </Button>

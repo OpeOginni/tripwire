@@ -393,8 +393,8 @@ function ChatMessage({
 function UserMessage({ content }: { content: string }) {
   return (
     <div className="flex justify-end px-1">
-      <div className="max-w-[86%] rounded-2xl rounded-tr-sm bg-[#252528] px-3 py-2 text-[13px] leading-[19px] text-tw-text-primary">
-        {content}
+      <div className="max-w-[86%] rounded-2xl rounded-tr-sm bg-[#252528] px-3 py-2 text-[13px] leading-[19px] whitespace-pre-wrap text-tw-text-primary">
+        {renderInlineText(content)}
       </div>
     </div>
   )
@@ -665,12 +665,12 @@ function ReasoningBlock({ content }: { content: string }) {
         variant="ghost"
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 py-0.5 text-[12px] text-tw-text-muted transition-colors hover:text-tw-text-secondary"
+        className="flex items-center gap-1.5 py-0.5 text-[12px] text-tw-text-muted transition-colors hover:text-tw-text-secondary w-fit"
       >
         <ThoughtCollapsibleChevronIcon10
           className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
         />
-        <span>Thought</span>
+        <span>Thinking</span>
       </Button>
       {isOpen && (
         <div className="border-l border-[#27272A] pl-4 text-[12px] leading-[18px] text-tw-text-muted/70">

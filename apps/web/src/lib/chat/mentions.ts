@@ -1,9 +1,9 @@
-export type ListedUserStatus = "blacklisted" | "whitelisted"
+export type ListedUserStatus = "blacklist" | "whitelist"
 
-export interface ListedUserMention {
-  username: string
+export interface ListedUserSuggestion {
+  githubUsername: string
   avatarUrl?: string | null
-  status: ListedUserStatus
+  list: ListedUserStatus
 }
 
 export interface MentionTrigger {
@@ -32,33 +32,17 @@ export function getMentionTrigger(
   }
 }
 
-export function replaceMentionTrigger(
-  value: string,
-  trigger: MentionTrigger
-): string {
-  const before = value.slice(0, trigger.start).trimEnd()
-  const after = value.slice(trigger.end).trimStart()
-
-  return [before, after].filter(Boolean).join(" ")
-}
-
 export function buildListedUserSuggestions(
-  blacklist: ListedUserMention[],
-  whitelist: ListedUserMention[],
-  query: string,
-  selectedUsernames: string[]
-): ListedUserMention[] {
-  const selected = new Set(
-    selectedUsernames.map((username) => username.toLowerCase())
-  )
-  const seen = new Set<string>()
+  users: ListedUserSuggestion[],
+  query: string
+): ListedUserSuggestion[] {
   const normalizedQuery = query.trim().replace(/^@/, "").toLowerCase()
-  const users = [...blacklist, ...whitelist]
-  const suggestions: ListedUserMention[] = []
+  const seen = new Set<string>()
+  const suggestions: ListedUserSuggestion[] = []
 
   for (const user of users) {
-    const usernameKey = user.username.toLowerCase()
-    if (seen.has(usernameKey) || selected.has(usernameKey)) continue
+    const usernameKey = user.githubUsername.toLowerCase()
+    if (seen.has(usernameKey)) continue
     if (normalizedQuery && !usernameKey.startsWith(normalizedQuery)) continue
 
     seen.add(usernameKey)
@@ -68,11 +52,18 @@ export function buildListedUserSuggestions(
   return suggestions.slice(0, MAX_SUGGESTIONS)
 }
 
-export function composeMentionMessage(
-  mentions: ListedUserMention[],
-  text: string
-): string {
-  return [...mentions.map((mention) => `@${mention.username}`), text.trim()]
-    .filter(Boolean)
-    .join(" ")
+export function replaceMentionTrigger(
+  value: string,
+  trigger: MentionTrigger,
+  username: string
+): { value: string; cursorPosition: number } {
+  const before = value.slice(0, trigger.start)
+  const after = value.slice(trigger.end)
+  const inserted = `@${username}`
+  const needsSpaceAfter = after.length === 0 || /^\s/.test(after)
+  const nextValue = `${before}${inserted}${needsSpaceAfter ? "" : " "}${after}`
+  const cursorPosition =
+    before.length + inserted.length + (needsSpaceAfter ? 0 : 1)
+
+  return { value: nextValue, cursorPosition }
 }

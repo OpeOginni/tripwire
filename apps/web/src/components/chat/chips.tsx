@@ -4,15 +4,15 @@ import { ChipIssueGlyphIcon10 } from "#/components/icons/chip-issue-glyph-icon"
 export function UserMentionChip({ username }: { username: string }) {
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-[5px] bg-[#2A2A2A] px-1 py-[1px]"
+      className="inline-flex items-center gap-1 rounded-md border border-[#2B303B] bg-[#212328] px-1 py-[1.5px] shadow-[0_0_8px_rgba(59,130,246,0.15)]"
       style={{ verticalAlign: "-0.2em" }}
     >
       <img
         src={`https://github.com/${username}.png?size=28`}
         alt=""
-        className="h-3.5 w-3.5 rounded-full bg-[#3a3a3e]"
+        className="h-3.5 w-3.5 rounded-full bg-[#3a3a3e] ring-1 ring-white/10"
       />
-      <span className="text-[12px] leading-tight font-medium text-[#FAFAFA]">
+      <span className="px-0.5 text-[12px] leading-tight font-medium text-[#FAFAFA]">
         @{username}
       </span>
     </span>

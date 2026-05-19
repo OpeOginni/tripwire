@@ -1,39 +1,40 @@
 import { describe, expect, it } from "vitest"
 import {
   buildListedUserSuggestions,
-  composeMentionMessage,
   getMentionTrigger,
   replaceMentionTrigger,
-  type ListedUserMention,
+  type ListedUserSuggestion,
 } from "./mentions"
 
-const blacklisted: ListedUserMention[] = [
+const users: ListedUserSuggestion[] = [
   {
-    username: "octocat",
-    status: "blacklisted",
-    avatarUrl: "https://github.com/octocat.png",
-  },
-]
-
-const whitelisted: ListedUserMention[] = [
-  {
-    username: "hubot",
-    status: "whitelisted",
-    avatarUrl: "https://github.com/hubot.png",
+    githubUsername: "spammer42",
+    list: "blacklist",
+    avatarUrl: "https://github.com/spammer42.png",
   },
   {
-    username: "mona",
-    status: "whitelisted",
-    avatarUrl: "https://github.com/mona.png",
+    githubUsername: "torvalds",
+    list: "whitelist",
+    avatarUrl: "https://github.com/torvalds.png",
+  },
+  {
+    githubUsername: "torvalds",
+    list: "whitelist",
+    avatarUrl: "https://github.com/torvalds.png",
+  },
+  {
+    githubUsername: "sindresorhus",
+    list: "whitelist",
+    avatarUrl: "https://github.com/sindresorhus.png",
   },
 ]
 
 describe("mention helpers", () => {
   it("detects the active @ query before the cursor", () => {
-    expect(getMentionTrigger("check @hu", 9)).toEqual({
-      query: "hu",
+    expect(getMentionTrigger("check @tor", 10)).toEqual({
+      query: "tor",
       start: 6,
-      end: 9,
+      end: 10,
     })
   })
 
@@ -41,30 +42,24 @@ describe("mention helpers", () => {
     expect(getMentionTrigger("email test@example.com", 22)).toBeNull()
   })
 
-  it("filters listed users and skips selected usernames", () => {
-    expect(
-      buildListedUserSuggestions(blacklisted, whitelisted, "mo", ["octocat"])
-    ).toEqual([
+  it("filters listed users by prefix and de-dupes usernames", () => {
+    expect(buildListedUserSuggestions(users, "to")).toEqual([
       {
-        username: "mona",
-        status: "whitelisted",
-        avatarUrl: "https://github.com/mona.png",
+        githubUsername: "torvalds",
+        list: "whitelist",
+        avatarUrl: "https://github.com/torvalds.png",
       },
     ])
   })
 
-  it("removes the typed trigger after selecting a chip", () => {
-    const trigger = getMentionTrigger("please check @hu", 16)
-
+  it("replaces the typed trigger with the selected username", () => {
+    const trigger = getMentionTrigger("please check @tor now", 17)
     expect(trigger).not.toBeNull()
-    expect(replaceMentionTrigger("please check @hu", trigger!)).toBe(
-      "please check"
-    )
-  })
-
-  it("serializes mention chips before the freeform message", () => {
-    expect(composeMentionMessage([whitelisted[0]], "what changed?")).toBe(
-      "@hubot what changed?"
-    )
+    expect(
+      replaceMentionTrigger("please check @tor now", trigger!, "torvalds")
+    ).toEqual({
+      value: "please check @torvalds now",
+      cursorPosition: 22,
+    })
   })
 })

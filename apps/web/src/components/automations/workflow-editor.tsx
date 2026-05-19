@@ -382,7 +382,7 @@ export function WorkflowEditor({
               size="sm"
               onClick={handleSave}
               loading={isSaving}
-              className="rounded-[10px]"
+              className="border-tw-border px-2"
             >
               {saveLabel ?? "Save"}
             </Button>

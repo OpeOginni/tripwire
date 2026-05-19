@@ -131,6 +131,7 @@ function ThemePicker() {
     <div className="flex gap-3">
       {themes.map((theme) => (
         <Button
+          size="card"
           variant="ghost"
           key={theme.key}
           type="button"

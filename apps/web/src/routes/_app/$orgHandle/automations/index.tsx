@@ -250,6 +250,7 @@ function AutomationsPage() {
               <div className="grid grid-cols-2 gap-3">
                 {/* Blank workflow card */}
                 <Button
+                  size="card"
                   variant="ghost"
                   type="button"
                   onClick={() => setIsCreating(true)}
@@ -271,6 +272,7 @@ function AutomationsPage() {
                 {/* Template cards */}
                 {templates.map((t) => (
                   <Button
+                    size="card"
                     variant="ghost"
                     key={t.id}
                     type="button"

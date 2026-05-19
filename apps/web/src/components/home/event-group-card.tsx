@@ -48,9 +48,10 @@ export function EventGroupCard({ group, onOpenEvent }: EventGroupCardProps) {
   return (
     <div className="relative flex w-full flex-col gap-[3px] overflow-hidden rounded-xl bg-tw-card p-1">
       <Button
+        size="card"
         variant="ghost"
-        onClick={() => onOpenEvent?.(first)}
         type="button"
+        onClick={() => onOpenEvent?.(first)}
         className="group cursor-pointer rounded-[10px] text-left focus:outline-none"
       >
         <div className="flex flex-col gap-1 rounded-[10px] bg-tw-inner p-2 transition-colors group-hover:bg-[#FAFAFA26]">

@@ -17,6 +17,8 @@ export const buttonVariants = cva(
     },
     variants: {
       size: {
+        /** Tall / multi-line content (empty states, pickers); overrides fixed height + nowrap. */
+        card: "h-auto min-h-0 w-full justify-start whitespace-normal p-0 shadow-none sm:h-auto [&_svg]:mx-0",
         default: "h-9 px-[calc(--spacing(3)-1px)] sm:h-8",
         icon: "size-9 sm:size-8",
         "icon-lg": "size-10 sm:size-9",
