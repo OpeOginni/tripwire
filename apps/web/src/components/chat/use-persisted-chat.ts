@@ -5,7 +5,7 @@ import {
   lastAssistantMessageIsCompleteWithApprovalResponses,
 } from "ai"
 import type { UIMessage, SerializedMessage } from "#/types/chat"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useCustomer } from "autumn-js/react"
 import { useTRPC } from "#/integrations/trpc/react"
 import { useRouterState } from "@tanstack/react-router"
@@ -27,6 +27,7 @@ export function usePersistedChat({
 }: UsePersistedChatOptions) {
   const currentPath = useRouterState({ select: (s) => s.location.pathname })
   const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const [chatError, setChatError] = useState<Error | null>(null)
   const [quotaExhaustedByError, setQuotaExhaustedByError] = useState(false)
 
@@ -94,6 +95,7 @@ export function usePersistedChat({
         title: extractChatTitle(messages),
       })
       refetchCustomer()
+      queryClient.invalidateQueries({ queryKey: trpc.chats.list.queryKey() })
     },
   })
   const isLoading = status === "submitted" || status === "streaming"

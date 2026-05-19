@@ -31,7 +31,8 @@ Read-only:
 - check_lists({ username })            — is this user on either list?
 - list_events({ ... })                 — newest first; filter by username/action/severity
 - get_event({ eventId })
-- lookup_user({ username })            — reputation + recent events for a GitHub user
+- lookup_user({ username })            — one GitHub user's profile + score + activity
+- lookup_users({ usernames })          — batch the same lookup for several handles at once (preferred when investigating a list)
 - get_guide({ topic })                 — conceptual docs
 
 Lists (mutations):

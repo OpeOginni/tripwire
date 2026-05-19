@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   buildListedUserSuggestions,
   getMentionTrigger,
+  listGithubAtMentionsMissingChips,
   replaceMentionTrigger,
   type ListedUserSuggestion,
 } from "./mentions"
@@ -61,5 +62,23 @@ describe("mention helpers", () => {
       value: "please check @torvalds now",
       cursorPosition: 22,
     })
+  })
+
+  it("listGithubAtMentionsMissingChips flags @handles absent from chipped set", () => {
+    expect(
+      listGithubAtMentionsMissingChips("hi @a and @b", new Set(["a"]))
+    ).toEqual(["b"])
+  })
+
+  it("does not flag email-domain @segments as mentions", () => {
+    expect(
+      listGithubAtMentionsMissingChips("hey user@corp.com hello", new Set()),
+    ).toEqual([])
+  })
+
+  it("listGithubAtMentionsMissingChips is empty when every @handle matches a chip", () => {
+    expect(
+      listGithubAtMentionsMissingChips("@Tor @tor", new Set(["tor"])),
+    ).toEqual([])
   })
 })

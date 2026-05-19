@@ -18,6 +18,7 @@ import { parseCommand, type SlashCommand } from "#/lib/chat-commands"
 import {
   buildListedUserSuggestions,
   getMentionTrigger,
+  listGithubAtMentionsMissingChips,
   MAX_LISTED_USER_SUGGESTIONS,
   replaceMentionTrigger,
   type ListedUserSuggestion,
@@ -242,6 +243,37 @@ export function ChatComposer({
     [mentions, slashCommandRunner, text]
   )
 
+  const chippedGithubUsernamesLower = useMemo(
+    () => new Set(mentions.map((m) => m.githubUsername.toLowerCase())),
+    [mentions]
+  )
+
+  /** Raw `@handles` typed in input that are not chipped — block send until resolved. */
+  const atMentionsMissingChips = useMemo(
+    () => listGithubAtMentionsMissingChips(text, chippedGithubUsernamesLower),
+    [chippedGithubUsernamesLower, text]
+  )
+
+  const showGithubResolveLoading =
+    Boolean(repo?.id) &&
+    !disabled &&
+    trigger !== null &&
+    debouncedMentionQuery === trigger.query &&
+    trigger.query.length > 0 &&
+    isValidGithubLogin(trigger.query) &&
+    resolveGithubMentionQuery.isFetching &&
+    authoritativeResolvedGithubUser === null
+
+  const mentionTypingOrResolveBlocking =
+    trigger !== null ||
+    showGithubResolveLoading ||
+    atMentionsMissingChips.length > 0
+
+  const canSendComposer =
+    Boolean(composedMessage.trim()) &&
+    !disabled &&
+    !mentionTypingOrResolveBlocking
+
   const {
     mentionsAttachBelow,
     composerSurfaceRef,
@@ -260,8 +292,8 @@ export function ChatComposer({
   }, [])
 
   const submitComposer = useCallback(async () => {
+    if (!canSendComposer) return
     const message = composedMessage.trim()
-    if (!message || disabled) return
 
     if (slashCommandRunner) {
       const parsed = parseCommand(message)
@@ -286,8 +318,8 @@ export function ChatComposer({
     onSend(message)
     resetComposer()
   }, [
+    canSendComposer,
     composedMessage,
-    disabled,
     mentions,
     onSend,
     resetComposer,
@@ -312,6 +344,7 @@ export function ChatComposer({
   })
 
   selectSlashRef.current = async (cmd: SlashCommand) => {
+    if (mentionTypingOrResolveBlocking) return
     const line = composedMessage.trim()
     const exactCommand =
       line === cmd.command || line.startsWith(`${cmd.command} `)
@@ -343,16 +376,6 @@ export function ChatComposer({
   }
 
   const showSlashPalette = Boolean(slashCommandRunner && slashInput.showPalette)
-
-  const showGithubResolveLoading =
-    Boolean(repo?.id) &&
-    !disabled &&
-    trigger !== null &&
-    debouncedMentionQuery === trigger.query &&
-    trigger.query.length > 0 &&
-    isValidGithubLogin(trigger.query) &&
-    resolveGithubMentionQuery.isFetching &&
-    authoritativeResolvedGithubUser === null
 
   const showMentionSuggestions =
     !disabled &&
@@ -487,7 +510,9 @@ export function ChatComposer({
 
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault()
-      sendMessage()
+      if (canSendComposer) {
+        sendMessage()
+      }
     }
   }
 
@@ -658,7 +683,7 @@ export function ChatComposer({
           variant="ghost"
           type="button"
           onClick={sendMessage}
-          disabled={!composedMessage.trim() || disabled}
+          disabled={!canSendComposer}
           className="flex items-center justify-center gap-1 self-stretch rounded-[10px] bg-[#363639] px-1.5 transition-colors hover:bg-[#404044] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="px-0.5 text-center text-[14px] leading-none text-tw-text-primary">

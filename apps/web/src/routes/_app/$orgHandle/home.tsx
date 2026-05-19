@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
 import { Button } from "#/components/ui/button"
-import { useQuery, useMutation } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChatComposer } from "#/components/chat/chat-composer"
 import { EventGroupCard } from "#/components/home/event-group-card"
@@ -11,7 +11,11 @@ import { useAuth } from "@tripwire/auth/components"
 import { useWorkspace, useWorkspacePath } from "#/lib/workspace-context"
 import { useTRPC } from "#/integrations/trpc/react"
 import { TripwireLogo } from "#/components/icons/tripwire-logo"
-import { OnboardingCheckCircleIcon14 } from "#/components/icons/app-chrome-icons"
+import {
+  OnboardingCheckCircleIcon14,
+  SmallCheckStrokeIcon12,
+  StrokeXIcon10Muted,
+} from "#/components/icons/app-chrome-icons"
 import { parseCommand } from "#/lib/chat-commands"
 
 export const Route = createFileRoute("/_app/$orgHandle/home")({
@@ -247,11 +251,6 @@ function HomePage() {
 }
 
 function HomeFloatingBar() {
-  const [previewChat, setPreviewChat] = useState<{
-    id: string
-    message: string
-    processing: boolean
-  } | null>(null)
   const navigate = useNavigate()
   const { repo } = useWorkspace()
   const trpc = useTRPC()
@@ -264,9 +263,9 @@ function HomeFloatingBar() {
 
     try {
       await createChat.mutateAsync({ id: chatId, repoId: repo?.id })
-      setPreviewChat({ id: chatId, message: trimmedMessage, processing: true })
+      window.sessionStorage.setItem(`tw.chat.init.${chatId}`, trimmedMessage)
+      navigate({ to: "/chat/$chatId", params: { chatId } })
     } catch (err) {
-      setPreviewChat(null)
       toastManager.add({
         type: "error",
         title: "Failed to start chat",
@@ -275,55 +274,8 @@ function HomeFloatingBar() {
     }
   }
 
-  const handleGoToChat = () => {
-    if (!previewChat) return
-    // Store initial message in sessionStorage (cleared on read, doesn't survive refresh)
-    sessionStorage.setItem(
-      `tw.chat.init.${previewChat.id}`,
-      previewChat.message
-    )
-    navigate({
-      to: "/chat/$chatId",
-      params: { chatId: previewChat.id },
-    })
-  }
-
   return (
     <div className="fixed bottom-6 left-1/2 z-30 flex w-[560px] max-w-[calc(100%-32px)] -translate-x-1/2 flex-col items-center gap-1.5">
-      {/* New Chat Preview */}
-      <AnimatePresence>
-        {previewChat && (
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 10, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.19, 1, 0.22, 1] }}
-            className="flex w-full items-center justify-between rounded-2xl bg-tw-card p-1.5 pl-3 backdrop-blur-sm"
-            style={{
-              boxShadow: "0 1px 1px #0000001A",
-            }}
-          >
-            <div className="flex min-w-0 flex-1 items-center gap-2">
-              <span className={previewChat.processing ? "animate-spin" : ""}>
-                <TripwireLogo size={16} fill="#B4B4B4" />
-              </span>
-              <span className="truncate text-[14px] text-[#EEEEEE]">
-                {previewChat.message}
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              type="button"
-              onClick={handleGoToChat}
-              className="ml-2 flex h-7 shrink-0 items-center rounded-[10px] bg-[#363639] px-3 text-[14px] text-[#EEEEEE] transition-colors hover:bg-[#404044]"
-            >
-              Go to chat
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Input bar */}
       <ChatComposer
         className="w-full shadow-[0_8px_24px_#00000040,0_1px_2px_#0000001a]"
         disabled={createChat.isPending}
@@ -375,8 +327,36 @@ function HomeFloatingBar() {
 
 function RecentChats() {
   const trpc = useTRPC()
+  const queryClient = useQueryClient()
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const chatsQuery = useQuery(trpc.chats.list.queryOptions({ limit: 5 }))
   const chats = chatsQuery.data ?? []
+
+  const listQueryKey = trpc.chats.list.queryKey({ limit: 5 })
+  const deleteChat = useMutation(
+    trpc.chats.delete.mutationOptions({
+      onMutate: async ({ chatId }) => {
+        setConfirmDeleteId(null)
+        await queryClient.cancelQueries({ queryKey: listQueryKey })
+        const previous = queryClient.getQueryData(listQueryKey)
+        await new Promise((r) => setTimeout(r, 300))
+        queryClient.setQueryData(
+          listQueryKey,
+          (old: typeof chats | undefined) =>
+            old ? old.filter((c) => c.id !== chatId) : [],
+        )
+        return { previous }
+      },
+      onError: (_err, _vars, ctx) => {
+        if (ctx?.previous) {
+          queryClient.setQueryData(listQueryKey, ctx.previous)
+        }
+      },
+      onSettled: () => {
+        queryClient.invalidateQueries({ queryKey: listQueryKey })
+      },
+    }),
+  )
 
   if (chats.length === 0) return null
 
@@ -386,24 +366,86 @@ function RecentChats() {
         Recent chats
       </h2>
       <div className="flex flex-col gap-0.5">
-        {chats.map((chat) => (
-          <Link
-            key={chat.id}
-            to="/chat/$chatId"
-            params={{ chatId: chat.id }}
-            className="group flex items-center justify-between rounded-lg px-2 py-2 transition-colors hover:bg-tw-hover"
-          >
-            <div className="flex min-w-0 items-center gap-2">
-              <TripwireLogo size={12} fill="#B4B4B4" />
-              <span className="truncate text-[13px] text-tw-text-secondary transition-colors group-hover:text-tw-text-primary">
-                {chat.title ?? "New chat"}
-              </span>
-            </div>
-            <span className="ml-3 shrink-0 text-[11px] text-tw-text-muted">
-              {formatRelativeTime(new Date(chat.updatedAt))}
-            </span>
-          </Link>
-        ))}
+        <AnimatePresence initial={false}>
+          {chats.map((chat) => {
+            const isConfirming = confirmDeleteId === chat.id
+
+            return (
+              <motion.div
+                key={chat.id}
+                layout
+                exit={{
+                  opacity: 0,
+                  height: 0,
+                  marginTop: 0,
+                  marginBottom: 0,
+                  overflow: "hidden",
+                }}
+                transition={{
+                  layout: { duration: 0.25, ease: [0.25, 1, 0.5, 1] },
+                  duration: 0.2,
+                  ease: [0.25, 1, 0.5, 1],
+                }}
+              >
+                <Link
+                  to="/chat/$chatId"
+                  params={{ chatId: chat.id }}
+                  className="group flex items-center justify-between rounded-lg px-2 py-2 transition-colors hover:bg-tw-hover"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <TripwireLogo size={12} fill="#B4B4B4" />
+                    <span className="truncate text-[13px] text-tw-text-secondary transition-colors group-hover:text-tw-text-primary">
+                      {chat.title ?? "New chat"}
+                    </span>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <span className="text-[11px] text-tw-text-muted">
+                      {formatRelativeTime(new Date(chat.updatedAt))}
+                    </span>
+                    {isConfirming ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            deleteChat.mutate({ chatId: chat.id })
+                          }}
+                          className="flex size-5 items-center justify-center rounded-md text-red-400 transition-all hover:bg-red-400/10 hover:text-red-300"
+                        >
+                          <SmallCheckStrokeIcon12 />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setConfirmDeleteId(null)
+                          }}
+                          className="flex size-5 items-center justify-center rounded-md text-tw-text-muted transition-all hover:bg-[#FAFAFA10] hover:text-tw-text-secondary"
+                        >
+                          <StrokeXIcon10Muted />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          setConfirmDeleteId(chat.id)
+                        }}
+                        className="flex size-5 items-center justify-center rounded-md opacity-0 transition-all group-hover:opacity-100 hover:bg-[#FAFAFA10]"
+                      >
+                        <StrokeXIcon10Muted />
+                      </button>
+                    )}
+                  </div>
+                </Link>
+              </motion.div>
+            )
+          })}
+        </AnimatePresence>
       </div>
     </div>
   )

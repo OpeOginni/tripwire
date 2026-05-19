@@ -11,6 +11,13 @@ import type { TRPCRouterRecord } from "@trpc/server"
 import { mergeMessagesPreservingResults } from "#/lib/chat-persistence"
 import { asConversationStoredMessages } from "#/lib/conversation-stored"
 import { extractChatTitle } from "#/lib/extract-chat-title"
+
+const TITLE_MODEL_FALLBACK = "moonshotai/kimi-k2.6"
+import { generateText, wrapLanguageModel } from "ai"
+import { devToolsMiddleware } from "@ai-sdk/devtools"
+import { createOpenRouter } from "@openrouter/ai-sdk-provider"
+import { trackCreditUsage } from "@tripwire/ai/credit-middleware"
+import { TITLE_SYSTEM_PROMPT } from "@tripwire/ai/prompt"
 import { parseCommand } from "#/lib/chat-commands"
 import {
   filterToolsForSurface,
@@ -198,6 +205,7 @@ export const chatsRouter = {
           },
           setWhere: eq(conversations.userId, ctx.user.id),
         })
+
     }),
 
   runSlashCommand: authedProcedure
@@ -322,12 +330,13 @@ export const chatsRouter = {
       }
 
       const nextMessages = [...existingMessages, ...appended]
+      const slashSyncTitle = extractChatTitle(nextMessages as UIMessage[])
       await upsertMessages(
         input.chatId,
         ctx.user.id,
         repoId,
         nextMessages,
-        extractChatTitle(nextMessages as UIMessage[])
+        slashSyncTitle,
       )
 
       return { messages: appended, replace: false }
@@ -372,13 +381,15 @@ export const chatsRouter = {
         ? existing.messages
         : []
       const nextMessages = [...existingMessages, ...append]
+      const appendSyncTitle = extractChatTitle(nextMessages as UIMessage[])
       await upsertMessages(
         input.chatId,
         ctx.user.id,
         existing?.repoId ?? input.repoId,
         nextMessages,
-        extractChatTitle(nextMessages as UIMessage[])
+        appendSyncTitle,
       )
+
     }),
 
   list: authedProcedure
@@ -405,6 +416,81 @@ export const chatsRouter = {
         .where(and(...conditions))
         .orderBy(desc(conversations.updatedAt))
         .limit(input.limit)
+    }),
+
+  generateTitle: authedProcedure
+    .input(
+      z.object({
+        chatId: z.string().uuid(),
+        messageText: z.string().min(1),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const preview = input.messageText.slice(0, 80)
+      console.log(`[summarize] chatId=${input.chatId} input="${preview}"`)
+
+      const apiKey = process.env.OPENROUTER_API_KEY
+      if (!apiKey) {
+        console.warn("[summarize] skipped — no OPENROUTER_API_KEY")
+        return { title: null }
+      }
+
+      const modelId =
+        process.env.TRIPWIRE_TITLE_MODEL ||
+        process.env.TRIPWIRE_AI_MODEL ||
+        TITLE_MODEL_FALLBACK
+
+      console.log(`[summarize] model=${modelId}`)
+
+      try {
+        const openrouter = createOpenRouter({
+          apiKey,
+          appName: "Tripwire",
+          compatibility: "strict",
+        })
+
+        const result = await generateText({
+          model: wrapLanguageModel({
+            model: openrouter.chat(modelId),
+            middleware: devToolsMiddleware(),
+          }),
+          system: TITLE_SYSTEM_PROMPT,
+          prompt: input.messageText.slice(0, 500),
+          maxOutputTokens: 60,
+        })
+
+        const raw = result.text
+        console.log(`[summarize] raw=${JSON.stringify(raw)}`)
+        const title = raw.trim().replace(/^["']|["']$/g, "").slice(0, 50)
+        if (!title) {
+          console.warn("[summarize] empty after cleanup, skipping")
+          return { title: null }
+        }
+
+        console.log(`[summarize] result="${title}" (${result.usage.inputTokens ?? 0}in/${result.usage.outputTokens ?? 0}out)`)
+
+        await db
+          .update(conversations)
+          .set({ title, updatedAt: new Date() })
+          .where(
+            and(
+              eq(conversations.id, input.chatId),
+              eq(conversations.userId, ctx.user.id),
+            ),
+          )
+
+        void trackCreditUsage({
+          customerId: ctx.user.id,
+          modelId,
+          usage: result.usage,
+        })
+
+        return { title }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        console.error(`[summarize] error="${msg}"`)
+        return { title: null }
+      }
     }),
 
   delete: authedProcedure

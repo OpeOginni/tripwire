@@ -84,6 +84,7 @@ export const env = createEnv({
     AUTUMN_SECRET_KEY: z.string().min(1).optional(),
     BETTER_AUTH_API_KEY: z.string().min(1).optional(),
     TRIPWIRE_AI_MODEL: z.string().min(1).optional(),
+    TRIPWIRE_TITLE_MODEL: z.string().min(1).optional(),
     NODE_ENV: z.enum(["development", "production", "test"]).optional(),
   },
   runtimeEnv: process.env,

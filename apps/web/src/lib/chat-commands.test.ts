@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest"
 import {
+  CHAT_COMMANDS,
   filterCommands,
   isSlashCommandDiscovery,
+  lookupSlashUsernameArgs,
   parseCommand,
 } from "./chat-commands"
 
@@ -28,5 +30,20 @@ describe("slash command helpers", () => {
     const p = parseCommand("/lookup @alice")
     expect(p?.command.command).toBe("/lookup")
     expect(p?.args).toBe("@alice")
+  })
+
+  it("lookupSlashUsernameArgs dedupes @handles in appearance order", () => {
+    expect(lookupSlashUsernameArgs("@ripgrim @HiHey @Ripgrim")).toEqual([
+      "ripgrim",
+      "HiHey",
+    ])
+  })
+
+  it("/lookup buildArgs resolves to lookup_users.usernames batch", () => {
+    const lookupCmd = CHAT_COMMANDS.find((c) => c.command === "/lookup")
+    expect(lookupCmd?.tool).toBe("lookup_users")
+    expect(lookupCmd?.buildArgs?.("@ripgrim @alice @Ripgrim ")).toEqual({
+      usernames: ["ripgrim", "alice"],
+    })
   })
 })

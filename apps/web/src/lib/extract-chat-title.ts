@@ -17,10 +17,15 @@ function textFromPart(part: unknown): string {
   return ""
 }
 
+/** Full text content from the first user message (untruncated). */
+export function extractFirstUserMessageText(messages: UIMessage[]): string {
+  const firstUser = messages.find((m) => m.role === "user")
+  if (!firstUser?.parts) return ""
+  return firstUser.parts.filter(isTextLikePart).map(textFromPart).join("")
+}
+
 /** Short title from first user message (persisted chat sidebar / metadata). */
 export function extractChatTitle(messages: UIMessage[]): string {
-  const firstUser = messages.find((m) => m.role === "user")
-  if (!firstUser?.parts) return "New chat"
-  const text = firstUser.parts.filter(isTextLikePart).map(textFromPart).join("")
+  const text = extractFirstUserMessageText(messages)
   return text.slice(0, 80) || "New chat"
 }

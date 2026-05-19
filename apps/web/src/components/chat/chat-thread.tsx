@@ -700,7 +700,7 @@ function ReasoningBlock({ content }: { content: string }) {
   if (!content.trim()) return null
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col">
       <Button
         variant="ghost"
         type="button"
@@ -710,7 +710,7 @@ function ReasoningBlock({ content }: { content: string }) {
         <ThoughtCollapsibleChevronIcon10
           className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
         />
-        <span>Thinking</span>
+        <span className="text-tw-text-secondary text-[13px]">Thinking</span>
       </Button>
       {isOpen && (
         <div className="border-l border-[#27272A] pl-4 text-[12px] leading-[18px] text-tw-text-muted/70">

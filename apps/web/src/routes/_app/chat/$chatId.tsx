@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { Button } from "#/components/ui/button"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState, useRef, useEffect } from "react"
 import { ChatComposer } from "#/components/chat/chat-composer"
 import { ChatThread } from "#/components/chat/chat-thread"
@@ -23,7 +23,15 @@ function ChatPage() {
   const { repo } = useWorkspace()
   const trpc = useTRPC()
 
+  const queryClient = useQueryClient()
   const convQuery = useQuery(trpc.chats.get.queryOptions({ chatId }))
+  const generateTitle = useMutation({
+    ...trpc.chats.generateTitle.mutationOptions(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: trpc.chats.get.queryKey({ chatId }) })
+      queryClient.invalidateQueries({ queryKey: trpc.chats.list.queryKey() })
+    },
+  })
 
   const [initialMessage] = useState(() => {
     const key = `tw.chat.init.${chatId}`
@@ -72,6 +80,9 @@ function ChatPage() {
     )
       return
     didSendInitial.current = true
+    if (initialMessage.trim().length > 10) {
+      generateTitle.mutate({ chatId, messageText: initialMessage.trim() })
+    }
     const parsed = parseCommand(initialMessage.trim())
     if (parsed) {
       void runCommand(parsed)

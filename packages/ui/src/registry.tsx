@@ -1,5 +1,6 @@
-import { defineRegistry, Renderer, JSONUIProvider } from "@json-render/react"
-import { useEffect, useRef, useState } from "react"
+import { defineRegistry } from "@json-render/react"
+import { useCallback, useEffect, useState } from "react"
+import useEmblaCarousel from "embla-carousel-react"
 import { Button } from "./button"
 import {
   RegistryActionErrorIcon,
@@ -8,8 +9,8 @@ import {
   RegistryListMinusIcon,
   RegistryStarIcon10,
 } from "./icons/registry-icons"
-import type { RenderSpec } from "./types"
 import { catalog, type UserCardSlideProps } from "./catalog"
+import { cn } from "./utils"
 
 /**
  * Component Registry for AI tool results
@@ -166,216 +167,180 @@ function InlineMarkdown({ text }: { text: string }) {
   return <>{parts}</>
 }
 
-function UserCardInner({ props }: { props: UserCardSlideProps }) {
-      const statusColor =
-        props.status === "blacklisted"
-          ? "text-tw-error"
-          : props.status === "whitelisted"
-            ? "text-tw-success"
-            : "text-tw-text-muted"
+function UserCardInner({
+  props,
+  surfaceClassName,
+}: {
+  props: UserCardSlideProps
+  surfaceClassName?: string
+}) {
+  const statusColor =
+    props.status === "blacklisted"
+      ? "text-tw-error"
+      : props.status === "whitelisted"
+        ? "text-tw-success"
+        : "text-tw-text-muted"
 
-      const statusLabel =
-        props.status === "blacklisted"
-          ? "Blacklisted"
-          : props.status === "whitelisted"
-            ? "Whitelisted"
-            : "Normal"
+  const statusLabel =
+    props.status === "blacklisted"
+      ? "Blacklisted"
+      : props.status === "whitelisted"
+        ? "Whitelisted"
+        : "Normal"
 
-      const scoreColor =
-        props.contributorScore >= 60
-          ? "text-tw-success"
-          : props.contributorScore >= 30
-            ? "text-tw-warning"
-            : "text-tw-error"
+  const scoreColor =
+    props.contributorScore >= 60
+      ? "text-tw-success"
+      : props.contributorScore >= 30
+        ? "text-tw-warning"
+        : "text-tw-error"
 
-      const ageDays = props.accountAgeDays
-      const ageText =
-        ageDays >= 365
-          ? `${Math.floor(ageDays / 365)}y ${Math.floor((ageDays % 365) / 30)}mo`
-          : ageDays >= 30
-            ? `${Math.floor(ageDays / 30)}mo`
-            : `${ageDays}d`
+  const ageDays = props.accountAgeDays
+  const ageText =
+    ageDays >= 365
+      ? `${Math.floor(ageDays / 365)}y ${Math.floor((ageDays % 365) / 30)}mo`
+      : ageDays >= 30
+        ? `${Math.floor(ageDays / 30)}mo`
+        : `${ageDays}d`
 
-      return (
-        <div className="flex flex-col gap-2.5 rounded-xl bg-tw-card p-3">
-          {/* Header: avatar, name, score */}
-          <div className="flex items-center gap-2.5">
-            {props.avatar && (
-              <a href={`/users/${props.username}`}>
-                <img
-                  src={props.avatar}
-                  alt=""
-                  className="size-10 rounded-full transition-opacity hover:opacity-80"
-                />
-              </a>
-            )}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <a
-                  href={`/users/${props.username}`}
-                  className="text-[14px] font-medium text-tw-text-primary transition-colors hover:text-tw-accent"
-                >
-                  @{props.username}
-                </a>
-                <span className={`text-[11px] font-medium ${statusColor}`}>
-                  {statusLabel}
-                </span>
-              </div>
-              {(props.name || props.company) && (
-                <div className="truncate text-[12px] text-tw-text-muted">
-                  {props.name}
-                  {props.company ? ` · ${props.company}` : ""}
-                </div>
-              )}
-            </div>
-            <div className="flex shrink-0 flex-col items-center">
-              <span
-                className={`text-[18px] font-semibold tabular-nums ${scoreColor}`}
-              >
-                {props.contributorScore}
-              </span>
-              <span className="text-[9px] tracking-wider text-tw-text-muted uppercase">
-                score
-              </span>
-            </div>
+  const hasEvents =
+    props.blockedCount > 0 || props.allowedCount > 0 || props.nearMissCount > 0
+
+  return (
+    <div
+      className={cn(
+        "flex min-w-0 flex-col gap-2.5 rounded-xl bg-tw-card p-3 justify-between",
+        surfaceClassName,
+      )}
+    >
+      <div className="flex items-center gap-2.5">
+        {props.avatar && (
+          <a href={`/users/${props.username}`}>
+            <img
+              src={props.avatar}
+              alt=""
+              className="size-9 rounded-full transition-opacity hover:opacity-80"
+            />
+          </a>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <a
+              href={`/users/${props.username}`}
+              className="truncate text-[13px] font-medium text-tw-text-primary transition-colors hover:text-tw-accent"
+            >
+              @{props.username}
+            </a>
+            <span className={`shrink-0 text-[10px] font-medium ${statusColor}`}>
+              {statusLabel}
+            </span>
           </div>
-
-          {/* Bio */}
-          {props.bio && (
-            <div className="text-[12px] leading-relaxed text-tw-text-secondary">
-              {props.bio}
+          {props.name && (
+            <div className="truncate text-[11px] text-tw-text-muted">
+              {props.name}
             </div>
           )}
-
-          <p className="text-[11px] leading-relaxed text-tw-text-secondary">
-            <span className="text-tw-text-muted">Age </span>
-            {ageText}
-            <span className="text-tw-text-muted"> · Repos </span>
-            {fmtCompact(props.publicRepos)}
-            <span className="text-tw-text-muted"> · Followers </span>
-            {fmtCompact(props.followers)}
-            <span className="text-tw-text-muted"> · Following </span>
-            {fmtCompact(props.following)}
-            <span className="text-tw-text-muted"> · Contributions (1y) </span>
-            {fmtCompact(props.contributionsLastYear)}
-          </p>
-          <p className="text-[11px] leading-relaxed text-tw-text-secondary">
-            <span className="text-tw-text-muted">Breakdown </span>
-            {fmtCompact(props.publicNonForkRepos)} non-fork public
-            <span className="text-tw-text-muted"> · </span>
-            {fmtCompact(props.publicForkRepos)} forks
-            <span className="text-tw-text-muted"> · </span>
-            {fmtCompact(props.prsToThisRepo)} PRs here
-            <span className="text-tw-text-muted"> · Closed PRs </span>
-            {fmtCompact(props.closedPrs)} ({fmtCompact(props.mergedPrs)} merged,{" "}
-            {fmtCompact(props.closedUnmergedPrs)} not merged)
-          </p>
-
-          {(props.blockedCount > 0 ||
-            props.allowedCount > 0 ||
-            props.nearMissCount > 0) && (
-            <p className="text-[11px] leading-snug text-tw-text-secondary">
-              <span className="text-tw-text-muted">Events </span>
-              {[
-                props.allowedCount > 0 ? (
-                  <span key="tw-ev-all" className="text-tw-success">
-                    {fmtCompact(props.allowedCount)} allowed
-                  </span>
-                ) : null,
-                props.blockedCount > 0 ? (
-                  <span key="tw-ev-bl" className="text-tw-error">
-                    {fmtCompact(props.blockedCount)} blocked
-                  </span>
-                ) : null,
-                props.nearMissCount > 0 ? (
-                  <span key="tw-ev-nm" className="text-tw-warning">
-                    {fmtCompact(props.nearMissCount)} near-miss
-                  </span>
-                ) : null,
-              ]
-                .filter(Boolean)
-                .flatMap((el, idx) =>
-                  idx === 0
-                    ? [el]
-                    : [
-                        <span key={`tw-ev-dot-${idx}`} className="text-tw-text-muted">
-                          {" "}
-                          ·{" "}
-                        </span>,
-                        el,
-                      ],
-                )}
-            </p>
-          )}
-
-          {/* Badges + Achievements */}
-          {(props.badges.length > 0 || props.achievements.length > 0) && (
-            <div className="flex flex-wrap gap-1">
-              {props.badges.map((badge) => (
-                <span
-                  key={badge}
-                  className="rounded-full bg-[#FAFAFA08] px-1.5 py-0.5 text-[10px] text-tw-text-muted"
-                >
-                  {badge}
-                </span>
-              ))}
-              {props.achievements.map((a) => (
-                <span
-                  key={a.type}
-                  className="rounded-full bg-[#FAFAFA08] px-1.5 py-0.5 text-[10px] text-tw-text-secondary"
-                >
-                  {a.type}
-                  {a.tier > 1 ? ` x${a.tier}` : ""}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Orgs */}
-          {props.orgs.length > 0 && (
-            <div className="flex items-center gap-1.5">
-              <span className="shrink-0 text-[10px] text-tw-text-muted">
-                Orgs
-              </span>
-              {props.orgs.slice(0, 6).map((org) => (
-                <img
-                  key={org.login}
-                  src={org.avatarUrl}
-                  alt={org.login}
-                  title={org.login}
-                  className="size-5 rounded-sm"
-                />
-              ))}
-              {props.orgs.length > 6 && (
-                <span className="text-[10px] text-tw-text-muted">
-                  +{props.orgs.length - 6}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Sponsors + signals */}
-          <div className="flex flex-wrap gap-2 text-[10px] text-tw-text-muted">
-            {props.sponsorsCount > 0 && (
-              <span>
-                {fmtCompact(props.sponsorsCount)} sponsor
-                {props.sponsorsCount !== 1 ? "s" : ""}
-              </span>
-            )}
-            {props.sponsoringCount > 0 && (
-              <span>sponsoring {fmtCompact(props.sponsoringCount)}</span>
-            )}
-            {props.hasTwoFactor && <span className="text-tw-success">2FA</span>}
-            {props.hasProfileReadme && <span>README</span>}
-          </div>
-
-          {/* Score breakdown affordance */}
-          <ScoreBreakdownButton
-            username={props.username}
-            repoId={props.repoId}
-          />
         </div>
-      )
+        <div className="flex shrink-0 flex-col items-center">
+          <span
+            className={`text-[18px] font-semibold leading-none tabular-nums ${scoreColor}`}
+          >
+            {props.contributorScore}
+          </span>
+          <span className="text-[9px] tracking-wider text-tw-text-muted uppercase">
+            score
+          </span>
+        </div>
+      </div>
+
+      {props.bio && (
+        <div className="line-clamp-2 text-[11px] leading-relaxed text-tw-text-secondary">
+          {props.bio}
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px]">
+        <div className="flex items-center justify-between">
+          <span className="text-tw-text-muted">Age</span>
+          <span className="text-tw-text-primary tabular-nums">{ageText}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-tw-text-muted">Repos</span>
+          <span className="text-tw-text-primary tabular-nums">{fmtCompact(props.publicRepos)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-tw-text-muted">Followers</span>
+          <span className="text-tw-text-primary tabular-nums">{fmtCompact(props.followers)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-tw-text-muted">1y contrib</span>
+          <span className="text-tw-text-primary tabular-nums">{fmtCompact(props.contributionsLastYear)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-tw-text-muted">Merged PRs</span>
+          <span className="text-tw-text-primary tabular-nums">{fmtCompact(props.mergedPrs)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-tw-text-muted">Closed</span>
+          <span className="text-tw-text-primary tabular-nums">{fmtCompact(props.closedUnmergedPrs)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-tw-text-muted">PRs here</span>
+          <span className="text-tw-text-primary tabular-nums">{fmtCompact(props.prsToThisRepo)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-tw-text-muted">Forks</span>
+          <span className="text-tw-text-primary tabular-nums">{fmtCompact(props.publicForkRepos)}</span>
+        </div>
+      </div>
+
+      {hasEvents && (
+        <div className="flex items-center gap-2 text-[11px]">
+          {props.allowedCount > 0 && (
+            <span className="text-tw-success tabular-nums">
+              {fmtCompact(props.allowedCount)} allowed
+            </span>
+          )}
+          {props.blockedCount > 0 && (
+            <span className="text-tw-error tabular-nums">
+              {fmtCompact(props.blockedCount)} blocked
+            </span>
+          )}
+          {props.nearMissCount > 0 && (
+            <span className="text-tw-warning tabular-nums">
+              {fmtCompact(props.nearMissCount)} near-miss
+            </span>
+          )}
+        </div>
+      )}
+
+      {props.orgs.length > 0 && (
+        <div className="flex items-center gap-1.5">
+          {props.orgs.slice(0, 5).map((org) => (
+            <img
+              key={org.login}
+              src={org.avatarUrl}
+              alt={org.login}
+              title={org.login}
+              className="size-4 rounded-sm"
+            />
+          ))}
+          {props.orgs.length > 5 && (
+            <span className="text-[9px] text-tw-text-muted">
+              +{props.orgs.length - 5}
+            </span>
+          )}
+        </div>
+      )}
+
+      {props.company && (
+        <div className="text-[10px] text-tw-text-muted">{props.company}</div>
+      )}
+
+      {/* TODO: rework badges/achievements/signals into a better format */}
+      {/* TODO: explore new form factors for score breakdown (inline, expandable row, etc.) */}
+    </div>
+  )
 }
 
 export const { registry } = defineRegistry(catalog, {
@@ -384,80 +349,90 @@ export const { registry } = defineRegistry(catalog, {
     UserCard: ({ props }) => <UserCardInner props={props} />,
 
     LookupUsersCarousel: ({ props }) => {
-      const [active, setActive] = useState(0)
-      const scrollerRef = useRef<HTMLDivElement>(null)
       const n = props.slides.length
+      const [emblaRef, emblaApi] = useEmblaCarousel({
+        loop: false,
+        align: "start",
+      })
+      const [active, setActive] = useState(0)
+
+      const onSelect = useCallback(() => {
+        if (!emblaApi) return
+        setActive(emblaApi.selectedScrollSnap())
+      }, [emblaApi])
 
       useEffect(() => {
-        const node = scrollerRef.current?.children.item(active)
-        node?.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-          inline: "center",
-        })
-      }, [active])
+        if (!emblaApi) return
+        onSelect()
+        emblaApi.on("select", onSelect)
+        return () => { emblaApi.off("select", onSelect) }
+      }, [emblaApi, onSelect])
 
       return (
-        <div className="flex flex-col gap-2 rounded-xl bg-tw-card p-3">
+        <div className="flex min-w-0 flex-col gap-1.5">
           {props.title ? (
             <div className="text-[11px] tracking-wide text-tw-text-muted uppercase">
               {props.title}
             </div>
           ) : null}
-          <div className="relative min-w-0">
-            <div
-              ref={scrollerRef}
-              className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [scrollbar-width:thin]"
-            >
-              {props.slides.map((slide) => (
-                <div
-                  key={slide.username}
-                  className="w-[min(100%,28rem)] shrink-0 snap-center"
-                >
-                  <UserCardInner props={slide} />
-                </div>
-              ))}
-            </div>
-            {n > 1 ? (
-              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="h-7 px-2 text-[11px] text-tw-text-secondary"
-                    onClick={() => setActive((i) => (i <= 0 ? n - 1 : i - 1))}
+
+          <div className="overflow-hidden">
+            <div ref={emblaRef} className="-mr-[12%]">
+              <div className="flex items-stretch gap-3">
+                {props.slides.map((slide) => (
+                  <div
+                    key={slide.username}
+                    className="min-w-0 shrink-0 grow-0 basis-[88%]"
                   >
-                    ← Prev
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="h-7 px-2 text-[11px] text-tw-text-secondary"
-                    onClick={() => setActive((i) => (i >= n - 1 ? 0 : i + 1))}
-                  >
-                    Next →
-                  </Button>
-                </div>
-                <div className="flex flex-wrap items-center justify-center gap-1">
-                  {props.slides.map((slide, i) => (
-                    <Button
-                      key={`dot-${slide.username}`}
-                      type="button"
-                      variant="ghost"
-                      aria-label={`Show @${slide.username}`}
-                      aria-current={i === active ? "true" : undefined}
-                      className={`h-6 min-h-6 w-6 min-w-6 p-0 rounded-full ${
-                        i === active
-                          ? "bg-tw-accent"
-                          : "bg-tw-text-muted/35 hover:bg-tw-text-muted"
-                      }`}
-                      onClick={() => setActive(i)}
+                    <UserCardInner
+                      props={slide}
+                      surfaceClassName="h-full"
                     />
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            ) : null}
+            </div>
           </div>
+
+          {n > 1 && (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                className="rounded-md px-1.5 py-1 text-[11px] text-tw-text-secondary transition-colors hover:bg-tw-hover"
+                onClick={() => emblaApi?.scrollPrev()}
+              >
+                ←
+              </button>
+              <div className="flex flex-1 gap-0.5">
+                {props.slides.map((slide, i) => (
+                  <button
+                    key={slide.username}
+                    type="button"
+                    aria-label={`@${slide.username}`}
+                    className="group min-h-[14px] min-w-[8px] flex-1 py-1"
+                    onClick={() => emblaApi?.scrollTo(i)}
+                  >
+                    <span
+                      className={cn(
+                        "block h-[2px] w-full rounded-full transition-colors",
+                        i === active
+                          ? "bg-tw-text-secondary"
+                          : "bg-white/[0.10] group-hover:bg-white/20",
+                      )}
+                    />
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="rounded-md px-1.5 py-1 text-[11px] text-tw-text-secondary transition-colors hover:bg-tw-hover"
+                onClick={() => emblaApi?.scrollNext()}
+              >
+                →
+              </button>
+            </div>
+          )}
+
           {props.errors != null && props.errors.length > 0 ? (
             <div className="flex flex-col gap-1 rounded-lg border border-tw-error/20 bg-[#F56D5D0D] p-2 text-[11px]">
               {props.errors.map((e) => (
@@ -675,7 +650,7 @@ export const { registry } = defineRegistry(catalog, {
     // ─── Score Breakdown ──────────────────────────────────────────
     ScoreBreakdown: ({ props }) => {
       return (
-        <div className="flex flex-col gap-3 rounded-lg border border-tw-border/35 bg-tw-inner/30 p-2.5">
+        <div className="flex flex-col gap-3 rounded-lg bg-tw-card p-2.5">
           <div className="flex items-baseline justify-between">
             <div className="flex items-center gap-1.5 text-[12px] tracking-wider text-tw-text-muted">
               @{props.username}
@@ -1697,110 +1672,9 @@ export const { registry } = defineRegistry(catalog, {
 })
 
 // Fetches the score_breakdown spec via /api/tools/run (bypasses the LLM
-// — no token cost) and renders it inline beneath the card. Keeps the last
-// fetched spec when hidden so toggling does not refetch.
-
-type ScoreBreakdownUI = {
-  spec: RenderSpec | null
-  expanded: boolean
-  loading: boolean
-  error: string | null
-}
-
-function ScoreBreakdownButton({
-  username,
-  repoId,
-}: {
-  username: string
-  /** When set (e.g. from lookup_user), scopes /api/tools/run to this repo. */
-  repoId?: string
-}) {
-  const [ui, setUi] = useState<ScoreBreakdownUI>({
-    spec: null,
-    expanded: false,
-    loading: false,
-    error: null,
-  })
-
-  async function load() {
-    setUi((s) => ({ ...s, loading: true, error: null }))
-    try {
-      const res = await fetch("/api/tools/run", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "score_breakdown",
-          args: { username },
-          ...(repoId ? { repoId } : {}),
-        }),
-      })
-      const body = (await res.json()) as
-        | { ok: true; spec: RenderSpec }
-        | { ok: false; error: string }
-      if (!res.ok || !body.ok) {
-        const message = !body.ok ? body.error : `HTTP ${res.status}`
-        setUi((s) => ({ ...s, loading: false, error: message }))
-        return
-      }
-      setUi({
-        spec: body.spec,
-        expanded: true,
-        loading: false,
-        error: null,
-      })
-    } catch (e) {
-      setUi((s) => ({
-        ...s,
-        loading: false,
-        error: e instanceof Error ? e.message : String(e),
-      }))
-    }
-  }
-
-  function showCached() {
-    setUi((s) => ({ ...s, expanded: true }))
-  }
-
-  function hide() {
-    setUi((s) => ({ ...s, expanded: false }))
-  }
-
-  if (ui.expanded && ui.spec) {
-    return (
-      <div className="mt-2 flex flex-col gap-2 border-t border-tw-border/25 pt-2">
-        <JSONUIProvider registry={registry}>
-          <Renderer spec={ui.spec} registry={registry} />
-        </JSONUIProvider>
-        <Button
-          variant="ghost"
-          type="button"
-          onClick={hide}
-          className="self-start text-[10px] text-tw-text-muted transition-colors hover:text-tw-text-secondary"
-        >
-          Hide breakdown
-        </Button>
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex items-center gap-2 pt-0.5">
-      <Button
-        variant="ghost"
-        size="sm"
-        type="button"
-        onClick={() => {
-          if (ui.spec) showCached()
-          else void load()
-        }}
-        disabled={ui.loading}
-        className="rounded-md bg-[#FAFAFA08] px-1 text-[10px] text-tw-text-secondary transition-colors disabled:opacity-50"
-      >
-        {ui.loading ? "Loading…" : "Score breakdown"}
-      </Button>
-      {ui.error && (
-        <span className="text-[11px] text-tw-error">{ui.error}</span>
-      )}
-    </div>
-  )
-}
+// TODO: explore new form factors for score breakdown (inline expandable row,
+// slide-out panel, etc.) before re-enabling this component.
+//
+// Previously: ScoreBreakdownButton fetched /api/tools/run with
+// { name: "score_breakdown", args: { username }, repoId } and rendered the
+// result spec inline beneath the card with show/hide toggling.

@@ -145,7 +145,6 @@ export function useSlashCommandRunner(adapter?: CommandRunnerAdapter) {
   const appendSlashMessages = useMutation(
     trpc.chats.appendSlashMessages.mutationOptions()
   )
-
   const appendPersistedSlashMessage = useCallback(
     async (message: UIMessage) => {
       await appendSlashMessages.mutateAsync({
@@ -290,6 +289,7 @@ export function useSlashCommandRunner(adapter?: CommandRunnerAdapter) {
             appendOptimisticMessage(message)
           }
         }
+
         return { kind: "done" }
       } catch (error) {
         if (loading && command.kind === "read" && command.tool && command.buildArgs) {

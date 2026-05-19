@@ -58,6 +58,33 @@ function normalizeUsername(raw: string): string {
   return raw.trim().replace(/^@/, "")
 }
 
+/**
+ * Extract GitHub `@login` mentions in order (case-insensitive de-dupe on lower).
+ */
+export function extractGithubMentionTokens(raw: string): string[] {
+  const re = /@([a-z\d](?:[a-z\d-]*[a-z\d])?)/gi
+  const out: string[] = []
+  const seen = new Set<string>()
+  let m: RegExpExecArray | null
+  while ((m = re.exec(raw)) !== null) {
+    const login = m[1]
+    const key = login.toLowerCase()
+    if (!login || seen.has(key)) continue
+    seen.add(key)
+    out.push(login)
+  }
+  return out
+}
+
+export function lookupSlashUsernameArgs(raw: string): string[] {
+  const fromAt = extractGithubMentionTokens(raw)
+  if (fromAt.length > 0) {
+    return fromAt.slice(0, 24)
+  }
+  const single = normalizeUsername(raw)
+  return single ? [single] : []
+}
+
 export const CHAT_COMMANDS: readonly SlashCommand[] = [
   {
     command: "/help",
@@ -105,11 +132,11 @@ export const CHAT_COMMANDS: readonly SlashCommand[] = [
     command: "/lookup",
     label: "Lookup user",
     description: "Investigate a contributor's profile, score, and activity",
-    example: "/lookup @username",
+    example: "/lookup @alice @bob",
     kind: "read",
     requiresArg: true,
-    tool: "lookup_user",
-    buildArgs: (raw) => ({ username: normalizeUsername(raw) }),
+    tool: "lookup_users",
+    buildArgs: (raw) => ({ usernames: lookupSlashUsernameArgs(raw) }),
   },
   {
     command: "/check",

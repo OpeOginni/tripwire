@@ -20,6 +20,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@ai-sdk/devtools": "^0.0.18",
     "@ai-sdk/react": "^3.0.186",
     "@base-ui/react": "^1.3.0",
     "@better-auth/infra": "^0.2.5",
@@ -72,6 +73,7 @@
     "clsx": "^2.1.1",
     "drizzle-kit": "^0.31.9",
     "drizzle-orm": "^0.45.1",
+    "embla-carousel-react": "^8.6.0",
     "evlog": "^2.17.0",
     "framer-motion": "^12.38.0",
     "geist": "^1.7.0",
@@ -100,6 +102,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.2.4",
     "@rsbuild/core": "latest",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/devtools-event-client": "latest",
@@ -118,7 +121,6 @@
     "tsx": "^4.21.0",
     "typescript": "^5.7.2",
     "vite": "^7.3.1",
-    "vitest": "^3.0.5",
-    "@biomejs/biome": "2.2.4"
+    "vitest": "^3.0.5"
   }
 }

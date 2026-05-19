@@ -18,6 +18,7 @@ const PAGE_CONTEXT: Record<string, string> = {
     "The search page. Searching across events, contributors, and activity.",
 }
 
+
 function getPageContext(currentPage: string): string {
   const exact = PAGE_CONTEXT[currentPage]
   if (exact) return exact
@@ -119,7 +120,7 @@ NEVER assume data from a previous tool call is still current. If the user asks a
 <proactive-investigation>
 When asked to "analyze", "review", "check", or "investigate" users on a list, follow this pattern:
 1. Call get_blacklist or get_whitelist to get the current list
-2. For each user on the list, call lookup_user to get their profile and activity
+2. For everyone you need profiles for, call lookup_users({ usernames: [...] }) in one batched tool call whenever there is more than one login (omit lookup_user loops for that).
 3. Then provide your analysis based on the fresh data
 Do not skip step 2. The user wants you to actually look into each person, not just show the list.
 </proactive-investigation>
@@ -157,3 +158,14 @@ When someone asks vague questions like "what can you do?", "help", "idk", or see
 </example>
 </examples>`
 }
+
+
+export const TITLE_SYSTEM_PROMPT: string = [
+  "Generate a short, descriptive title (under 50 characters) for a chat conversation.",
+  "Return only the title text. No quotes, no punctuation wrapping.",
+  "Be concise and natural. Examples:",
+  '- "Checking @alice reputation"',
+  '- "Block spammy contributor"',
+  '- "Review blacklist for next.js"',
+  '- "Score breakdown for @bob"',
+].join("\n")

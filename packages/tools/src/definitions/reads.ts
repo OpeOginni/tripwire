@@ -487,6 +487,101 @@ async function gatherUserSignals(
   }
 }
 
+async function lookupUserExecute(
+  username: string,
+  userId: string,
+  repoId: string
+): Promise<{
+  ghUser: GitHubUser
+  score: ReturnType<typeof computeContributorScore>
+  badges: string[]
+  status: "normal" | "blacklisted" | "whitelisted"
+  repoId: string
+  counts: {
+    blockedCount: number
+    allowedCount: number
+    nearMissCount: number
+    publicNonForkRepos: number
+    publicForkRepos: number
+    prsToThisRepo: number
+    mergedPrs: number
+    closedPrs: number
+    closedUnmergedPrs: number
+    accountAgeDays: number
+  }
+  profile: {
+    profileReadme: boolean
+    graphqlData: ScoreInput["graphql"]
+    achievements: ScoreInput["achievements"]
+  }
+}> {
+  const signals = await gatherUserSignals(username, userId, repoId)
+  const score = computeContributorScore(signals.scoreInput)
+  return {
+    ghUser: signals.ghUser,
+    score,
+    badges: signals.badges,
+    status: signals.status,
+    repoId,
+    counts: {
+      blockedCount: signals.scoreInput.blockedCount,
+      allowedCount: signals.scoreInput.allowedCount,
+      nearMissCount: signals.scoreInput.nearMissCount,
+      publicNonForkRepos: signals.scoreInput.publicNonForkRepoCount,
+      publicForkRepos: signals.scoreInput.publicForkRepoCount,
+      prsToThisRepo: signals.scoreInput.contextRepoPrCount,
+      mergedPrs: signals.scoreInput.mergedPrCount,
+      closedPrs: signals.scoreInput.closedPrCount,
+      closedUnmergedPrs: signals.scoreInput.closedUnmergedPrCount,
+      accountAgeDays: signals.scoreInput.accountAgeDays,
+    },
+    profile: {
+      profileReadme: signals.scoreInput.hasProfileReadme,
+      graphqlData: signals.scoreInput.graphql,
+      achievements: signals.scoreInput.achievements,
+    },
+  }
+}
+
+function lookupOutputToSlideRecord(output: Awaited<ReturnType<typeof lookupUserExecute>>) {
+  return {
+    username: output.ghUser.login,
+    repoId: output.repoId,
+    name: output.ghUser.name ?? null,
+    avatar: output.ghUser.avatar_url ?? null,
+    bio: output.ghUser.bio ?? null,
+    company: output.ghUser.company ?? null,
+    location: output.ghUser.location ?? null,
+    publicRepos: output.ghUser.public_repos ?? 0,
+    publicNonForkRepos: output.counts.publicNonForkRepos,
+    publicForkRepos: output.counts.publicForkRepos,
+    prsToThisRepo: output.counts.prsToThisRepo,
+    followers: output.ghUser.followers ?? 0,
+    following: output.ghUser.following ?? 0,
+    accountAgeDays: output.counts.accountAgeDays,
+    mergedPrs: output.counts.mergedPrs,
+    closedPrs: output.counts.closedPrs,
+    closedUnmergedPrs: output.counts.closedUnmergedPrs,
+    hasProfileReadme: output.profile.profileReadme,
+    hasTwoFactor: output.ghUser.two_factor_authentication ?? false,
+    blockedCount: output.counts.blockedCount,
+    allowedCount: output.counts.allowedCount,
+    nearMissCount: output.counts.nearMissCount,
+    orgs: output.profile.graphqlData?.organizations ?? [],
+    sponsorsCount: output.profile.graphqlData?.sponsorsCount ?? 0,
+    sponsoringCount: output.profile.graphqlData?.sponsoringCount ?? 0,
+    achievements: output.profile.achievements,
+    badges: output.badges,
+    contributionsLastYear: output.profile.graphqlData?.contributionsLastYear ?? 0,
+    contributorScore: output.score.total,
+    status: output.status,
+  }
+}
+
+function lookupOutputToSlideProps(output: Awaited<ReturnType<typeof lookupUserExecute>>) {
+  return makeSpec("UserCard", lookupOutputToSlideRecord(output))
+}
+
 const lookupUser = defineTool({
   name: "lookup_user",
   description:
@@ -495,69 +590,83 @@ const lookupUser = defineTool({
   inputSchema: z.object({ username: z.string().min(1) }),
   handler: async ({ username }, ctx) => {
     const repoId = requireRepoId(ctx)
-    const signals = await gatherUserSignals(username, ctx.userId, repoId)
-    const score = computeContributorScore(signals.scoreInput)
-    return {
-      ghUser: signals.ghUser,
-      score,
-      badges: signals.badges,
-      status: signals.status,
-      repoId,
-      counts: {
-        blockedCount: signals.scoreInput.blockedCount,
-        allowedCount: signals.scoreInput.allowedCount,
-        nearMissCount: signals.scoreInput.nearMissCount,
-        publicNonForkRepos: signals.scoreInput.publicNonForkRepoCount,
-        publicForkRepos: signals.scoreInput.publicForkRepoCount,
-        prsToThisRepo: signals.scoreInput.contextRepoPrCount,
-        mergedPrs: signals.scoreInput.mergedPrCount,
-        closedPrs: signals.scoreInput.closedPrCount,
-        closedUnmergedPrs: signals.scoreInput.closedUnmergedPrCount,
-        accountAgeDays: signals.scoreInput.accountAgeDays,
-      },
-      profile: {
-        profileReadme: signals.scoreInput.hasProfileReadme,
-        graphqlData: signals.scoreInput.graphql,
-        achievements: signals.scoreInput.achievements,
-      },
+    return lookupUserExecute(username, ctx.userId, repoId)
+  },
+  chatRender: (output) => lookupOutputToSlideProps(output),
+})
+const lookupUsers = defineTool({
+  name: "lookup_users",
+  description:
+    "Batch look-up of GitHub users for the current repo (profiles, Tripwire history, scores). Use when multiple logins appear together (slash /lookup @a @b or a list from the user).",
+  directInvokable: true,
+  inputSchema: z.object({
+    usernames: z.array(z.string().min(1)).min(1).max(24),
+  }),
+  handler: async ({ usernames }, ctx) => {
+    const repoId = requireRepoId(ctx)
+    const ordered: string[] = []
+    const seen = new Set<string>()
+    for (const raw of usernames) {
+      const u = raw.trim()
+      if (!u) continue
+      const key = u.toLowerCase()
+      if (seen.has(key)) continue
+      seen.add(key)
+      ordered.push(u)
     }
+
+    if (ordered.length === 0) {
+      throw createError({
+        code: "lookup.empty_usernames",
+        status: 400,
+        message: "No GitHub usernames to look up.",
+      })
+    }
+
+    const rows = await Promise.all(
+      ordered.map(async (login) => {
+        try {
+          const data = await lookupUserExecute(login, ctx.userId, repoId)
+          return { ok: true as const, data }
+        } catch (err: unknown) {
+          const msg =
+            err instanceof Error ? err.message : String(err ?? "Lookup failed.")
+          return { ok: false as const, login, message: msg }
+        }
+      })
+    )
+
+    const successes = rows.flatMap((r) => (r.ok ? [r.data] : []))
+    const errors = rows.flatMap((r) =>
+      r.ok ? [] : [{ username: r.login, message: r.message }]
+    )
+
+    if (successes.length === 0) {
+      throw createError({
+        code: "lookup.batch_all_failed",
+        status: 404,
+        message: errors.map((e) => `@${e.username}: ${e.message}`).join(" · "),
+        internal: { errors },
+      })
+    }
+
+    return { successes, errors }
   },
   chatRender: (output) => {
-    const { ghUser, counts, profile, score, badges, status, repoId } = output
-    return makeSpec("UserCard", {
-      username: ghUser.login,
-      repoId,
-      name: ghUser.name ?? null,
-      avatar: ghUser.avatar_url ?? null,
-      bio: ghUser.bio ?? null,
-      company: ghUser.company ?? null,
-      location: ghUser.location ?? null,
-      publicRepos: ghUser.public_repos ?? 0,
-      publicNonForkRepos: counts.publicNonForkRepos,
-      publicForkRepos: counts.publicForkRepos,
-      prsToThisRepo: counts.prsToThisRepo,
-      followers: ghUser.followers ?? 0,
-      following: ghUser.following ?? 0,
-      accountAgeDays: counts.accountAgeDays,
-      mergedPrs: counts.mergedPrs,
-      closedPrs: counts.closedPrs,
-      closedUnmergedPrs: counts.closedUnmergedPrs,
-      hasProfileReadme: profile.profileReadme,
-      hasTwoFactor: ghUser.two_factor_authentication ?? false,
-      blockedCount: counts.blockedCount,
-      allowedCount: counts.allowedCount,
-      nearMissCount: counts.nearMissCount,
-      orgs: profile.graphqlData?.organizations ?? [],
-      sponsorsCount: profile.graphqlData?.sponsorsCount ?? 0,
-      sponsoringCount: profile.graphqlData?.sponsoringCount ?? 0,
-      achievements: profile.achievements,
-      badges,
-      contributionsLastYear: profile.graphqlData?.contributionsLastYear ?? 0,
-      contributorScore: score.total,
-      status,
+    const slides = output.successes.map(lookupOutputToSlideRecord)
+    if (slides.length === 1 && output.errors.length === 0) {
+      return lookupOutputToSlideProps(output.successes[0]!)
+    }
+    return makeSpec("LookupUsersCarousel", {
+      title: `Contributor lookup (${slides.length}${
+        output.errors.length > 0 ? `, ${output.errors.length} failed` : ""
+      })`,
+      slides,
+      ...(output.errors.length > 0 ? { errors: output.errors } : {}),
     })
   },
 })
+
 const CATEGORY_META: Record<
   ScoreCategory,
   { label: string; max: number | null }
@@ -1347,6 +1456,7 @@ export const readTools: AnyToolDefinition[] = [
   listEvents,
   getEvent,
   lookupUser,
+  lookupUsers,
   scoreBreakdown,
   getReputationLeaderboard,
   listWorkflows,

@@ -460,7 +460,7 @@ function SidebarRecentChats() {
                 type="button"
                 disabled={loadingId !== null}
                 onClick={() => handleLoadChat(chat.id)}
-                className="flex min-w-0 flex-1 items-center gap-2 disabled:opacity-50"
+                className="flex min-w-0 flex-1 items-center gap-2 disabled:opacity-50 justify-start"
               >
                 {isLoading ? (
                   <UnicodeSpinner
