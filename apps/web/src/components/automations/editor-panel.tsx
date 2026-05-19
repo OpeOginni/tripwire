@@ -1,4 +1,5 @@
 import type { Node } from "@xyflow/react";
+import { Button } from "#/components/ui/button";
 import { getNodeEntry, type ParamDefinition } from "@tripwire/core/workflow-registry";
 import type { WorkflowNodeType } from "@tripwire/db";
 import { getNodeStyle } from "#/lib/node-styles";
@@ -33,7 +34,7 @@ export function EditorPanel({ selectedNodeId, nodes, onNodeDataChange }: EditorP
 	return (
 		<div className="flex flex-col h-full overflow-auto">
 			<div className="flex items-center gap-3 px-4 py-4 border-b" style={{ borderColor: style.border }}>
-				<div className="flex items-center justify-center size-8 rounded-lg" style={{ backgroundColor: style.bg }}>
+				<div className="flex items-center justify-center size-8 rounded-lg">
 					<span style={{ color: style.accent }}>{icon}</span>
 				</div>
 				<div className="flex flex-col min-w-0">
@@ -187,17 +188,17 @@ function ParamField({ param, value, onChange }: ParamFieldProps) {
 				<label className="text-[11px] text-tw-text-tertiary font-medium">
 					{param.name}
 				</label>
-				<button
-					type="button"
+				<Button
+					variant="ghost"
 					onClick={() => onChange(!resolvedValue)}
-					className={`h-5 w-9 rounded-full transition-colors ${
-						resolvedValue ? "bg-tw-accent" : "bg-tw-border"
+					className={`h-5 w-9 rounded-full p-0 border-0 ${
+						resolvedValue ? "bg-tw-accent hover:bg-tw-accent/90" : "bg-tw-border hover:bg-tw-border/90"
 					}`}
 				>
 					<div className={`h-3.5 w-3.5 rounded-full bg-white transition-transform ${
 						resolvedValue ? "translate-x-4" : "translate-x-0.5"
 					}`} />
-				</button>
+				</Button>
 			</div>
 		);
 	}

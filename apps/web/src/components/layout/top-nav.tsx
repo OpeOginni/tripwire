@@ -1,4 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Button } from "#/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import {
 	HomeNavIcon,
@@ -196,7 +197,7 @@ export function TopNav({ askOpen, onToggleAsk }: TopNavProps) {
 			<div className="flex items-center gap-1">
 				<OrgRepoSwitcher />
 				{showAskButton && onToggleAsk ? (
-					<button
+					<Button variant="ghost"
 						onClick={onToggleAsk}
 						type="button"
 						className={`flex items-center justify-center gap-1.5 h-8 rounded-lg px-2.5 transition-colors ${
@@ -208,7 +209,7 @@ export function TopNav({ askOpen, onToggleAsk }: TopNavProps) {
 					>
 						<TripwireSparkIcon className="text-tw-text-secondary" />
 						<span className="text-[13px] leading-none font-medium">Ask</span>
-					</button>
+					</Button>
 				) : null}
 			</div>
 		</div>

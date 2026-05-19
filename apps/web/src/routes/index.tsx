@@ -14,7 +14,7 @@ import {
 	TRIPWIRE_EYE_PUPIL_PATH,
 	TRIPWIRE_EYE_PUPIL_VIEWBOX,
 	TRIPWIRE_EYE_PUPIL_RECT_IN_OUTER,
-} from "#/components/landing/tripwire-eye";
+} from "#/components/icons/tripwire-eye";
 
 const EYE_CURSOR_MASK = {
 	viewBox: TRIPWIRE_EYE_OUTER_VIEWBOX,

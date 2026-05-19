@@ -51,6 +51,48 @@ const workflowDefinitionSchema = z.object({
 	edges: z.array(z.any()),
 });
 
+const VALID_UNICODE_SCRIPTS = new Set([
+	"Latn", "Cyrl", "Grek", "Arab", "Hebr", "Deva", "Beng", "Guru", "Gujr",
+	"Orya", "Taml", "Telu", "Knda", "Mlym", "Sinh", "Thai", "Laoo", "Tibt",
+	"Mymr", "Geor", "Hang", "Hani", "Kana", "Hira", "Bopo", "Ethi",
+]);
+
+const VALID_ISO_CODES = new Set([
+	"en", "es", "fr", "de", "pt", "zh", "ja", "ko", "ru", "ar", "hi",
+	"it", "nl", "pl", "sv", "da", "no", "fi", "cs", "tr", "th", "vi",
+	"id", "ms", "uk", "ro", "hu", "el", "he", "bn", "ta", "te", "mr",
+	"ur", "fa", "sw", "tl", "ca", "eu", "gl",
+]);
+
+function isValidLanguageCode(code: string): boolean {
+	if (VALID_ISO_CODES.has(code)) return true;
+	if (VALID_UNICODE_SCRIPTS.has(code)) return true;
+	if (/^[A-Z][a-z]{3}$/.test(code)) return true;
+	if (/^[a-z]{2,3}$/.test(code)) return true;
+	return false;
+}
+
+function validateWorkflowDefinition(def: { nodes: unknown[]; edges: unknown[] }) {
+	const nodes = def.nodes as Array<{ type?: string; data?: Record<string, unknown> }>;
+
+	const triggerCount = nodes.filter((n) => n.type === "trigger").length;
+	if (triggerCount > 1) {
+		throw new Error("A workflow can only have one trigger");
+	}
+
+	for (const node of nodes) {
+		if (node.type === "rule" && node.data?.rule === "language") {
+			const lang = node.data?.language as string | undefined;
+			const langCode = node.data?.languageCode as string | undefined;
+			if (lang === "custom" && langCode) {
+				if (!isValidLanguageCode(langCode)) {
+					throw new Error(`Invalid language code: "${langCode}". Use an ISO 639-1 code (e.g. en, fr) or Unicode script name (e.g. Cyrl, Latn).`);
+				}
+			}
+		}
+	}
+}
+
 export const workflowsRouter = {
 	list: authedProcedure
 		.input(z.object({ repoId: z.string().uuid() }))
@@ -81,13 +123,7 @@ export const workflowsRouter = {
 		}))
 		.mutation(async ({ ctx, input }) => {
 			await assertRepoAccess(ctx.user.id, input.repoId);
-
-			const triggerCount = (input.definition.nodes as Array<{ type?: string }>).filter(
-				(n) => n.type === "trigger",
-			).length;
-			if (triggerCount > 1) {
-				throw new Error("A workflow can only have one trigger");
-			}
+			validateWorkflowDefinition(input.definition);
 
 			const [wf] = await db
 				.insert(workflows)
@@ -115,12 +151,7 @@ export const workflowsRouter = {
 			await assertRepoAccess(ctx.user.id, existing.repoId);
 
 			if (input.definition) {
-				const triggerCount = (input.definition.nodes as Array<{ type?: string }>).filter(
-					(n) => n.type === "trigger",
-				).length;
-				if (triggerCount > 1) {
-					throw new Error("A workflow can only have one trigger");
-				}
+				validateWorkflowDefinition(input.definition);
 			}
 
 			const [wf] = await db

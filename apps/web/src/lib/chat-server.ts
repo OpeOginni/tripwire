@@ -277,7 +277,8 @@ function stripIncompleteAssistantToolsBeforeUserTurn(messages: any[]): void {
 		cur.parts = cur.parts.filter((part: any) => {
 			if (!isAiSdkToolPart(part)) return true;
 			const s = part.state;
-			return s === "output-available" || s === "output-error" || s === "output-denied";
+			return s === "output-available" || s === "output-error" || s === "output-denied"
+				|| s === "approval-requested" || s === "approval-responded";
 		});
 	}
 }

@@ -41,7 +41,7 @@ function buildDefaultData(type: string, subtype: string): Record<string, unknown
     case "action":
       return { action: subtype };
     case "delay":
-      return { duration: "5m" };
+      return { durationValue: 5, durationUnit: "m" };
     case "transform":
       return { transform: subtype };
     default:

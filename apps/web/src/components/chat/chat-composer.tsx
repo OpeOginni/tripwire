@@ -6,6 +6,7 @@ import {
 	type KeyboardEvent,
 	type ReactNode,
 } from "react";
+import { Button } from "#/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { CloseIcon } from "#/components/icons/close-icon";
 import { MicIcon, PlusIcon } from "#/components/icons/nav-icons";
@@ -225,7 +226,7 @@ export function ChatComposer({
 							`${suggestionListId}-${user.status}-${user.username.toLowerCase()}`;
 
 						return (
-							<button
+							<Button variant="ghost"
 								type="button"
 								id={optionId}
 								role="option"
@@ -249,7 +250,7 @@ export function ChatComposer({
 								>
 									{user.status}
 								</span>
-							</button>
+							</Button>
 						);
 					})}
 				</div>
@@ -263,14 +264,14 @@ export function ChatComposer({
 					>
 						<MentionAvatar user={user} size="size-4" />
 						<span className="max-w-[120px] truncate">@{user.username}</span>
-						<button
+						<Button variant="ghost"
 							type="button"
 							onClick={() => removeMention(user.username)}
 							className="flex size-4 items-center justify-center rounded-md text-current opacity-70 transition-opacity hover:opacity-100"
 							aria-label={`Remove @${user.username}`}
 						>
 							<CloseIcon className="size-2.5" />
-						</button>
+						</Button>
 					</span>
 				))}
 
@@ -296,7 +297,7 @@ export function ChatComposer({
 					aria-activedescendant={activeSuggestionId}
 					className="h-9 min-w-[120px] flex-1 rounded-[10px] bg-tw-inner px-2.5 text-[14px] text-tw-text-primary outline-none placeholder:text-tw-text-tertiary disabled:opacity-50"
 				/>
-				<button
+				<Button variant="ghost"
 					type="button"
 					aria-label="Voice input unavailable"
 					title="Voice input unavailable"
@@ -304,27 +305,27 @@ export function ChatComposer({
 					className="flex size-9 items-center justify-center rounded-[10px] text-tw-text-tertiary transition-colors hover:text-tw-text-secondary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:text-tw-text-tertiary"
 				>
 					<MicIcon />
-				</button>
+				</Button>
 			</div>
 			<div className="flex w-full items-center justify-between pt-1.5">
 				<div className="flex items-center gap-1">
-					<button
+					<Button variant="ghost"
 						type="button"
 						className="flex h-7 items-center gap-1 rounded-lg px-2 text-tw-text-tertiary transition-colors hover:bg-tw-hover hover:text-tw-text-secondary"
 					>
 						<PlusIcon />
 						<span className="text-[12px]">Add files</span>
-					</button>
-					<button
+					</Button>
+					<Button variant="ghost"
 						type="button"
 						className="flex h-7 items-center gap-1 rounded-lg px-2 text-tw-text-tertiary transition-colors hover:bg-tw-hover hover:text-tw-text-secondary"
 					>
 						<PlusIcon />
 						<span className="text-[12px]">Add context</span>
 						{contextActionAdornment}
-					</button>
+					</Button>
 				</div>
-				<button
+				<Button variant="ghost"
 					type="button"
 					onClick={sendMessage}
 					disabled={!composedMessage.trim() || disabled}
@@ -341,7 +342,7 @@ export function ChatComposer({
 							{"\u21B5"}
 						</span>
 					</span>
-				</button>
+				</Button>
 			</div>
 		</div>
 	);

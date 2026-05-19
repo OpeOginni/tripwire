@@ -5,7 +5,7 @@ You are a professional software engineer. All code must follow best practices: a
 ## Global Standards
 
 - **Comments**: Use JSDoc for exported functions/types only. No ASCII divider comments (`// ─── Section ───`). No decorative multi-line doc comments.
-- **Styling**: Never update global styles. Keep all styling local to components.
+- **Styling**: Never use local classnames on componenets unless you really need to. Keep all styling to global tokens.
 - **Package Manager**: Use `pnpm`, not `npm` or `yarn`.
 - **Server/Client Boundary**: Never import `@tripwire/db` or `@tripwire/core` barrels in client code. Use subpath imports (`@tripwire/db/schema/rule-meta`, `@tripwire/core/rules/signal-registry`, `@tripwire/core/workflow-registry`) for pure-data modules. `import type` is always safe.
 - **No Effects for Prop Sync**: Never use `useEffect` to sync props to state. Use `key` props to remount, derived state, or controlled components.
@@ -18,6 +18,9 @@ You are a professional software engineer. All code must follow best practices: a
 2. Composition Over Complexity: Break down complex logic into smaller pieces
 3. Type Safety First: TypeScript interfaces for all props, state, return types
 4. No Helpers in Components: Put utility functions in `apps/web/src/lib/` or `packages/*/src/`, never inside component or tool files
+5. Never use raw html components (<button>, <input>, <select><option></select>, etc). Always use their react counterparts defined in `apps/web/src/components/ui` (shared primitives such as `Button` live in `@tripwire/ui` and are re-exported under `#/components/ui` for the app).
+If you're unable to find the right component, explore the coss ui directory. `https://coss.com/ui/docs`
+6. Never define a raw vector (`<svg`) outside `apps/web/src/components/icons/` (for the app) or `packages/ui/src/icons/` (for shared UI). Import icon components from there and follow the same patterns as existing icons.
 
 ### Root Structure
 

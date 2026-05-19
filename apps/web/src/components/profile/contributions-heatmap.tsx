@@ -1,6 +1,10 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ContributionsData } from "@tripwire/github";
+import {
+	ContributionsHeatmapCanvas,
+	type HeatmapCell,
+} from "#/components/icons/contributions-heatmap-canvas";
 
 const COLOR_BANDS = [
 	{ min: 1, max: 5, color: "#1a3a2a" },
@@ -27,47 +31,6 @@ function colorForCount(count: number): string {
 	}
 	return COLOR_BANDS[COLOR_BANDS.length - 1].color;
 }
-
-interface HeatmapCell {
-	key: string;
-	x: number;
-	y: number;
-	fill: string;
-	count: number;
-	date: string;
-}
-
-const HeatmapSvg = memo(function HeatmapSvg({
-	width,
-	height,
-	cells,
-	onMouseMove,
-	onMouseLeave,
-	svgRef,
-}: {
-	width: number;
-	height: number;
-	cells: HeatmapCell[];
-	onMouseMove: (e: React.MouseEvent<SVGSVGElement>) => void;
-	onMouseLeave: () => void;
-	svgRef: React.RefObject<SVGSVGElement | null>;
-}) {
-	return (
-		<svg
-			ref={svgRef}
-			width={width}
-			height={height}
-			viewBox={`0 0 ${width} ${height}`}
-			className="block shrink-0"
-			onMouseMove={onMouseMove}
-			onMouseLeave={onMouseLeave}
-		>
-			{cells.map((c) => (
-				<rect key={c.key} x={c.x} y={c.y} width={12} height={12} rx={3} ry={3} fill={c.fill} />
-			))}
-		</svg>
-	);
-});
 
 interface HoveredCell {
 	x: number;
@@ -200,7 +163,7 @@ export function ContributionsHeatmap({
 										</span>
 									))}
 								</div>
-								<HeatmapSvg
+								<ContributionsHeatmapCanvas
 									svgRef={svgRef}
 									width={width}
 									height={height}

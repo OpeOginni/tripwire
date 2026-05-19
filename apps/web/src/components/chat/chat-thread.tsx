@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { Button } from "#/components/ui/button";
 import { UnicodeSpinner, useRandomThinkingVariant } from "#/components/ui/unicode-spinner";
 import { useThinkingPhrase } from '@tripwire/ai/components';
 import type { UIMessage, MessagePart, ToolResultPart, RenderSpec } from "#/types/chat";
@@ -25,6 +26,15 @@ import {
 } from "#/lib/chat-format";
 import { getBriefActionText, renderInlineText } from "#/components/chat/chips";
 import { TripwireLogo } from "#/components/icons/tripwire-logo";
+import {
+	QuotaCreditsLockIcon20,
+	ChatErrorAlertIcon14,
+	ToolStepErrorRingIcon12,
+	ToolStepSuccessRingIcon12,
+	ThoughtCollapsibleChevronIcon10,
+	BatchResultSuccessRingIcon14,
+	BatchResultErrorRingIcon14,
+} from "#/components/icons/chat-thread-status-icons";
 
 interface ChatThreadProps {
 	messages?: UIMessage[];
@@ -74,7 +84,7 @@ export function ChatThread(props: ChatThreadProps = {}) {
 		<div className="flex flex-col gap-3 pt-1 pb-2">
 			{messages.map((msg, msgIdx) => (
 				<div
-					key={msg.id || `msg-${msgIdx}`}
+					key={`${msg.id || "msg"}-${msgIdx}`}
 					className="transition-all duration-300 ease-out"
 				>
 					<ChatMessage
@@ -108,10 +118,7 @@ function QuotaExhaustedState() {
 	return (
 		<div className="flex flex-col items-center justify-center py-8 text-center">
 			<div className="size-12 flex items-center justify-center mb-3 rounded-full bg-[#FAFAFA08]">
-				<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-					<rect x="4" y="9" width="12" height="9" rx="1.5" stroke="#9F9FA9" strokeWidth="1.5" />
-					<path d="M7 9V6a3 3 0 1 1 6 0v3" stroke="#9F9FA9" strokeWidth="1.5" strokeLinecap="round" />
-				</svg>
+				<QuotaCreditsLockIcon20 />
 			</div>
 			<p className="text-[14px] text-tw-text-secondary mb-1">Out of credits</p>
 			<p className="text-[12px] text-tw-text-muted max-w-[220px]">
@@ -135,11 +142,7 @@ function ErrorMessage({ message }: { message: string }) {
 				<div className="rounded-xl bg-[#F56D5D0D] border border-tw-error/10 p-3">
 					<div className="flex items-start gap-2">
 						<div className="shrink-0 mt-0.5">
-							<svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-tw-error">
-								<circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
-								<path d="M7 4v3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-								<circle cx="7" cy="9.5" r="0.75" fill="currentColor" />
-							</svg>
+							<ChatErrorAlertIcon14 className="text-tw-error" />
 						</div>
 						<div className="flex-1 min-w-0">
 							<div className="text-[13px] font-medium text-tw-error leading-tight">{title}</div>
@@ -494,27 +497,21 @@ function ToolStep({ toolName, args, state }: ToolStepProps) {
 
 	return (
 		<div className="flex flex-col">
-			<button
+			<Button variant="ghost"
 				type="button"
 				onClick={() => hasArgs && setIsOpen(!isOpen)}
 				className={`flex items-center gap-2 py-0.5 text-[12px] text-tw-text-muted ${hasArgs ? "cursor-pointer hover:text-[#E0E0E0]" : "cursor-default"} transition-colors`}
 			>
 				{isError ? (
-					<svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0 text-red-400/60">
-						<circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" />
-						<path d="M4.5 4.5L7.5 7.5M7.5 4.5L4.5 7.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-					</svg>
+					<ToolStepErrorRingIcon12 className="shrink-0 text-red-400/60" />
 				) : isComplete ? (
-					<svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0 text-tw-success/60">
-						<circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" />
-						<path d="M3.5 6L5 7.5L8.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-					</svg>
+					<ToolStepSuccessRingIcon12 className="shrink-0 text-tw-success/60" />
 				) : (
 					<UnicodeSpinner variant="dots" className="text-[12px] text-tw-text-secondary" label={displayName} />
 				)}
 				<span className={isComplete ? "" : "text-tw-text-secondary"}>{displayName}</span>
 				{!isOpen && argsStr && <span className="text-tw-text-tertiary truncate max-w-[140px]">{argsStr}</span>}
-			</button>
+			</Button>
 			{isOpen && hasArgs && (
 				<div className="ml-5 mt-0.5 mb-1 text-[11px] flex flex-col gap-0.5">
 					{Object.entries(args).map(([key, val]) => (
@@ -538,22 +535,14 @@ function ReasoningBlock({ content }: { content: string }) {
 
 	return (
 		<div className="flex flex-col gap-1">
-			<button
+			<Button variant="ghost"
 				type="button"
 				onClick={() => setIsOpen(!isOpen)}
 				className="flex items-center gap-1.5 text-[12px] text-tw-text-muted hover:text-tw-text-secondary transition-colors py-0.5"
 			>
-				<svg
-					width="10"
-					height="10"
-					viewBox="0 0 10 10"
-					fill="none"
-					className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
-				>
-					<path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-				</svg>
+				<ThoughtCollapsibleChevronIcon10 className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
 				<span>Thought</span>
-			</button>
+			</Button>
 			{isOpen && (
 				<div className="pl-4 border-l border-[#27272A] text-[12px] leading-[18px] text-tw-text-muted/70">
 					<Streamdown
@@ -586,20 +575,20 @@ function ToolApprovalCard({ toolName, args, onApprove, onDeny }: ToolApprovalCar
 		<div className="rounded-xl bg-tw-card p-3 flex flex-col gap-2">
 			<div className="text-[13px] text-tw-text-primary">{renderInlineText(text)}</div>
 			<div className="flex items-center gap-2">
-				<button
+				<Button variant="ghost"
 					type="button"
 					onClick={onApprove}
 					className="h-7 px-3 rounded-lg bg-tw-text-primary text-[#0D0D0F] text-[12px] font-medium hover:opacity-90 transition-opacity"
 				>
 					{yesLabel}
-				</button>
-				<button
+				</Button>
+				<Button variant="ghost"
 					type="button"
 					onClick={onDeny}
 					className="h-7 px-3 rounded-lg bg-tw-hover text-tw-text-secondary text-[12px] font-medium hover:text-tw-text-primary transition-colors"
 				>
 					{noLabel}
-				</button>
+				</Button>
 			</div>
 		</div>
 	);
@@ -633,20 +622,20 @@ function BatchApprovalCard({ approvals, onApproveAll, onDenyAll }: BatchApproval
 				</div>
 				{consequence && <div className="text-[12px] text-tw-text-muted">{consequence}</div>}
 				<div className="flex items-center gap-2 mt-1">
-					<button
+					<Button variant="ghost"
 						type="button"
 						onClick={onApproveAll}
 						className="h-7 px-3 rounded-lg bg-tw-text-primary text-[#0D0D0F] text-[12px] font-medium hover:opacity-90 transition-opacity"
 					>
 						Yes, {buttonLabel}
-					</button>
-					<button
+					</Button>
+					<Button variant="ghost"
 						type="button"
 						onClick={onDenyAll}
 						className="h-7 px-3 rounded-lg bg-tw-hover text-tw-text-secondary text-[12px] font-medium hover:text-tw-text-primary transition-colors"
 					>
 						Cancel
-					</button>
+					</Button>
 				</div>
 			</div>
 		);
@@ -664,20 +653,20 @@ function BatchApprovalCard({ approvals, onApproveAll, onDenyAll }: BatchApproval
 				))}
 			</div>
 			<div className="flex items-center gap-2 mt-1">
-				<button
+				<Button variant="ghost"
 					type="button"
 					onClick={onApproveAll}
 					className="h-7 px-3 rounded-lg bg-tw-text-primary text-[#0D0D0F] text-[12px] font-medium hover:opacity-90 transition-opacity"
 				>
 					Approve all
-				</button>
-				<button
+				</Button>
+				<Button variant="ghost"
 					type="button"
 					onClick={onDenyAll}
 					className="h-7 px-3 rounded-lg bg-tw-hover text-tw-text-secondary text-[12px] font-medium hover:text-tw-text-primary transition-colors"
 				>
 					Cancel
-				</button>
+				</Button>
 			</div>
 		</div>
 	);
@@ -736,15 +725,9 @@ function CombinedActionResult({ results }: { results: ActionResultData[] }) {
 	return (
 		<div className={`rounded-xl border p-3 flex items-center gap-2 ${bgColor}`}>
 			{allSuccess ? (
-				<svg width="14" height="14" viewBox="0 0 14 14" fill="none" className={iconColor}>
-					<circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
-					<path d="M4 7L6 9L10 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-				</svg>
+				<BatchResultSuccessRingIcon14 className={iconColor} />
 			) : (
-				<svg width="14" height="14" viewBox="0 0 14 14" fill="none" className={iconColor}>
-					<circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
-					<path d="M5 5L9 9M9 5L5 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-				</svg>
+				<BatchResultErrorRingIcon14 className={iconColor} />
 			)}
 			<span className="text-[13px] text-tw-text-primary">{renderInlineText(message)}</span>
 		</div>

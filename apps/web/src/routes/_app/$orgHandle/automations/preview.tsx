@@ -1,10 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Button } from "#/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useWorkspace } from "#/lib/workspace-context";
 import { useTRPC } from "#/integrations/trpc/react";
 import { WorkflowEditor } from "#/components/automations/workflow-editor";
 import { templates } from "#/components/automations/templates";
 import type { Node, Edge } from "@xyflow/react";
+import { ChevronLeftStrokeIcon14 } from "#/components/icons/app-chrome-icons";
 
 export const Route = createFileRoute("/_app/$orgHandle/automations/preview")({
 	component: TemplatePreviewPage,
@@ -68,17 +70,14 @@ function TemplatePreviewPage() {
 	return (
 		<div className="h-full flex flex-col">
 			<div className="flex items-center gap-3 px-4 py-3 border-b border-tw-border shrink-0">
-				<button
+				<Button variant="ghost"
 					type="button"
 					onClick={() => navigate({ to: `/${orgHandle}/automations` })}
 					className="flex items-center justify-center size-7 rounded-lg hover:bg-tw-hover transition-colors"
 				>
-					<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-						<path d="M9 3L5 7L9 11" stroke="#9F9FA9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-					</svg>
-				</button>
+					<ChevronLeftStrokeIcon14 className="text-[#9F9FA9]" />
+				</Button>
 				<div className="flex items-center gap-2.5 min-w-0 flex-1">
-					<span className="w-2 h-2 rounded-full shrink-0 bg-tw-accent" />
 					<div className="flex flex-col min-w-0">
 						<span className="text-[14px] font-medium text-tw-text-primary truncate">{template.name}</span>
 						<span className="text-[11px] text-tw-text-muted truncate">{template.description}</span>

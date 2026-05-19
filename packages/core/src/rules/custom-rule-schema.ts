@@ -30,7 +30,7 @@ export const customRuleDefinitionSchema = z
 	})
 	.refine(
 		(def) => def.nodes.some((n) => n.id === def.outputNodeId),
-		{ message: "outputNodeId must reference an existing node" },
+		{ message: "The output node was removed or disconnected. Right-click a condition node and set it as the output." },
 	);
 
 const customRuleActionSchema = z.enum(["block", "warn", "log", "threshold"]);

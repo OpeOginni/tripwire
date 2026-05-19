@@ -17,6 +17,15 @@ import {
 	useRulesWorkspace,
 } from "#/components/rules/rules-workspace-context";
 import { RulesWorkspaceSkeleton } from "#/components/rules/rules-workspace-skeleton";
+import {
+	RulesNavMarketplaceIcon14,
+	RulesNavInstalledCheckIcon14,
+	RulesNavPeopleIcon14,
+	RulesNavRequestsIcon14,
+	RulesNavFilesIcon14,
+	RulesNavWorkflowsZapIcon14,
+	RulesSearchLoupeMutedIcon14,
+} from "#/components/icons/rules-workspace-nav-icons";
 
 function navClass(active: boolean): string {
 	return `flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[13px] transition-colors ${
@@ -109,57 +118,24 @@ function RulesWorkspaceLayoutInner() {
 
 					<nav className="flex flex-col gap-0.5 -mx-1.5">
 						<Link to={tabLink("marketplace")} className={navClass(v.activeTab === "marketplace")}>
-							<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-								<path
-									d="M2 4v7h10V4M1 4h12l-1-2H2L1 4ZM5 7h4"
-									stroke="currentColor"
-									strokeWidth="1.2"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								/>
-							</svg>
+							<RulesNavMarketplaceIcon14 />
 							Marketplace
 						</Link>
 						<Link to={tabLink("installed")} className={navClassRow(v.activeTab === "installed")}>
 							<span className="flex items-center gap-2">
-								<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-									<circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2" />
-									<path
-										d="M4.5 7.2l1.8 1.8 3.2-3.6"
-										stroke="currentColor"
-										strokeWidth="1.2"
-										strokeLinecap="round"
-										strokeLinejoin="round"
-									/>
-								</svg>
+								<RulesNavInstalledCheckIcon14 />
 								Installed
 							</span>
 							<span className="text-[11px] text-[#FFFFFF59] tabular-nums">{v.activeCount}</span>
 						</Link>
-						<Link to={v.customHubPath} className={navClassRow(v.pathname.includes("/rules/custom"))}>
-							<span className="flex items-center gap-2">
-								<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-									<path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-									<rect x="2.5" y="2.5" width="9" height="9" rx="2" stroke="currentColor" strokeWidth="1.2" />
-								</svg>
-								Custom
-							</span>
-							{v.customRuleCount > 0 && (
-								<span className="text-[11px] text-[#FFFFFF59] tabular-nums">{v.customRuleCount}</span>
-							)}
-						</Link>
+						{/* Custom hub link (disabled): use RulesNavCustomRuleIcon14 + tabLink("custom") when re-enabling */}
 						<Link to={tabLink("people")} className={navClass(v.activeTab === "people")}>
-							<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-								<circle cx="7" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.2" />
-								<path d="M2.5 12c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-							</svg>
+							<RulesNavPeopleIcon14 />
 							People
 						</Link>
 						<Link to={tabLink("requests")} className={navClassRow(v.activeTab === "requests")}>
 							<span className="flex items-center gap-2">
-								<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-									<path d="M3 3h8v6H6.5L4 11V9H3V3Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
-								</svg>
+								<RulesNavRequestsIcon14 />
 								Requests
 							</span>
 							{(v.pendingRequestCount + v.pendingVouchCount) > 0 && (
@@ -169,25 +145,12 @@ function RulesWorkspaceLayoutInner() {
 							)}
 						</Link>
 						<Link to={tabLink("files")} className={navClass(v.activeTab === "files")}>
-							<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-								<path
-									d="M3 1.5h5l3 3v8h-8v-11Z"
-									stroke="currentColor"
-									strokeWidth="1.2"
-									strokeLinejoin="round"
-								/>
-								<path d="M8 1.5v3h3" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
-							</svg>
+							<RulesNavFilesIcon14 />
 							Files
 						</Link>
 						<Link to={tabLink("workflows")} className={navClassRow(v.activeTab === "workflows")}>
 							<span className="flex items-center gap-2">
-								<svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-									<path
-										d="M8.5 1.5a1 1 0 0 0-1.8-.6L2.6 7.4a1 1 0 0 0 .8 1.6h3.1l-1 5.5a1 1 0 0 0 1.8.6l4.1-6.5a1 1 0 0 0-.8-1.6H7.5l1-5.5Z"
-										fill="currentColor"
-									/>
-								</svg>
+								<RulesNavWorkflowsZapIcon14 />
 								Workflows
 							</span>
 						</Link>
@@ -197,10 +160,7 @@ function RulesWorkspaceLayoutInner() {
 				<div className="flex flex-col gap-4 min-w-0">
 					{v.activeTab !== "people" && (
 						<div className="flex items-center gap-2 h-9 rounded-[10px] bg-tw-card px-2.5">
-							<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-								<circle cx="6" cy="6" r="4.5" stroke="#6E6E6E" strokeWidth="1.2" />
-								<path d="M9.5 9.5L12.5 12.5" stroke="#6E6E6E" strokeWidth="1.2" strokeLinecap="round" />
-							</svg>
+							<RulesSearchLoupeMutedIcon14 />
 							<input
 								value={v.searchQuery}
 								onChange={(e) => v.setSearchQuery(e.target.value)}

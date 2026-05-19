@@ -91,13 +91,13 @@ function DevelopersSettingsPage() {
 								{copied ? "Copied" : "Copy"}
 							</Button>
 						</div>
-						<button
+						<Button variant="ghost"
 							type="button"
 							onClick={() => setRevealedKey(null)}
 							className="self-start text-[11px] text-tw-text-tertiary hover:text-tw-text-secondary mt-1 cursor-pointer"
 						>
 							Dismiss
-						</button>
+						</Button>
 					</div>
 				)}
 

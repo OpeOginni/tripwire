@@ -15,7 +15,18 @@ interface ToastErrorOptions {
  */
 export function toastFromError(err: unknown, opts: ToastErrorOptions = {}): void {
 	const parsed = parseError(err);
-	const title = opts.title ?? parsed.message ?? opts.fallbackTitle ?? "Something went wrong";
+
+	let zodMessage: string | null = null;
+	if (parsed.message) {
+		try {
+			const arr = JSON.parse(parsed.message);
+			if (Array.isArray(arr) && arr.length > 0 && arr[0].message) {
+				zodMessage = arr.map((e: { message?: string }) => e.message).filter(Boolean).join(". ");
+			}
+		} catch { /* not JSON */ }
+	}
+
+	const title = opts.title ?? zodMessage ?? parsed.message ?? opts.fallbackTitle ?? "Something went wrong";
 	const descParts: string[] = [];
 	if (parsed.why) descParts.push(parsed.why);
 	if (parsed.fix && parsed.fix !== parsed.why) descParts.push(parsed.fix);

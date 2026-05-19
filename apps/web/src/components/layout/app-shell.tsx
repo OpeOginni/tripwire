@@ -28,6 +28,13 @@ import {
 import { AI_MODEL_ID, getContextWindow } from "@tripwire/ai/model-config";
 import type { UIMessage } from "#/types/chat";
 import { GithubIcon } from "#/components/icons/github";
+import { TripwireAskGlyphIcon18 } from "#/components/icons/tripwire-ask-glyph-icon";
+import {
+	PlusStrokeIcon14,
+	StrokeXIcon14,
+	ChatBubbleOutlineIcon12,
+	StrokeXIcon10Muted,
+} from "#/components/icons/app-chrome-icons";
 import { TripwireLogo } from "../icons/tripwire-logo";
 import { routes } from "#/lib/routes";
 
@@ -147,16 +154,7 @@ function AppShellInner() {
 
 							<div className="flex items-center justify-between pl-3 pr-2 pt-3 pb-2 shrink-0 relative z-10">
 								<div className="flex items-center gap-2 min-w-0">
-									<svg
-										viewBox="0 0 610.08 589.32"
-										width="18"
-										height="18"
-										fill="#B4B4B4"
-										preserveAspectRatio="none"
-									>
-										<path d="M609.85 266.25c-2.93-37.11-34.21-66.57-72.05-66.57H74.66c-42.93-.01-77.81 35.17-74.43 77.96 2.93 37.11 34.21 66.58 72.05 66.58h80.92c19.88 0 37.14-13.09 43.16-32.03 14.65-46.07 57.76-79.45 108.69-79.45s94.03 33.38 108.69 79.45c6.02 18.94 23.29 32.03 43.16 32.03h78.53c42.93 0 77.81-35.17 74.44-77.97ZM305.04 409.68c-37.82 0-71.03-19.68-90-49.33v138.97c0 49.5 40.5 90 90 90s90-40.5 90-90V360.35c-18.98 29.66-52.18 49.33-90 49.33Z" />
-										<circle cx="305.04" cy="90.37" r="90.37" />
-									</svg>
+									<TripwireAskGlyphIcon18 />
 									<span className="text-[14px] leading-none text-tw-text-primary font-medium">
 										Ask Tripwire
 									</span>
@@ -183,35 +181,21 @@ function AppShellInner() {
 											</ContextContent>
 									</Context>
 									<CreditBalancePill />
-									<button
+									<Button variant="ghost"
 										onClick={newChat}
 										type="button"
 										className="flex items-center justify-center size-6 rounded-md hover:bg-tw-hover transition-colors"
 										title="New chat"
 									>
-										<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-											<path
-												d="M7 3v8M3 7h8"
-												stroke="#9F9FA9"
-												strokeWidth="1.5"
-												strokeLinecap="round"
-											/>
-										</svg>
-									</button>
-									<button
+										<PlusStrokeIcon14 className="text-[#9F9FA9]" />
+									</Button>
+									<Button variant="ghost"
 										onClick={close}
 										type="button"
 										className="flex items-center justify-center size-6 rounded-md hover:bg-tw-hover transition-colors"
 									>
-										<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-											<path
-												d="M11 3L3 11M3 3L11 11"
-												stroke="#9F9FA9"
-												strokeWidth="1.5"
-												strokeLinecap="round"
-											/>
-										</svg>
-									</button>
+										<StrokeXIcon14 className="text-[#9F9FA9]" />
+									</Button>
 								</div>
 							</div>
 
@@ -350,20 +334,20 @@ function SidebarRecentChats() {
 								<span className="text-[12px] text-tw-text-secondary flex-1 truncate">
 									Delete this chat?
 								</span>
-								<button
+								<Button variant="ghost"
 									type="button"
 									onClick={() => deleteChat.mutate({ chatId: chat.id })}
 									className="text-[11px] font-medium text-red-400 hover:text-red-300 transition-colors px-1"
 								>
 									Delete
-								</button>
-								<button
+								</Button>
+								<Button variant="ghost"
 									type="button"
 									onClick={() => setConfirmDeleteId(null)}
 									className="text-[11px] font-medium text-tw-text-muted hover:text-tw-text-secondary transition-colors px-1"
 								>
 									Cancel
-								</button>
+								</Button>
 							</motion.div>
 						);
 					}
@@ -384,7 +368,7 @@ function SidebarRecentChats() {
 									: "hover:bg-tw-hover"
 							}`}
 						>
-							<button
+							<Button variant="ghost"
 								type="button"
 								disabled={loadingId !== null}
 								onClick={() => handleLoadChat(chat.id)}
@@ -393,17 +377,15 @@ function SidebarRecentChats() {
 								{isLoading ? (
 									<UnicodeSpinner variant="dots" className="text-[12px] text-tw-text-secondary" label="Loading chat" />
 								) : (
-									<svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0 text-tw-text-muted">
-										<path d="M2.5 3.5C2.5 2.67 3.17 2 4 2h4c.83 0 1.5.67 1.5 1.5v3c0 .83-.67 1.5-1.5 1.5H5.5L3.5 10V8H4c-.83 0-1.5-.67-1.5-1.5v-3Z" stroke="currentColor" strokeWidth="1" />
-									</svg>
+									<ChatBubbleOutlineIcon12 className="shrink-0 text-tw-text-muted" />
 								)}
 								<span className={`text-[12px] truncate transition-colors duration-200 ${
 									isLoading ? "text-tw-text-primary" : "text-tw-text-secondary"
 								}`}>
 									{chat.title ?? "New chat"}
 								</span>
-							</button>
-							<button
+							</Button>
+							<Button variant="ghost"
 								type="button"
 								onClick={(e) => {
 									e.stopPropagation();
@@ -411,10 +393,8 @@ function SidebarRecentChats() {
 								}}
 								className="shrink-0 flex items-center justify-center size-5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-[#FAFAFA10] transition-all"
 							>
-								<svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-									<path d="M7.5 2.5L2.5 7.5M2.5 2.5L7.5 7.5" stroke="#9F9FA9" strokeWidth="1.2" strokeLinecap="round" />
-								</svg>
-							</button>
+								<StrokeXIcon10Muted />
+							</Button>
 						</motion.div>
 					);
 				})}

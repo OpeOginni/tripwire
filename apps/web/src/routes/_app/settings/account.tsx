@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { Button } from "#/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from '@tripwire/auth/components';
 import { authClient } from '@tripwire/auth/client';
@@ -15,6 +16,7 @@ import {
 	DialogFooter,
 	DialogClose,
 } from "#/components/ui/dialog";
+import { SessionMonitorIcon16 } from "#/components/icons/app-chrome-icons";
 
 export const Route = createFileRoute("/_app/settings/account")({
 	component: AccountSettingsPage,
@@ -123,13 +125,13 @@ function AccountSettingsPage() {
 								End all sessions across all devices.
 							</div>
 						</div>
-						<button
+						<Button variant="ghost"
 							type="button"
 							onClick={handleSignOut}
 							className="flex items-center h-8 px-3 rounded-lg border border-[#27272A] text-[13px] font-medium text-tw-text-primary hover:bg-tw-hover transition-colors"
 						>
 							Sign out
-						</button>
+						</Button>
 					</div>
 					<DeleteAccountRow />
 				</div>
@@ -211,14 +213,14 @@ function DeleteAccountRow() {
 						>
 							Cancel
 						</DialogClose>
-						<button
+						<Button variant="ghost"
 							type="button"
 							disabled={confirmText !== "delete" || isDeleting}
 							onClick={handleDelete}
 							className="flex items-center h-8 px-3 rounded-lg bg-red-500 text-[13px] font-medium text-white hover:bg-red-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
 						>
 							{isDeleting ? "Deleting..." : "Delete my account"}
-						</button>
+						</Button>
 					</DialogFooter>
 				</DialogPopup>
 			</Dialog>
@@ -257,10 +259,7 @@ function SessionsList() {
 				sessionList.map((session) => (
 					<div key={session.id} className="flex items-center justify-between p-4">
 						<div className="flex items-center gap-3">
-							<svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-tw-text-muted shrink-0">
-								<rect x="2" y="3" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
-								<path d="M5 14h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-							</svg>
+							<SessionMonitorIcon16 className="text-tw-text-muted shrink-0" />
 							<div>
 								<div className="text-[13px] font-medium text-tw-text-primary">
 									Session

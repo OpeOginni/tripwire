@@ -7,14 +7,7 @@ import {
 	MenuItem,
 } from "#/components/ui/menu";
 import { useAuth } from '@tripwire/auth/components';
-
-function ChevronDown() {
-	return (
-		<svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-tw-text-tertiary">
-			<path d="M2.5 4L5 6.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-		</svg>
-	);
-}
+import { MenuChevronDownIcon10, SmallCheckStrokeIcon12 } from "#/components/icons/app-chrome-icons";
 
 export function OrgSwitcher() {
 	const { org, orgs, setOrg } = useWorkspace();
@@ -40,7 +33,7 @@ export function OrgSwitcher() {
 				<span className="text-[13px] text-tw-text-primary leading-none max-w-[120px] truncate">
 					{org?.name ?? "Select org"}
 				</span>
-				<ChevronDown />
+				<MenuChevronDownIcon10 className="text-tw-text-tertiary" />
 			</MenuTrigger>
 			<MenuPopup align="end" className="border-tw-border bg-tw-card">
 				{orgs.map((o) => (
@@ -65,9 +58,7 @@ export function OrgSwitcher() {
 							{o.name}
 						</span>
 						{org?.id === o.id && (
-							<svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-tw-accent shrink-0">
-								<path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-							</svg>
+							<SmallCheckStrokeIcon12 className="text-tw-accent shrink-0" />
 						)}
 					</MenuItem>
 				))}
@@ -94,7 +85,7 @@ export function RepoSwitcher() {
 				<span className="text-[13px] text-tw-text-primary leading-none max-w-[160px] truncate">
 					{repo?.name ?? "Select repo"}
 				</span>
-				<ChevronDown />
+				<MenuChevronDownIcon10 className="text-tw-text-tertiary" />
 			</MenuTrigger>
 			<MenuPopup align="end" className="border-tw-border bg-tw-card">
 				{repos.map((r) => (
@@ -107,9 +98,7 @@ export function RepoSwitcher() {
 							<span className="text-[12px] text-tw-text-primary">{r.fullName}</span>
 						</span>
 						{repo?.id === r.id && (
-							<svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-tw-accent shrink-0">
-								<path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-							</svg>
+							<SmallCheckStrokeIcon12 className="text-tw-accent shrink-0" />
 						)}
 					</MenuItem>
 				))}

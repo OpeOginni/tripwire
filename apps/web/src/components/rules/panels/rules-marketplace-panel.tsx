@@ -11,6 +11,7 @@ import {
 	VouchedUsersViz,
 } from "#/components/rules/rule-card-grid";
 import { useRulesWorkspace } from "#/components/rules/rules-workspace-context";
+import { Button } from "#/components/ui/button";
 
 
 export function RulesMarketplacePanel() {
@@ -157,7 +158,7 @@ export function RulesMarketplacePanel() {
 							<span className="text-[12px] font-medium text-tw-text-secondary">Vouch scope</span>
 							<div className="flex items-center gap-1">
 								{(["repo", "global", "both"] as const).map((s) => (
-									<button
+									<Button variant="ghost"
 										key={s}
 										type="button"
 										onClick={() => updateRuleValue("vouchedUsersOnly", { vouchScope: s } as never)}
@@ -168,7 +169,7 @@ export function RulesMarketplacePanel() {
 										}`}
 									>
 										{s === "repo" ? "Repo whitelist" : s === "global" ? "Global vouches" : "Both"}
-									</button>
+									</Button>
 								))}
 							</div>
 							<p className="text-[11px] text-tw-text-tertiary leading-snug m-0">
@@ -194,7 +195,7 @@ export function RulesMarketplacePanel() {
 					configureHint={({ close }) => (
 						<>
 							Honeypot phrases and the hidden line injected into your PR template live in the{" "}
-							<button
+							<Button variant="ghost"
 								type="button"
 								onClick={() => {
 									navigateToRulesTab("files");
@@ -203,7 +204,7 @@ export function RulesMarketplacePanel() {
 								className="text-tw-accent hover:underline underline-offset-2 cursor-pointer"
 							>
 								Files tab
-							</button>
+							</Button>
 							. This dialog only changes how Tripwire reacts when the phrase is detected.
 						</>
 					)}

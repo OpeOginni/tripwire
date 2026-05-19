@@ -8,7 +8,8 @@
 	"files": {
 		"ignoreUnknown": false,
 		"includes": [
-			"**/src/**/*",
+			"src/**/*",
+			"../../packages/ui/src/**/*",
 			"**/.vscode/**/*",
 			"**/index.html",
 			"**/vite.config.js",
@@ -24,9 +25,42 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true
+			"recommended": false,
+			"correctness": {
+				"noRestrictedElements": {
+					"level": "error",
+					"options": {
+						"elements": {
+							"button": "Use Button from @tripwire/ui/button (or #/components/ui/button in apps/web) instead of raw <button>.",
+							"svg": "Define SVGs only under apps/web/src/components/icons/ or packages/ui/src/icons/; import an icon component instead of raw <svg>."
+						}
+					}
+				}
+			}
 		}
 	},
+	"overrides": [
+		{
+			"includes": ["**/components/icons/**/*.tsx"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noRestrictedElements": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["**/packages/ui/src/icons/**/*.tsx"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noRestrictedElements": "off"
+					}
+				}
+			}
+		}
+	],
 	"javascript": {
 		"formatter": {
 			"quoteStyle": "double"

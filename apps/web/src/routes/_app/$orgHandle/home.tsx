@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { Button } from "#/components/ui/button";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChatComposer } from "#/components/chat/chat-composer";
@@ -10,6 +11,7 @@ import { useAuth } from '@tripwire/auth/components';
 import { useWorkspace, useWorkspacePath } from "#/lib/workspace-context";
 import { useTRPC } from "#/integrations/trpc/react";
 import { TripwireLogo } from "#/components/icons/tripwire-logo";
+import { OnboardingCheckCircleIcon14 } from "#/components/icons/app-chrome-icons";
 
 export const Route = createFileRoute("/_app/$orgHandle/home")({
 	component: HomePage,
@@ -147,13 +149,13 @@ function HomePage() {
 				)}
 
 				{!digestQuery.isPending && groups.length > visibleCount && (
-					<button
+					<Button variant="ghost"
 						type="button"
 						onClick={() => setVisibleCount((c) => c + DIGEST_PAGE_SIZE)}
 						className="mt-2 mx-auto text-center text-[12px] text-tw-text-tertiary hover:text-tw-text-secondary transition-colors self-center"
 					>
 						Show {Math.min(DIGEST_PAGE_SIZE, groups.length - visibleCount)} more
-					</button>
+					</Button>
 				)}
 
 				{/* Empty state — setup checklist */}
@@ -176,10 +178,7 @@ function HomePage() {
 									>
 										<div className="flex items-center gap-2.5">
 											{step.done ? (
-												<svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-tw-success shrink-0">
-													<circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
-													<path d="M4.5 7L6.5 9L9.5 5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-												</svg>
+												<OnboardingCheckCircleIcon14 className="text-tw-success shrink-0" />
 											) : (
 												<div className="w-3.5 h-3.5 rounded-full border border-tw-border shrink-0" />
 											)}
@@ -201,13 +200,13 @@ function HomePage() {
 				})()}
 
 				{groups.length > 0 && (
-					<button
+					<Button variant="ghost"
 						type="button"
 						onClick={() => navigate({ to: eventsPath })}
 						className="mt-3 mx-auto text-center text-[12px] text-tw-text-tertiary hover:text-tw-text-secondary transition-colors self-center"
 					>
 						View all events →
-					</button>
+					</Button>
 				)}
 
 				{/* Recent chats */}
@@ -282,13 +281,13 @@ function HomeFloatingBar() {
 								{previewChat.message}
 							</span>
 						</div>
-						<button
+						<Button variant="ghost"
 							type="button"
 							onClick={handleGoToChat}
 							className="shrink-0 flex items-center h-7 px-3 rounded-[10px] bg-[#363639] text-[14px] text-[#EEEEEE] hover:bg-[#404044] transition-colors ml-2"
 						>
 							Go to chat
-						</button>
+						</Button>
 					</motion.div>
 				)}
 			</AnimatePresence>

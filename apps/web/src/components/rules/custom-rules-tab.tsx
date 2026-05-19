@@ -91,13 +91,13 @@ export function CustomRulesTab({ repoId, orgHandle }: CustomRulesTabProps) {
 						<span className="ml-1 text-[#FFFFFF59]">({limits.planId === "free" ? "Free" : limits.planId.charAt(0).toUpperCase() + limits.planId.slice(1)})</span>
 					</span>
 					{atLimit && (
-						<button
+						<Button variant="ghost"
 							type="button"
 							onClick={() => navigate({ href: "/settings/billing" })}
 							className="text-[12px] text-tw-accent hover:underline bg-transparent border-none cursor-pointer"
 						>
 							Upgrade for more
-						</button>
+						</Button>
 					)}
 				</div>
 			)}
@@ -158,7 +158,7 @@ export function CustomRulesTab({ repoId, orgHandle }: CustomRulesTabProps) {
 										)}
 									</div>
 
-									<button
+									<Button variant="ghost"
 										type="button"
 										role="switch"
 										aria-checked={rule.enabled}
@@ -175,7 +175,7 @@ export function CustomRulesTab({ repoId, orgHandle }: CustomRulesTabProps) {
 													: "left-0.5 bg-[#FFFFFF59]"
 											}`}
 										/>
-									</button>
+									</Button>
 								</div>
 
 								<div className="flex items-center justify-between">
@@ -190,20 +190,20 @@ export function CustomRulesTab({ repoId, orgHandle }: CustomRulesTabProps) {
 									</div>
 
 									<div className="flex items-center gap-1">
-										<button
+										<Button variant="ghost"
 											type="button"
 											onClick={() => navigate({ href: `/${orgHandle}/rules/custom/${rule.id}` })}
 											className="text-[12px] text-[#FFFFFF99] hover:text-white bg-transparent border-none cursor-pointer px-2 py-1 rounded-md hover:bg-[#ffffff08] transition-colors"
 										>
 											Edit
-										</button>
-										<button
+										</Button>
+										<Button variant="ghost"
 											type="button"
 											onClick={() => setDeleteTarget({ id: rule.id, name: rule.name })}
 											className="text-[12px] text-[#FFFFFF59] hover:text-red-400 bg-transparent border-none cursor-pointer px-2 py-1 rounded-md hover:bg-[#ffffff08] transition-colors"
 										>
 											Delete
-										</button>
+										</Button>
 									</div>
 								</div>
 							</div>

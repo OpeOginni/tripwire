@@ -14,6 +14,7 @@ import { toastFromError } from "#/lib/toast-error";
 import { TripwireLogo } from "#/components/icons/tripwire-logo";
 import { GithubIcon } from "#/components/icons/github";
 import { buildSeoMeta, canonicalLink } from "#/lib/seo";
+import { SearchLoupeOutlineIcon14, SmallXStrokeIcon12 } from "#/components/icons/app-chrome-icons";
 
 export const Route = createFileRoute("/vouched")({
 	component: VouchedUsersPage,
@@ -83,10 +84,7 @@ function VouchedUsersPage() {
 				{/* Search */}
 				<div className="mb-5">
 					<div className="flex items-center gap-2 h-9 rounded-lg bg-tw-card px-2.5">
-						<svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="shrink-0 text-tw-text-tertiary">
-							<circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.3" />
-							<path d="M10.5 10.5L13.5 13.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-						</svg>
+						<SearchLoupeOutlineIcon14 className="shrink-0 text-tw-text-tertiary" />
 						<input
 							type="text"
 							value={search}
@@ -98,15 +96,13 @@ function VouchedUsersPage() {
 							className="flex-1 bg-transparent outline-none text-[13px] text-tw-text-primary placeholder:text-tw-text-tertiary"
 						/>
 						{search && (
-							<button
+							<Button variant="ghost"
 								type="button"
 								onClick={() => { setSearch(""); setPage(0); }}
 								className="text-tw-text-tertiary hover:text-tw-text-secondary transition-colors cursor-pointer"
 							>
-								<svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-									<path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-								</svg>
-							</button>
+								<SmallXStrokeIcon12 className="text-current" />
+							</Button>
 						)}
 					</div>
 				</div>
@@ -157,22 +153,22 @@ function VouchedUsersPage() {
 							{page * limit + 1}–{Math.min((page + 1) * limit, total)} of {total}
 						</span>
 						<div className="flex items-center gap-1">
-							<button
+							<Button variant="ghost"
 								type="button"
 								onClick={() => setPage((p) => Math.max(0, p - 1))}
 								disabled={page === 0}
 								className="px-2.5 py-1 rounded-md text-[12px] text-tw-text-secondary hover:text-tw-text-primary hover:bg-tw-card disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
 							>
 								Prev
-							</button>
-							<button
+							</Button>
+							<Button variant="ghost"
 								type="button"
 								onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
 								disabled={page >= totalPages - 1}
 								className="px-2.5 py-1 rounded-md text-[12px] text-tw-text-secondary hover:text-tw-text-primary hover:bg-tw-card disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
 							>
 								Next
-							</button>
+							</Button>
 						</div>
 					</div>
 				)}

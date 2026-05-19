@@ -3,6 +3,7 @@ import { useFileTree, FileTree } from "@pierre/trees/react";
 import { parseAsStringEnum, useQueryState } from "nuqs";
 import { Button } from "#/components/ui/button";
 import { Checkbox } from "#/components/ui/checkbox";
+import { HoneypotMicroPlusIcon7 } from "#/components/icons/honeypot-micro-plus-icon";
 import type { RuleConfig, HoneypotPhraseKind } from "@tripwire/db";
 
 
@@ -244,9 +245,7 @@ function HoneypotSection({
 								className="inline-flex items-center gap-1 text-[11px] text-tw-text-tertiary hover:text-tw-text-secondary bg-transparent hover:bg-tw-hover border-none px-2 py-0.5"
 								title={HONEYPOT_KIND_HINT[kind]}
 							>
-								<svg width="7" height="7" viewBox="0 0 10 10" fill="none" aria-hidden="true" className="opacity-70">
-									<path d="M5 1.5v7M1.5 5h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-								</svg>
+								<HoneypotMicroPlusIcon7 className="opacity-70" />
 								{HONEYPOT_KIND_LABEL[kind]}
 							</Button>
 						))}
@@ -409,7 +408,7 @@ export function RepoFilesTree(props: RepoFilesTreeProps) {
 								</div>
 								<div className="flex items-center gap-0.5">
 									{(["preview", "edit"] as const).map((m) => (
-										<button
+										<Button variant="ghost"
 											key={m}
 											type="button"
 											onClick={() => setEditorMode(m)}
@@ -420,7 +419,7 @@ export function RepoFilesTree(props: RepoFilesTreeProps) {
 											}`}
 										>
 											{m === "preview" ? "Preview" : "Edit"}
-										</button>
+										</Button>
 									))}
 								</div>
 							</div>

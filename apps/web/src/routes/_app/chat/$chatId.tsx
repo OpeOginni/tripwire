@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Button } from "#/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useRef, useEffect } from "react";
 import { ChatComposer } from "#/components/chat/chat-composer";
@@ -7,6 +8,7 @@ import { usePersistedChat } from "#/components/chat/use-persisted-chat";
 import { useWorkspace } from "#/lib/workspace-context";
 import { useTRPC } from "#/integrations/trpc/react";
 import type { UIMessage } from "#/types/chat";
+import { ChevronLeftStrokeIcon14 } from "#/components/icons/app-chrome-icons";
 
 export const Route = createFileRoute("/_app/chat/$chatId")({
 	component: ChatPage,
@@ -50,21 +52,13 @@ function ChatPage() {
 		<div className="h-full flex flex-col items-center">
 			{/* Header */}
 			<div className="w-full max-w-[560px] flex items-center gap-2 px-3 pt-4 pb-2 shrink-0">
-				<button
+				<Button variant="ghost"
 					type="button"
 					onClick={() => navigate({ to: "/home" })}
 					className="flex items-center justify-center size-7 rounded-lg hover:bg-tw-hover transition-colors"
 				>
-					<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-						<path
-							d="M9 3L5 7L9 11"
-							stroke="#9F9FA9"
-							strokeWidth="1.5"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-						/>
-					</svg>
-				</button>
+					<ChevronLeftStrokeIcon14 className="text-[#9F9FA9]" />
+				</Button>
 				<span className="text-[13px] font-medium text-tw-text-secondary truncate">
 					{title}
 				</span>

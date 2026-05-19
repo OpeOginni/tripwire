@@ -1,7 +1,9 @@
 import { AnimatePresence, motion, type Transition } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import { Button } from "#/components/ui/button";
 import { ChevronDown } from "#/components/icons/chevron-down";
 import { CloseIcon } from "#/components/icons/close-icon";
+import { SaveBarSuccessCheckIcon12 } from "#/components/icons/app-chrome-icons";
 import type { RuleConfigChange, RuleConfigChangeTone } from '@tripwire/core';
 
 interface RulesSaveBarProps {
@@ -58,20 +60,6 @@ function SaveSpinner() {
 			animate={{ rotate: 360 }}
 			transition={{ duration: 0.8, ease: "linear", repeat: Infinity }}
 		/>
-	);
-}
-
-function SaveCheckIcon() {
-	return (
-		<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-			<path
-				d="M2.2 6.2 4.75 8.45 9.8 3.55"
-				stroke="currentColor"
-				strokeWidth="1.55"
-				strokeLinecap="round"
-				strokeLinejoin="round"
-			/>
-		</svg>
 	);
 }
 
@@ -169,7 +157,7 @@ export function RulesSaveBar({
 															) : null}
 														</div>
 													</div>
-													<button
+													<Button variant="ghost"
 														type="button"
 														onClick={() => onRevert(change.id)}
 														disabled={saving}
@@ -177,7 +165,7 @@ export function RulesSaveBar({
 														aria-label={`Revert ${change.label}`}
 													>
 														<CloseIcon className="size-2.5" />
-													</button>
+													</Button>
 												</div>
 											))}
 										</div>
@@ -215,7 +203,7 @@ export function RulesSaveBar({
 											transition={ENTER_EXIT_TRANSITION}
 											className="flex items-center gap-1.5"
 										>
-											<button
+											<Button variant="ghost"
 												type="button"
 												onClick={() => setOpen((current) => !current)}
 												disabled={saving}
@@ -228,10 +216,10 @@ export function RulesSaveBar({
 												<ChevronDown
 													className={`transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`}
 												/>
-											</button>
+											</Button>
 
 											<div className="flex items-center gap-1">
-												<button
+												<Button variant="ghost"
 													type="button"
 													onClick={onDiscard}
 													disabled={saving}
@@ -239,21 +227,21 @@ export function RulesSaveBar({
 													aria-label="Discard changes"
 												>
 													<CloseIcon className="size-3" />
-												</button>
+												</Button>
 
-												<button
+												<Button variant="ghost"
 													type="button"
 													onClick={onSave}
 													disabled={saving}
 													className="flex h-9 items-center justify-center gap-1.5 rounded-[10px] bg-[#363639] px-3 transition-colors hover:bg-[#404044] disabled:cursor-not-allowed disabled:opacity-60"
 												>
 													<span className="text-tw-text-secondary">
-														<SaveCheckIcon />
+														<SaveBarSuccessCheckIcon12 />
 													</span>
 													<span className="text-[13px] leading-none text-tw-text-primary">
 														Save
 													</span>
-												</button>
+												</Button>
 											</div>
 										</motion.div>
 									) : saved ? (

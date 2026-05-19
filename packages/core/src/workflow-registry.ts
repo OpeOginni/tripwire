@@ -244,7 +244,30 @@ const RULE_ENTRIES: NodeRegistryEntry[] = [
     description: RULE_META.languageRequirement.description,
     definition: "Checks if the PR or issue content is in the required language.",
     example: "Set to English to filter non-English contributions.",
-    params: [{ key: "language", name: "Language", type: "string", default: "English", description: "Required language for contributions" }],
+    params: [
+      {
+        key: "language", name: "Language", type: "select", default: "en",
+        options: [
+          { label: "English (en)", value: "en" },
+          { label: "Spanish (es)", value: "es" },
+          { label: "French (fr)", value: "fr" },
+          { label: "German (de)", value: "de" },
+          { label: "Portuguese (pt)", value: "pt" },
+          { label: "Chinese (zh)", value: "zh" },
+          { label: "Japanese (ja)", value: "ja" },
+          { label: "Korean (ko)", value: "ko" },
+          { label: "Russian (ru)", value: "ru" },
+          { label: "Arabic (ar)", value: "ar" },
+          { label: "Hindi (hi)", value: "hi" },
+          { label: "Custom", value: "custom" },
+        ],
+      },
+      {
+        key: "languageCode", name: "Unicode script/tag", type: "string",
+        description: "ISO 639-1 code or Unicode script name (e.g. Cyrl, Latn, Hani)",
+        condition: { field: "language", value: "custom" },
+      },
+    ],
     handles: ruleHandles,
   },
   {
@@ -458,7 +481,16 @@ const DELAY_ENTRIES: NodeRegistryEntry[] = [
     definition: "Pauses the workflow for a set duration before continuing.",
     example: "Wait 5 minutes before re-checking a contributor's profile data.",
     params: [
-      { key: "duration", name: "Duration", type: "string", default: "5m", description: "Wait duration (e.g. 5m, 1h, 1d)" },
+      { key: "durationValue", name: "Duration", type: "number", default: 5, required: true, description: "How long to wait" },
+      {
+        key: "durationUnit", name: "Unit", type: "select", default: "m", required: true,
+        options: [
+          { label: "Seconds", value: "s" },
+          { label: "Minutes", value: "m" },
+          { label: "Hours", value: "h" },
+          { label: "Days", value: "d" },
+        ],
+      },
     ],
     handles: delayHandles,
   },

@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Button } from "#/components/ui/button";
 import { useCustomer } from "autumn-js/react";
 import { useWorkspace } from "#/lib/workspace-context";
+import { PlusStrokeIcon14 } from "#/components/icons/app-chrome-icons";
 
 export const Route = createFileRoute("/_app/settings/billing")({
 	component: BillingSettingsPage,
@@ -130,24 +132,24 @@ function UpgradeButton({ isFreePlan }: { isFreePlan: boolean }) {
 
 	if (isFreePlan) {
 		return (
-			<button
+			<Button variant="ghost"
 				type="button"
 				onClick={handleUpgrade}
 				className="flex items-center h-8 px-3 rounded-lg bg-tw-text-primary text-[#0D0D0F] text-[13px] font-medium hover:opacity-90 transition-opacity"
 			>
 				Upgrade plan
-			</button>
+			</Button>
 		);
 	}
 
 	return (
-		<button
+		<Button variant="ghost"
 			type="button"
 			onClick={handleManage}
 			className="flex items-center h-8 px-3 rounded-lg border border-[#27272A] text-[13px] font-medium text-tw-text-primary hover:bg-tw-hover transition-colors"
 		>
 			Manage subscription
-		</button>
+		</Button>
 	);
 }
 
@@ -175,16 +177,14 @@ function PaymentMethodSection({ hasStripe }: { hasStripe: boolean }) {
 			<div className="rounded-xl bg-tw-card p-4">
 				<div className="flex items-center justify-between">
 					<div className="text-[13px] text-tw-text-muted">No payment method on file.</div>
-					<button
+					<Button variant="ghost"
 						type="button"
 						onClick={handleAddPayment}
 						className="flex items-center gap-1 text-[13px] font-medium text-tw-text-secondary hover:text-tw-text-primary transition-colors"
 					>
-						<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-							<path d="M7 3v8M3 7h8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-						</svg>
+						<PlusStrokeIcon14 className="text-current" />
 						Add payment method
-					</button>
+					</Button>
 				</div>
 			</div>
 		);
@@ -196,13 +196,13 @@ function PaymentMethodSection({ hasStripe }: { hasStripe: boolean }) {
 				<div className="text-[13px] text-tw-text-muted">
 					Managed through Stripe.
 				</div>
-				<button
+				<Button variant="ghost"
 					type="button"
 					onClick={handleManagePayment}
 					className="text-[13px] font-medium text-tw-text-secondary hover:text-tw-text-primary transition-colors"
 				>
 					Manage
-				</button>
+				</Button>
 			</div>
 		</div>
 	);

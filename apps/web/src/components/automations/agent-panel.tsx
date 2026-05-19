@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { Button } from "#/components/ui/button";
+import { PlusStrokeIcon14 } from "#/components/icons/app-chrome-icons";
 import { ChatThread } from "#/components/chat/chat-thread";
 import { ChatComposer } from "#/components/chat/chat-composer";
 import { useAIChat } from "#/components/chat/chat-context";
@@ -52,21 +54,14 @@ export function AgentPanel({ workflowId }: AgentPanelProps) {
 			</div>
 
 			<div className="flex items-center justify-end px-4 pt-2 pb-1 shrink-0 relative z-10">
-				<button
-					type="button"
+				<Button
+					variant="ghost"
+					size="icon-xs"
 					onClick={newChat}
-					className="flex items-center justify-center size-6 rounded-md hover:bg-tw-hover transition-colors"
 					title="New chat"
 				>
-					<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-						<path
-							d="M7 3v8M3 7h8"
-							stroke="#9F9FA9"
-							strokeWidth="1.5"
-							strokeLinecap="round"
-						/>
-					</svg>
-				</button>
+					<PlusStrokeIcon14 className="text-[#9F9FA9]" />
+				</Button>
 			</div>
 
 			<div className="flex-1 overflow-auto min-h-0 px-2 py-2 relative z-10">

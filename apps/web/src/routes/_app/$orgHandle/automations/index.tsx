@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { Button } from "#/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { parseAsStringEnum, useQueryState } from "nuqs";
@@ -8,6 +9,15 @@ import { useTRPC } from "#/integrations/trpc/react";
 import { templates } from "#/components/automations/templates";
 import type { WorkflowTemplate } from "#/components/automations/templates";
 import type { Node, Edge } from "@xyflow/react";
+import {
+	PlusStrokeIcon14,
+	PlusStrokeIcon18,
+	WorkflowZapFillIcon14,
+	SmallXStrokeIcon12,
+	StrokeXIcon10Muted,
+	SaveBarSuccessCheckIcon12,
+	UserCircleMutedIcon13,
+} from "#/components/icons/app-chrome-icons";
 
 export const Route = createFileRoute("/_app/$orgHandle/automations/")({
 	component: AutomationsPage,
@@ -137,7 +147,7 @@ function AutomationsPage() {
 					["workflows", "Workflows"] as const,
 					["reports", "Reports"] as const,
 				]).map(([t, label]) => (
-					<button
+					<Button variant="ghost"
 						key={t}
 						type="button"
 						onClick={() => setTab(t)}
@@ -148,7 +158,7 @@ function AutomationsPage() {
 						}`}
 					>
 						{label}
-					</button>
+					</Button>
 				))}
 			</div>
 
@@ -157,16 +167,14 @@ function AutomationsPage() {
 			{tab === "workflows" && <>
 			<div className="flex items-center justify-end mb-4">
 				{!isCreating && (
-					<button
+					<Button variant="ghost"
 						type="button"
 						onClick={() => setIsCreating(true)}
 						className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-tw-accent text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
 					>
-						<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-							<path d="M7 3v8M3 7h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-						</svg>
+						<PlusStrokeIcon14 className="text-current" />
 						New Workflow
-					</button>
+					</Button>
 				)}
 			</div>
 
@@ -181,21 +189,21 @@ function AutomationsPage() {
 						autoFocus
 						className="flex-1 h-8 bg-tw-inner rounded-lg px-2.5 text-[13px] text-tw-text-primary placeholder:text-tw-text-tertiary outline-none"
 					/>
-					<button
+					<Button variant="ghost"
 						type="button"
 						onClick={() => handleCreate()}
 						disabled={!newName.trim() || createWf.isPending}
 						className="h-8 px-3 rounded-lg bg-tw-accent text-white text-[13px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
 					>
 						{createWf.isPending ? "..." : "Create"}
-					</button>
-					<button
+					</Button>
+					<Button variant="ghost"
 						type="button"
 						onClick={() => { setIsCreating(false); setNewName(""); }}
 						className="h-8 px-2 rounded-lg text-tw-text-muted hover:text-tw-text-secondary hover:bg-tw-hover transition-colors text-[13px]"
 					>
 						Cancel
-					</button>
+					</Button>
 				</div>
 			)}
 
@@ -214,25 +222,23 @@ function AutomationsPage() {
 
 					<div className="grid grid-cols-2 gap-3">
 						{/* Blank workflow card */}
-						<button
+						<Button variant="ghost"
 							type="button"
 							onClick={() => setIsCreating(true)}
 							className="flex flex-col items-center justify-center gap-2 p-5 rounded-xl border border-dashed border-[#FFFFFF1A] hover:border-tw-accent/40 hover:bg-[#FFFFFF04] transition-all text-center group"
 						>
 							<div className="flex items-center justify-center size-10 rounded-lg bg-[#FFFFFF08] group-hover:bg-tw-accent/10 transition-colors">
-								<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-									<path d="M9 4v10M4 9h10" stroke="#9F9FA9" strokeWidth="1.5" strokeLinecap="round" className="group-hover:stroke-tw-accent transition-colors" />
-								</svg>
+								<PlusStrokeIcon18 className="text-[#9F9FA9] group-hover:text-tw-accent transition-colors" />
 							</div>
 							<div>
 								<p className="text-[13px] font-medium text-tw-text-primary">Blank Workflow</p>
 								<p className="text-[11px] text-tw-text-muted mt-0.5">Start with an empty canvas</p>
 							</div>
-						</button>
+						</Button>
 
 						{/* Template cards */}
 						{templates.map((t) => (
-							<button
+							<Button variant="ghost"
 								key={t.id}
 								type="button"
 								onClick={() => handlePreviewTemplate(t)}
@@ -244,7 +250,7 @@ function AutomationsPage() {
 								<span className="text-[11px] text-tw-text-tertiary mt-auto">
 									{t.nodes.length} nodes · {t.edges.length} connections
 								</span>
-							</button>
+							</Button>
 						))}
 					</div>
 				</div>
@@ -263,9 +269,7 @@ function AutomationsPage() {
 								onClick={() => navigate({ to: `/${orgHandle}/automations/${wf.id}` })}
 							>
 								<div className="flex items-center justify-center size-9 rounded-lg bg-[#FFFFFF08] shrink-0">
-									<svg width="16" height="16" viewBox="0 0 16 16" fill="#9F9FA9">
-										<path d="M8.5 1.5a1 1 0 0 0-1.8-.6L2.6 7.4a1 1 0 0 0 .8 1.6h3.1l-1 5.5a1 1 0 0 0 1.8.6l4.1-6.5a1 1 0 0 0-.8-1.6H7.5l1-5.5Z" />
-									</svg>
+									<WorkflowZapFillIcon14 className="size-4 text-[#9F9FA9]" />
 								</div>
 								<div className="flex flex-col min-w-0 flex-1">
 									<span className="text-[13px] font-medium text-tw-text-primary truncate">{wf.name}</span>
@@ -277,22 +281,20 @@ function AutomationsPage() {
 									<span className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${isEnabled ? "bg-tw-success/10 text-tw-success" : "bg-[#FFFFFF08] text-tw-text-muted"}`}>
 										{isEnabled ? "Active" : "Draft"}
 									</span>
-									<button
+									<Button variant="ghost"
 										type="button"
 										onClick={(e) => { e.stopPropagation(); handleToggle(wf.id, !isEnabled); }}
 										className={`w-9 h-[20px] relative shrink-0 rounded-[10px] transition-colors border-none ${isEnabled ? "bg-tw-accent" : "bg-[#FFFFFF14]"}`}
 									>
 										<div className={`w-4 h-4 absolute top-0.5 rounded-full transition-all ${isEnabled ? "right-0.5 bg-white" : "left-0.5 bg-[#FFFFFF59]"}`} />
-									</button>
-									<button
+									</Button>
+									<Button variant="ghost"
 										type="button"
 										onClick={(e) => { e.stopPropagation(); handleDelete(wf.id); }}
 										className="opacity-0 group-hover:opacity-100 flex items-center justify-center size-7 rounded-lg hover:bg-[#F56D5D1A] transition-all"
 									>
-										<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-											<path d="M9 3L3 9M3 3L9 9" stroke="#F56D5D" strokeWidth="1.5" strokeLinecap="round" />
-										</svg>
-									</button>
+										<SmallXStrokeIcon12 className="text-[#F56D5D]" />
+									</Button>
 								</div>
 							</div>
 						);
@@ -345,25 +347,21 @@ function AutomationsPage() {
 												</span>
 											</div>
 											<div className="flex items-center gap-1">
-												<button
+												<Button variant="ghost"
 													type="button"
 													onClick={handleDiscardToggles}
 													className="flex size-9 items-center justify-center rounded-[10px] text-tw-text-tertiary hover:bg-tw-hover hover:text-tw-text-secondary transition-colors"
 												>
-													<svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-														<path d="M7.5 2.5L2.5 7.5M2.5 2.5L7.5 7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-													</svg>
-												</button>
-												<button
+													<StrokeXIcon10Muted className="text-tw-text-tertiary" />
+												</Button>
+												<Button variant="ghost"
 													type="button"
 													onClick={handleSaveToggles}
 													className="flex h-9 items-center gap-1.5 rounded-[10px] bg-[#363639] px-3 hover:bg-[#404044] transition-colors"
 												>
-													<svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-tw-text-secondary">
-														<path d="M2.2 6.2 4.75 8.45 9.8 3.55" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
-													</svg>
+													<SaveBarSuccessCheckIcon12 className="text-tw-text-secondary" />
 													<span className="text-[13px] leading-none text-tw-text-primary">Save</span>
-												</button>
+												</Button>
 											</div>
 										</motion.div>
 									) : saved ? (
@@ -374,9 +372,7 @@ function AutomationsPage() {
 											exit={{ opacity: 0 }}
 											className="flex h-9 items-center gap-2 px-3"
 										>
-											<svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-tw-text-secondary">
-												<path d="M2.25 6.35 4.8 8.65 9.75 3.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-											</svg>
+											<SaveBarSuccessCheckIcon12 className="text-tw-text-secondary" />
 											<span className="text-[14px] text-tw-text-primary">Saved</span>
 										</motion.div>
 									) : null}
@@ -433,7 +429,7 @@ function ReportsPanel({ repoId }: { repoId?: string }) {
 						["pr", "Pull Request"] as const,
 						["issue", "Issue"] as const,
 					]).map(([k, label]) => (
-						<button
+						<Button variant="ghost"
 							key={k}
 							type="button"
 							onClick={() => setKind(k)}
@@ -444,16 +440,14 @@ function ReportsPanel({ repoId }: { repoId?: string }) {
 							}`}
 						>
 							{label}
-						</button>
+						</Button>
 					))}
 				</div>
 
 				<div className="flex gap-2">
 					{/* Username input */}
 					<div className="flex items-center gap-2 h-9 flex-1 rounded-[10px] bg-tw-card px-2.5">
-						<svg width="13" height="13" viewBox="0 0 16 16" fill="#6E6E6E">
-							<path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm5 7a5 5 0 0 0-10 0h10Z" />
-						</svg>
+						<UserCircleMutedIcon13 className="text-[#6E6E6E]" />
 						<input
 							type="text"
 							placeholder={placeholders[kind]}
@@ -479,14 +473,14 @@ function ReportsPanel({ repoId }: { repoId?: string }) {
 						</div>
 					)}
 
-					<button
+					<Button variant="ghost"
 						type="button"
 						onClick={handleRun}
 						disabled={runReport.isPending || !username.trim()}
 						className="flex items-center gap-1.5 h-9 px-4 rounded-[10px] bg-[#363639] hover:bg-[#404044] text-[13px] font-medium text-tw-text-primary transition-colors disabled:opacity-50 shrink-0"
 					>
 						{runReport.isPending ? "Running..." : "Run"}
-					</button>
+					</Button>
 				</div>
 			</div>
 
@@ -588,9 +582,7 @@ function ReportsPanel({ repoId }: { repoId?: string }) {
 								{/* Workflow header */}
 								<div className="flex items-center justify-between px-3 pt-2.5 pb-1.5">
 									<div className="flex items-center gap-2 min-w-0">
-										<svg width="14" height="14" viewBox="0 0 16 16" fill="#9F9FA9">
-											<path d="M8.5 1.5a1 1 0 0 0-1.8-.6L2.6 7.4a1 1 0 0 0 .8 1.6h3.1l-1 5.5a1 1 0 0 0 1.8.6l4.1-6.5a1 1 0 0 0-.8-1.6H7.5l1-5.5Z" />
-										</svg>
+										<WorkflowZapFillIcon14 className="text-[#9F9FA9]" />
 										<span className="text-[13px] font-medium text-tw-text-primary truncate">{r.workflowName}</span>
 										<span className="text-[11px] text-tw-text-muted">{r.outcomes.length} nodes</span>
 									</div>

@@ -15,8 +15,8 @@ export const NODE_STYLE_MAP: Record<string, NodeStyleEntry> = {
 } as const;
 
 export const HANDLE_COLORS = {
-  pass: { bg: "#22C55E", border: "#16A34A" },
-  fail: { bg: "#EF4444", border: "#DC2626" },
+  pass: { bg: "#2D4A3A", border: "#3D6B50" },
+  fail: { bg: "#4A2D2D", border: "#6B3D3D" },
 } as const;
 
 export function getNodeStyle(type: string): NodeStyleEntry {

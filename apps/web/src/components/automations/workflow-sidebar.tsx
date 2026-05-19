@@ -1,4 +1,5 @@
 import type { Node } from "@xyflow/react";
+import { Button } from "#/components/ui/button";
 import { AgentPanel } from "./agent-panel";
 import { ToolboxPanel } from "./toolbox-panel";
 import { EditorPanel } from "./editor-panel";
@@ -37,7 +38,7 @@ export function WorkflowSidebar({
 			<div className="px-3 pt-3 pb-2 shrink-0">
 				<div className="bg-tw-card rounded-[10px] p-1 flex items-center gap-1">
 					{tabs.map(({ key, label }) => (
-						<button
+						<Button variant="ghost"
 							key={key}
 							type="button"
 							onClick={() => onTabChange(key)}
@@ -48,7 +49,7 @@ export function WorkflowSidebar({
 							}`}
 						>
 							{label}
-						</button>
+						</Button>
 					))}
 				</div>
 			</div>

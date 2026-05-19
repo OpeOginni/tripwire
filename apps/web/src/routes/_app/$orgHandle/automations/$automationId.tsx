@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "#/components/ui/button";
 import { useWorkspace } from "#/lib/workspace-context";
 import { useTRPC } from "#/integrations/trpc/react";
 import { WorkflowEditor } from "#/components/automations/workflow-editor";
 import type { Node, Edge } from "@xyflow/react";
+import { ChevronLeftStrokeIcon14 } from "#/components/icons/app-chrome-icons";
 
 export const Route = createFileRoute("/_app/$orgHandle/automations/$automationId")({
 	component: AutomationEditorPage,
@@ -110,15 +112,13 @@ function AutomationEditorPage() {
 	return (
 		<div className="h-full flex flex-col">
 			<div className="flex items-center gap-3 px-4 py-3 border-b border-tw-border shrink-0">
-				<button
-					type="button"
+				<Button
+					variant="ghost"
+					size="icon-xs"
 					onClick={() => navigate({ to: `/${orgHandle}/automations` })}
-					className="flex items-center justify-center size-7 rounded-lg hover:bg-tw-hover transition-colors"
 				>
-					<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-						<path d="M9 3L5 7L9 11" stroke="#9F9FA9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-					</svg>
-				</button>
+					<ChevronLeftStrokeIcon14 className="text-[#9F9FA9]" />
+				</Button>
 				<div className="flex flex-col min-w-0">
 					{editingName ? (
 						<input
@@ -134,13 +134,14 @@ function AutomationEditorPage() {
 							className="text-[14px] font-medium text-tw-text-primary bg-transparent border-b border-tw-accent outline-none px-0 py-0"
 						/>
 					) : (
-						<button
-							type="button"
+						<Button
+							variant="ghost"
+							size="xs"
 							onClick={() => { setNameDraft(wf.name); setEditingName(true); }}
-							className="text-[14px] font-medium text-tw-text-primary truncate text-left hover:text-tw-accent transition-colors cursor-text"
+							className="text-[14px] font-medium text-tw-text-primary truncate text-left hover:text-tw-accent cursor-text h-auto p-0"
 						>
 							{wf.name}
-						</button>
+						</Button>
 					)}
 					{wf.description && (
 						<span className="text-[11px] text-tw-text-muted truncate">{wf.description}</span>

@@ -14,6 +14,7 @@ import {
 	DelayIcon,
 	TransformIcon,
 } from "#/components/icons/node-icons";
+import { ToolboxSearchLoupeIcon13 } from "#/components/icons/app-chrome-icons";
 import Dither from "#/components/Dither";
 import type { ReactNode } from "react";
 
@@ -85,7 +86,7 @@ const paletteGroups: { title: string; items: PaletteItem[] }[] = [
 	{
 		title: "Delays",
 		items: [
-			{ type: "delay", label: "Delay", sublabel: "Configurable wait", color: nodeColors.delay, icon: <DelayIcon />, data: { duration: "5m" } },
+			{ type: "delay", label: "Delay", sublabel: "Configurable wait", color: nodeColors.delay, icon: <DelayIcon />, data: { durationValue: 5, durationUnit: "m" } },
 		],
 	},
 	{
@@ -131,9 +132,7 @@ export function ToolboxPanel({ search, setSearch }: ToolboxPanelProps) {
 		<div className="flex flex-col h-full relative">
 			<div className="px-3 py-3 border-b border-tw-border shrink-0">
 				<div className="flex items-center gap-2 h-9 rounded-[10px] bg-tw-card px-3">
-					<svg width="13" height="13" viewBox="0 0 16 16" fill="#6E6E6E">
-						<path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1ZM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0Z" />
-					</svg>
+					<ToolboxSearchLoupeIcon13 />
 					<input
 						type="text"
 						placeholder="Search nodes..."

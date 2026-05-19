@@ -4,9 +4,11 @@ import { useTRPC } from "#/integrations/trpc/react";
 import { useWorkspace } from "#/lib/workspace-context";
 import { EmptyState } from "#/components/layout/empty-state";
 import { useEffect, useState } from "react";
+import { Button } from "#/components/ui/button";
 import { markEventsViewed } from "#/lib/use-events-unread";
 import { routes } from "#/lib/routes";
 import { isCustomRuleName, stripCustomRulePrefix } from "#/lib/custom-rules-utils";
+import { ChevronRightIndicatorIcon12 } from "#/components/icons/app-chrome-icons";
 
 export const Route = createFileRoute("/_app/$orgHandle/events/")({
 	component: EventsPage,
@@ -169,21 +171,7 @@ function EventRow({ event }: { event: Event }) {
 
 			{/* Arrow indicator - only show for clickable rows */}
 			{isClickable && (
-				<svg
-					width="12"
-					height="12"
-					viewBox="0 0 12 12"
-					className="shrink-0 text-[#FFFFFF59]"
-				>
-					<path
-						d="M4.5 3L7.5 6L4.5 9"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="1.5"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-					/>
-				</svg>
+				<ChevronRightIndicatorIcon12 className="shrink-0 text-[#FFFFFF59]" />
 			)}
 		</>
 	);
@@ -219,7 +207,7 @@ function FilterTab({
 	onClick: () => void;
 }) {
 	return (
-		<button
+		<Button variant="ghost"
 			type="button"
 			onClick={onClick}
 			className={`
@@ -238,7 +226,7 @@ function FilterTab({
 					{count}
 				</span>
 			)}
-		</button>
+		</Button>
 	)
 }
 
@@ -484,7 +472,7 @@ function EventsPage() {
 				/>
 
 				{hasFilters && (
-					<button
+					<Button variant="ghost"
 						type="button"
 						onClick={() => {
 							setFilters({ action: null, username: "" });
@@ -493,7 +481,7 @@ function EventsPage() {
 						className="text-[13px] text-[#FFFFFF59] hover:text-white bg-transparent border-none cursor-pointer transition-colors px-2 py-1"
 					>
 						Clear
-					</button>
+					</Button>
 				)}
 			</div>
 
@@ -524,22 +512,22 @@ function EventsPage() {
 						{total.toLocaleString()}
 					</span>
 					<div className="flex items-center gap-1">
-						<button
+						<Button variant="ghost"
 							type="button"
 							onClick={() => setPage((p) => Math.max(0, p - 1))}
 							disabled={page === 0}
 							className="px-3 py-1 rounded-lg text-[13px] font-medium text-[#FFFFFF73] bg-transparent border border-tw-border cursor-pointer disabled:opacity-30 disabled:cursor-default hover:bg-white/[0.03] transition-colors"
 						>
 							Prev
-						</button>
-						<button
+						</Button>
+						<Button variant="ghost"
 							type="button"
 							onClick={() => setPage((p) => p + 1)}
 							disabled={(page + 1) * limit >= total}
 							className="px-3 py-1 rounded-lg text-[13px] font-medium text-[#FFFFFF73] bg-transparent border border-tw-border cursor-pointer disabled:opacity-30 disabled:cursor-default hover:bg-white/[0.03] transition-colors"
 						>
 							Next
-						</button>
+						</Button>
 					</div>
 				</div>
 			)}

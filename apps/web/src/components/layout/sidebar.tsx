@@ -82,7 +82,7 @@ export function Sidebar() {
 
 				{/* Workspace switcher */}
 				<div className="relative" ref={switcherRef}>
-				<button
+				<Button variant="ghost"
 					type="button"
 					onClick={() => orgs.length > 1 && setSwitcherOpen(!switcherOpen)}
 					className="flex items-center h-8 min-w-0 w-full rounded-lg pr-2 pl-[5px] gap-2 bg-tw-card border border-[#333333] cursor-pointer"
@@ -96,11 +96,11 @@ export function Sidebar() {
 						{orgName}
 					</span>
 					<ChevronDown />
-				</button>
+				</Button>
 				{switcherOpen && orgs.length > 1 && (
 					<div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg bg-[#2a2a2a] border border-[#353434] shadow-lg py-1">
 						{orgs.map((o) => (
-							<button
+							<Button variant="ghost"
 								key={o.id}
 								type="button"
 								onClick={() => {
@@ -117,7 +117,7 @@ export function Sidebar() {
 									</span>
 								</div>
 								{o.name}
-							</button>
+							</Button>
 						))}
 					</div>
 				)}

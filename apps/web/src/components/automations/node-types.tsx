@@ -1,4 +1,5 @@
 import { memo, useState, useRef, useEffect, useCallback } from "react";
+import { Button } from "#/components/ui/button";
 import { Handle, Position, useStoreApi, type NodeProps } from "@xyflow/react";
 import { NODE_STYLE_MAP, HANDLE_COLORS, getNodeStyle } from "#/lib/node-styles";
 import { formatScheduleSublabel } from "#/lib/schedule-format";
@@ -130,14 +131,14 @@ function EditableParam({
 					className="w-14 px-2 py-0.5 rounded-md text-[11px] font-medium bg-tw-surface text-tw-text-primary border border-tw-accent/40 outline-none text-center"
 				/>
 			) : (
-				<button
+				<Button variant="ghost"
 					type="button"
 					onClick={(e) => { e.stopPropagation(); setDraft(String(value)); setEditing(true); }}
 					className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-tw-surface text-tw-text-secondary cursor-pointer hover:bg-tw-hover-light"
 					title={`Edit ${label.toLowerCase()}`}
 				>
 					{value}
-				</button>
+				</Button>
 			)}
 		</div>
 	);
@@ -195,14 +196,14 @@ function EditableText({
 					className="flex-1 min-w-0 px-1.5 py-0.5 rounded-md text-[11px] bg-tw-surface text-tw-text-primary border border-tw-accent/40 outline-none"
 				/>
 			) : (
-				<button
+				<Button variant="ghost"
 					type="button"
 					onClick={(e) => { e.stopPropagation(); setEditing(true); }}
 					className="text-[11px] text-tw-text-secondary font-mono bg-tw-inner px-1.5 py-0.5 rounded truncate max-w-[160px] text-left cursor-pointer hover:bg-tw-hover-light"
 					title={`Edit ${label.toLowerCase()}`}
 				>
 					{value || <span className="text-tw-text-tertiary italic">{placeholder ?? "empty"}</span>}
-				</button>
+				</Button>
 			)}
 		</div>
 	);
@@ -230,35 +231,6 @@ const colors = {
 
 const handleBase = "!w-2.5 !h-2.5 !rounded-sm !border !border-tw-border !bg-tw-card";
 
-function BranchHandles() {
-	return (
-		<>
-			<div className="absolute -bottom-4 left-[30%] -translate-x-1/2 flex flex-col items-center">
-				<Handle type="source" position={Position.Bottom} id="pass" className="!w-3 !h-3 !rounded-sm !border-0 !relative !transform-none !inset-0" style={{ backgroundColor: HANDLE_COLORS.pass.bg }} />
-				<span className="text-[8px] font-bold mt-0.5 select-none" style={{ color: HANDLE_COLORS.pass.bg }}>T</span>
-			</div>
-			<div className="absolute -bottom-4 left-[70%] -translate-x-1/2 flex flex-col items-center">
-				<Handle type="source" position={Position.Bottom} id="fail" className="!w-3 !h-3 !rounded-sm !border-0 !relative !transform-none !inset-0" style={{ backgroundColor: HANDLE_COLORS.fail.bg }} />
-				<span className="text-[8px] font-bold mt-0.5 select-none" style={{ color: HANDLE_COLORS.fail.bg }}>F</span>
-			</div>
-		</>
-	);
-}
-
-function ConditionBranchHandles() {
-	return (
-		<>
-			<div className="absolute -bottom-4 left-[30%] -translate-x-1/2 flex flex-col items-center">
-				<Handle type="source" position={Position.Bottom} id="true" className="!w-3 !h-3 !rounded-sm !border-0 !relative !transform-none !inset-0" style={{ backgroundColor: HANDLE_COLORS.pass.bg }} />
-				<span className="text-[8px] font-bold mt-0.5 select-none" style={{ color: HANDLE_COLORS.pass.bg }}>T</span>
-			</div>
-			<div className="absolute -bottom-4 left-[70%] -translate-x-1/2 flex flex-col items-center">
-				<Handle type="source" position={Position.Bottom} id="false" className="!w-3 !h-3 !rounded-sm !border-0 !relative !transform-none !inset-0" style={{ backgroundColor: HANDLE_COLORS.fail.bg }} />
-				<span className="text-[8px] font-bold mt-0.5 select-none" style={{ color: HANDLE_COLORS.fail.bg }}>F</span>
-			</div>
-		</>
-	);
-}
 const triggerLabels: Record<string, string> = {
 	pr_opened: "PR Opened",
 	pr_edited: "PR Edited",
@@ -357,7 +329,8 @@ export const RuleNode = memo(({ id, data, selected }: NodeProps) => {
 					return <Param key={k} label={k} value={String(v)} />;
 				})}
 			</NodeShell>
-			<BranchHandles />
+			<Handle type="source" position={Position.Bottom} id="pass" className={`${handleBase} !-bottom-1.5 !left-[30%]`} style={{ backgroundColor: HANDLE_COLORS.pass.bg, borderColor: HANDLE_COLORS.pass.border }} />
+			<Handle type="source" position={Position.Bottom} id="fail" className={`${handleBase} !-bottom-1.5 !left-[70%]`} style={{ backgroundColor: HANDLE_COLORS.fail.bg, borderColor: HANDLE_COLORS.fail.border }} />
 		</>
 	);
 });
@@ -490,7 +463,8 @@ export const ConditionNode = memo(({ id, data, selected }: NodeProps) => {
 					)}
 				</div>
 			</NodeShell>
-			<ConditionBranchHandles />
+			<Handle type="source" position={Position.Bottom} id="true" className={`${handleBase} !-bottom-1.5 !left-[30%]`} style={{ backgroundColor: HANDLE_COLORS.pass.bg, borderColor: HANDLE_COLORS.pass.border }} />
+			<Handle type="source" position={Position.Bottom} id="false" className={`${handleBase} !-bottom-1.5 !left-[70%]`} style={{ backgroundColor: HANDLE_COLORS.fail.bg, borderColor: HANDLE_COLORS.fail.border }} />
 		</>
 	);
 });
@@ -539,8 +513,12 @@ export const ActionNode = memo(({ id, data, selected }: NodeProps) => {
 });
 ActionNode.displayName = "ActionNode";
 
-export const DelayNode = memo(({ id, data, selected }: NodeProps) => {
-	const duration = (data.duration as string) ?? "5m";
+const unitLabels: Record<string, string> = { s: "sec", m: "min", h: "hr", d: "day" };
+
+export const DelayNode = memo(({ data, selected }: NodeProps) => {
+	const value = (data.durationValue as number) ?? 5;
+	const unit = (data.durationUnit as string) ?? "m";
+	const label = `${value}${unitLabels[unit] ?? unit}`;
 	return (
 		<>
 			<Handle type="target" position={Position.Top} className={`${handleBase} !-top-1.5`} />
@@ -548,11 +526,9 @@ export const DelayNode = memo(({ id, data, selected }: NodeProps) => {
 				type="delay"
 				icon={icons.delay}
 				label="Delay"
-				sublabel={`Wait ${duration}`}
+				sublabel={`Wait ${label}`}
 				selected={selected}
-			>
-				<EditableText label="Duration" value={duration} nodeId={id} fieldKey="duration" placeholder="5m, 1h, 1d" />
-			</NodeShell>
+			/>
 			<Handle type="source" position={Position.Bottom} className={`${handleBase} !-bottom-1.5`} />
 		</>
 	);

@@ -47,15 +47,40 @@ const getNodeTypes = defineTool({
     }
     return { categories };
   },
-  chatRender: (output) =>
-    makeSpec("Text", {
-      content: Object.entries(output.categories)
-        .map(
-          ([cat, entries]) =>
-            `**${cat}**: ${(entries as Array<{ name: string; subtype: string }>).map((e) => `${e.name} (${e.subtype})`).join(", ")}`,
-        )
-        .join("\n\n"),
-    }),
+  chatRender: (output) => {
+    type Entry = {
+      name: string;
+      subtype: string;
+      type: string;
+      description?: string;
+      params?: Array<{ key: string; name: string; type: string; default?: unknown; options?: Array<{ label: string; value: string }> }>;
+      handles?: Array<{ id: string; type: string; position: string; label?: string }>;
+    };
+    const text = Object.entries(output.categories)
+      .map(([cat, entries]) => {
+        const lines = (entries as Entry[]).map((e) => {
+          let line = `  **${e.name}** \`${e.type}/${e.subtype}\``;
+          if (e.description) line += ` - ${e.description}`;
+          if (e.params && e.params.length > 0) {
+            const paramStr = e.params.map((p) => {
+              let s = `${p.key}: ${p.type}`;
+              if (p.default !== undefined) s += ` = ${JSON.stringify(p.default)}`;
+              if (p.options) s += ` [${p.options.map((o) => o.value).join("|")}]`;
+              return s;
+            }).join(", ");
+            line += `\n    data: { ${paramStr} }`;
+          }
+          const outputs = e.handles?.filter((h) => h.type === "source") ?? [];
+          if (outputs.length > 1) {
+            line += `\n    outputs: ${outputs.map((h) => h.label ?? h.id).join(", ")}`;
+          }
+          return line;
+        });
+        return `**${cat}**\n${lines.join("\n")}`;
+      })
+      .join("\n\n");
+    return makeSpec("Text", { content: text });
+  },
 });
 
 const createWorkflow = defineTool({
@@ -100,8 +125,30 @@ const createWorkflow = defineTool({
 
 const editWorkflow = defineTool({
   name: "edit_workflow",
-  description:
-    "Apply operations to modify a workflow's node graph. Operations: add_node (type + subtype), edit_node (update data/position), delete_node, add_edge (connect nodes), delete_edge. Call get_node_types first to see available node types and subtypes.",
+  description: `Apply operations to modify a workflow's node graph. Send ALL add_node + add_edge ops in ONE call.
+
+Node data schemas (pass in the "data" field of add_node):
+- trigger: { trigger: "<subtype>" } e.g. { trigger: "pr_opened" }
+- rule: { rule: "<subtype>", params: { ... } } e.g. { rule: "accountAge", params: { days: 30 } }
+  accountAge params: { days: number }
+  minMergedPrs params: { count: number }
+  repoActivityMinimum params: { minRepos: number }
+  maxPrsPerDay params: { limit: number }
+  maxFilesChanged params: { limit: number }
+  language params: { language: "en"|"es"|"fr"|...|"custom", languageCode?: string }
+  crypto/requireProfileReadme/aiHoneypot: no params needed
+  vouchedUsersOnly params: { vouchScope: "repo"|"global"|"both" }
+- condition: { field: "score"|"accountAgeDays"|"publicRepos"|..., operator: ">"|">="|"<"|"<="|"=="|"!="|"matches", value: "50" }
+- logic: { gate: "AND"|"OR"|"NOT" }
+- action: { action: "<subtype>" } e.g. { action: "block", message: "Blocked by Tripwire" }
+  block/warn/comment/log: optional message field
+  label: requires label field
+  notify_slack/notify_discord/send_webhook: requires url field
+- delay: { durationValue: 5, durationUnit: "s"|"m"|"h"|"d" }
+- transform: { transform: "<subtype>" } e.g. { transform: "fetch_github_user" }
+
+Edge handles: Rule/condition nodes have "pass"/"fail" (or "true"/"false") source handles. Use sourceHandle to route edges from the correct output.
+Always provide an explicit id for each add_node.`,
   needsApproval: true,
   inputSchema: z.object({
     workflowId: z.string().uuid().describe("Workflow ID"),
@@ -169,6 +216,8 @@ const editWorkflow = defineTool({
       },
     });
 
+    const nodeIds = next.nodes.map((n) => ({ id: n.id, type: n.type, subtype: (n.data as Record<string, string>).trigger ?? (n.data as Record<string, string>).rule ?? (n.data as Record<string, string>).action ?? (n.data as Record<string, string>).gate ?? (n.data as Record<string, string>).transform ?? n.type }));
+
     return {
       ok: true,
       message: summary,
@@ -176,6 +225,7 @@ const editWorkflow = defineTool({
         workflowId,
         nodeCount: next.nodes.length,
         edgeCount: next.edges.length,
+        nodes: nodeIds,
         warnings: warnings.length > 0 ? warnings : undefined,
       },
     };

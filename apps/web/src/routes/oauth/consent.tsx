@@ -4,6 +4,7 @@ import { parseAsString, useQueryStates } from "nuqs";
 import { authClient } from '@tripwire/auth/client';
 import { Button } from "#/components/ui/button";
 import { TripwireSparkIcon } from "#/components/icons/nav-icons";
+import { OauthConsentCheckRingIcon20 } from "#/components/icons/oauth-consent-check-ring-icon";
 
 export const Route = createFileRoute("/oauth/consent")({
 	component: ConsentPage,
@@ -89,7 +90,7 @@ function ConsentPage() {
 				<TripwireLogo accent />
 				<div className="flex flex-col items-center gap-2">
 					<div className="flex items-center gap-2 text-[15px] text-white">
-						<CheckRing /> Connected to {clientName}
+						<OauthConsentCheckRingIcon20 /> Connected to {clientName}
 					</div>
 					<div className="text-[13px] text-tw-text-tertiary">
 						Returning you to {clientName}…
@@ -199,21 +200,6 @@ function Spinner() {
 
 function Dot() {
 	return <span className="w-1.5 h-1.5 rounded-full bg-tw-text-tertiary shrink-0" />;
-}
-
-function CheckRing() {
-	return (
-		<svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-			<circle cx="12" cy="12" r="10" stroke="#67E19F" strokeWidth="1.8" />
-			<path
-				d="M8 12.5L11 15.5L16 9.5"
-				stroke="#67E19F"
-				strokeWidth="1.8"
-				strokeLinecap="round"
-				strokeLinejoin="round"
-			/>
-		</svg>
-	);
 }
 
 function humanScope(scope: string): string {

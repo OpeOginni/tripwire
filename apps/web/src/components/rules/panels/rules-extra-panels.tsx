@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "#/components/ui/button";
 import { RepoFilesTree } from "#/components/rules/repo-files-tree";
@@ -7,7 +7,7 @@ import { PeopleTab } from "#/components/rules/people-tab";
 import { useRulesWorkspace } from "#/components/rules/rules-workspace-context";
 import { useTRPC } from "#/integrations/trpc/react";
 import { useWorkspace } from "#/lib/workspace-context";
-import { workflowSupportsManualRun } from "#/lib/workflow-simulation";
+import { WorkflowsEmptyZapIcon32 } from "#/components/icons/app-chrome-icons";
 
 export function RulesPeoplePanel() {
 	const {
@@ -114,7 +114,7 @@ function RequestsTab({
 						{ key: "vouches" as const, label: "Vouches", count: vouchRequests.length },
 					] as const
 				).map(({ key, label, count }) => (
-					<button
+					<Button variant="ghost"
 						key={key}
 						type="button"
 						onClick={() => setSubtab(key)}
@@ -124,7 +124,7 @@ function RequestsTab({
 						{count > 0 && (
 							<span className="text-[11px] text-tw-accent tabular-nums ml-0.5">{count}</span>
 						)}
-					</button>
+					</Button>
 				))}
 			</div>
 			{loading ? (
@@ -237,50 +237,13 @@ export function RulesWorkflowsPanel() {
 function WorkflowsTab({ repoId }: { repoId: string | undefined }) {
 	const trpc = useTRPC();
 	const navigate = useNavigate();
-	const queryClient = useQueryClient();
 	const { org } = useWorkspace();
-	const [runUsername, setRunUsername] = useState("");
-	const [runFeedback, setRunFeedback] = useState<string | null>(null);
-	const [pendingWorkflowId, setPendingWorkflowId] = useState<string | null>(null);
 
 	const workflowsQuery = useQuery(
 		trpc.workflows.list.queryOptions({ repoId: repoId ?? "" }, { enabled: !!repoId }),
 	);
-	const inflightQuery = useQuery(
-		trpc.workflows.listInflightManualRuns.queryOptions(
-			{ repoId: repoId ?? "" },
-			{ enabled: !!repoId, refetchInterval: 5_000 },
-		),
-	);
-	const manualRun = useMutation(
-		trpc.workflows.manualRun.mutationOptions({
-			onMutate: (vars) => {
-				setPendingWorkflowId(vars.workflowId);
-			},
-			onSuccess: (data) => {
-				setRunFeedback(
-					`${data.simulation.workflowName}: ${data.simulation.result === "blocked" ? "would block" : data.simulation.result === "allowed" ? "would allow" : "no action"}`,
-				);
-			},
-			onError: (err) => {
-				const msg = err.message ?? "Run failed";
-				if (msg.includes("already in progress")) {
-					setRunFeedback("A run is already in progress for that workflow.");
-				} else {
-					setRunFeedback(msg);
-				}
-			},
-			onSettled: async () => {
-				setPendingWorkflowId(null);
-				if (repoId) {
-					await queryClient.invalidateQueries(trpc.workflows.listInflightManualRuns.queryFilter({ repoId }));
-				}
-			},
-		}),
-	);
 
 	const wfList = workflowsQuery.data ?? [];
-	const inflight = new Set(inflightQuery.data?.inflightWorkflowIds ?? []);
 
 	const openAutomations = () => navigate({ to: `/${org?.slug}/automations` });
 	const openWorkflow = (workflowId: string) =>
@@ -290,52 +253,28 @@ function WorkflowsTab({ repoId }: { repoId: string | undefined }) {
 		<div className="flex flex-col gap-3">
 			<div className="flex items-center justify-between gap-2">
 				<p className="text-[13px] text-tw-text-secondary">Automation workflows for this repo.</p>
-				<button type="button" onClick={openAutomations} className="text-[12px] text-tw-accent hover:underline shrink-0">
+				<Button size="xs" variant="ghost" onClick={openAutomations} className="text-[12px] text-tw-text-secondary shrink-0">
 					Open editor
-				</button>
+				</Button>
 			</div>
-
-			<div className="flex flex-col gap-1">
-				<label htmlFor="wf-run-username" className="text-[11px] text-tw-text-muted">
-					Username to simulate (required for Run)
-				</label>
-				<input
-					id="wf-run-username"
-					type="text"
-					placeholder="octocat"
-					value={runUsername}
-					onChange={(e) => {
-						setRunUsername(e.target.value);
-						setRunFeedback(null);
-					}}
-					className="h-9 rounded-[10px] bg-tw-card border border-tw-border-card px-2.5 text-[13px] text-white placeholder:text-[#6E6E6E] outline-none focus:border-[#FFFFFF1A]"
-				/>
-			</div>
-			{runFeedback ? (
-				<p className="text-[12px] text-tw-text-secondary m-0">{runFeedback}</p>
-			) : null}
 
 			{workflowsQuery.isPending ? (
 				<div className="py-8 text-center text-tw-text-muted text-[13px]">Loading...</div>
 			) : wfList.length === 0 ? (
-				<div className="py-8 text-center">
-					<p className="text-[13px] text-tw-text-muted mb-2">No workflows yet.</p>
-					<button type="button" onClick={openAutomations} className="text-[12px] text-tw-accent hover:underline">
-						Create your first workflow
-					</button>
+				<div className="rounded-xl bg-tw-card border border-tw-border-card p-8 flex flex-col items-center gap-3">
+					<WorkflowsEmptyZapIcon32 />
+					<div className="text-center">
+						<p className="text-[13px] text-tw-text-primary m-0">No workflows yet</p>
+						<p className="text-[12px] text-[#FFFFFF40] m-0 mt-1">Workflows automate how Tripwire responds to PRs, issues, and comments.</p>
+					</div>
+					<Button size="sm" variant="default" onClick={openAutomations} className="text-[12px] mt-1">
+						Create a workflow
+					</Button>
 				</div>
 			) : (
 				<div className="flex flex-col gap-1.5">
 					{wfList.map((wf) => {
 						const nodeCount = (wf.definition as { nodes: unknown[] }).nodes?.length ?? 0;
-						const canManual = workflowSupportsManualRun(wf);
-						const busy = inflight.has(wf.id) || pendingWorkflowId === wf.id;
-						const runDisabled =
-							!repoId ||
-							!wf.enabled ||
-							!canManual ||
-							!runUsername.trim() ||
-							busy;
 						return (
 							<div
 								key={wf.id}
@@ -357,32 +296,11 @@ function WorkflowsTab({ repoId }: { repoId: string | undefined }) {
 										{new Date(wf.updatedAt).toLocaleDateString()}
 									</span>
 								</div>
-								<div className="flex items-center gap-2 shrink-0">
-									{canManual && wf.enabled ? (
-										<Button
-											size="xs"
-											variant="secondary"
-											disabled={runDisabled}
-											className="text-[12px]"
-											onClick={(e) => {
-												e.stopPropagation();
-												if (!repoId || runDisabled) return;
-												setRunFeedback(null);
-												manualRun.mutate({
-													workflowId: wf.id,
-													username: runUsername.trim(),
-												});
-											}}
-										>
-											{busy ? "Running…" : "Run"}
-										</Button>
-									) : null}
-									<span
-										className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${wf.enabled ? "bg-tw-success/10 text-tw-success" : "bg-tw-inner text-tw-text-muted"}`}
-									>
-										{wf.enabled ? "Active" : "Draft"}
-									</span>
-								</div>
+								<span
+									className={`text-[11px] font-medium px-2 py-0.5 rounded-md shrink-0 ${wf.enabled ? "bg-tw-success/10 text-tw-success" : "bg-tw-inner text-tw-text-muted"}`}
+								>
+									{wf.enabled ? "Active" : "Draft"}
+								</span>
 							</div>
 						);
 					})}

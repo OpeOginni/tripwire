@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from "react";
+import { Button } from "#/components/ui/button";
+import { DropdownChevronDownIcon10 } from "#/components/icons/app-chrome-icons";
 
 interface RuleDropdownProps {
 	value: string;
@@ -24,7 +26,7 @@ export function RuleDropdown({ value, options, onChange }: RuleDropdownProps) {
 
 	return (
 		<span className="relative inline-flex" ref={ref} data-dropdown>
-			<button
+			<Button variant="ghost"
 				type="button"
 				onClick={(e) => {
 					e.stopPropagation();
@@ -35,26 +37,12 @@ export function RuleDropdown({ value, options, onChange }: RuleDropdownProps) {
 				<span className="text-xs text-center text-white font-medium">
 					{value}
 				</span>
-				<svg
-					width="10"
-					height="10"
-					viewBox="0 0 24 24"
-					fill="none"
-					style={{ flexShrink: 0 }}
-				>
-					<path
-						d="M6 9l6 6 6-6"
-						stroke="#FFFFFF"
-						strokeWidth="2"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-					/>
-				</svg>
-			</button>
+				<DropdownChevronDownIcon10 />
+			</Button>
 			{open && options && (
 				<div className="absolute top-full left-0 mt-1 z-50 min-w-[80px] rounded-lg bg-[#2a2a2a] border border-[#353434] shadow-lg py-1">
 					{options.map((opt) => (
-						<button
+						<Button variant="ghost"
 							key={opt}
 							type="button"
 							onClick={(e) => {
@@ -67,7 +55,7 @@ export function RuleDropdown({ value, options, onChange }: RuleDropdownProps) {
 							}`}
 						>
 							{opt}
-						</button>
+						</Button>
 					))}
 				</div>
 			)}

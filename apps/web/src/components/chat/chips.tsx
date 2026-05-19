@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ChipIssueGlyphIcon10 } from "#/components/icons/chip-issue-glyph-icon";
 
 export function UserMentionChip({ username }: { username: string }) {
 	return (
@@ -24,10 +25,7 @@ export function IssueChip({ label, number }: { label: string | null; number: str
 			className="inline-flex items-center gap-1 rounded-[5px] px-1 py-[1px] bg-[#2A2A2A]"
 			style={{ verticalAlign: "-0.2em" }}
 		>
-			<svg width="10" height="10" viewBox="0 0 16 16" fill="none" className="shrink-0">
-				<circle cx="8" cy="8" r="5.5" stroke="#B4B4B4" strokeWidth="1.2" />
-				<circle cx="8" cy="8" r="1.5" fill="#B4B4B4" />
-			</svg>
+			<ChipIssueGlyphIcon10 className="shrink-0" />
 			<span className="text-[12px] leading-tight text-[#FAFAFA] font-medium tabular-nums">
 				{label ? `${label} ` : ""}#{number}
 			</span>
@@ -42,7 +40,6 @@ export function renderInlineText(text: string): ReactNode {
 	let lastIndex = 0;
 	let m: RegExpExecArray | null;
 	let key = 0;
-	// biome-ignore lint/suspicious/noAssignInExpressions: needed for regex iteration
 	while ((m = regex.exec(text)) !== null) {
 		if (m.index > lastIndex) parts.push(text.slice(lastIndex, m.index));
 		const tok = m[0];

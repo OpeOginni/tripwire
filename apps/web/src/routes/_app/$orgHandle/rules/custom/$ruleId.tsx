@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { Button } from "#/components/ui/button";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useWorkspace } from "#/lib/workspace-context";
@@ -8,6 +9,7 @@ import type {
 	CustomRuleAction,
 	CustomRuleScopeOverride,
 } from "@tripwire/db";
+import { ChevronLeftStrokeIcon14 } from "#/components/icons/app-chrome-icons";
 
 const RuleBuilderEditor = lazy(() =>
 	import("#/components/rules/rule-builder-editor").then((m) => ({
@@ -88,21 +90,13 @@ function RuleBuilderPage() {
 	return (
 		<div className="h-full flex flex-col">
 			<div className="flex items-center gap-3 px-4 py-3 border-b border-tw-border shrink-0">
-				<button
+				<Button variant="ghost"
 					type="button"
 					onClick={() => navigate({ href: `/${orgHandle}/rules/custom` })}
 					className="flex items-center justify-center size-7 rounded-lg hover:bg-tw-hover transition-colors"
 				>
-					<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-						<path
-							d="M9 3L5 7L9 11"
-							stroke="#9F9FA9"
-							strokeWidth="1.5"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-						/>
-					</svg>
-				</button>
+					<ChevronLeftStrokeIcon14 className="text-[#9F9FA9]" />
+				</Button>
 				<div className="flex flex-col min-w-0">
 					<span className="text-[14px] font-medium text-tw-text-primary truncate">
 						{isNew ? "New Custom Rule" : rule?.name ?? "Edit Rule"}

@@ -1,4 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { Button } from "#/components/ui/button";
+import { toastFromError } from "#/lib/toast-error";
 import {
 	ReactFlow,
 	Background,
@@ -20,6 +22,7 @@ import { nodeTypes, nodeColors } from "#/components/automations/node-types";
 import { onRuleMutation } from "#/lib/workflow-events";
 import { buildChangeSummary, type EditorSnapshot } from "#/lib/pending-changes";
 import { PendingChangesToolbar } from "#/components/automations/pending-changes-toolbar";
+import { ToolboxSearchLoupeIcon13, DragHandleDotsIcon8 } from "#/components/icons/app-chrome-icons";
 import type {
 	CustomRuleAction,
 	CustomRuleDefinition,
@@ -380,11 +383,15 @@ export function RuleBuilderEditor({
 			setSaveError("Set an output node before simulating.");
 			return;
 		}
-		const result = await simulateRule.mutateAsync({
-			repoId,
-			definition,
-		});
-		setSimResult(result);
+		try {
+			const result = await simulateRule.mutateAsync({
+				repoId,
+				definition,
+			});
+			setSimResult(result);
+		} catch (err: unknown) {
+			toastFromError(err, { fallbackTitle: "Something went wrong" });
+		}
 	};
 
 	const handleSave = async () => {
@@ -438,9 +445,7 @@ export function RuleBuilderEditor({
 				onSaved?.(created.id);
 			}
 		} catch (err: unknown) {
-			const msg =
-				err instanceof Error ? err.message : "Failed to save rule.";
-			setSaveError(msg);
+			toastFromError(err, { fallbackTitle: "Something went wrong" });
 		}
 	};
 
@@ -477,9 +482,7 @@ export function RuleBuilderEditor({
 			<div className="w-[220px] shrink-0 border-r border-tw-border bg-tw-surface flex flex-col">
 				<div className="p-2 border-b border-tw-border shrink-0">
 					<div className="flex items-center gap-2 h-8 rounded-[10px] bg-tw-card px-2.5">
-						<svg width="13" height="13" viewBox="0 0 16 16" fill="#6E6E6E">
-							<path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1ZM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0Z" />
-						</svg>
+						<ToolboxSearchLoupeIcon13 />
 						<input
 							type="text"
 							placeholder="Search nodes..."
@@ -505,17 +508,7 @@ export function RuleBuilderEditor({
 										className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-grab active:cursor-grabbing hover:bg-tw-hover transition-colors"
 									>
 										<span className="text-tw-text-muted shrink-0 opacity-60">
-											<svg
-												width="8"
-												height="8"
-												viewBox="0 0 8 8"
-												fill="currentColor"
-											>
-												<circle cx="2" cy="2" r="1" />
-												<circle cx="6" cy="2" r="1" />
-												<circle cx="2" cy="6" r="1" />
-												<circle cx="6" cy="6" r="1" />
-											</svg>
+											<DragHandleDotsIcon8 />
 										</span>
 										<span className="text-[12px] text-tw-text-primary leading-tight truncate">
 											{item.label}
@@ -636,7 +629,7 @@ export function RuleBuilderEditor({
 									["threshold", "Threshold"],
 								] as const
 							).map(([val, label]) => (
-								<button
+								<Button variant="ghost"
 									key={val}
 									type="button"
 									onClick={() => setAction(val)}
@@ -647,7 +640,7 @@ export function RuleBuilderEditor({
 									}`}
 								>
 									{label}
-								</button>
+								</Button>
 							))}
 						</div>
 					</div>
@@ -709,7 +702,7 @@ export function RuleBuilderEditor({
 					<div className="text-[11px] uppercase tracking-[0.08em] text-tw-text-tertiary font-medium">
 						Impact Preview
 					</div>
-					<button
+					<Button variant="ghost"
 						type="button"
 						onClick={handleSimulate}
 						disabled={simulateRule.isPending || nodes.length === 0}
@@ -718,7 +711,7 @@ export function RuleBuilderEditor({
 						{simulateRule.isPending
 							? "Simulating..."
 							: "Run Simulation"}
-					</button>
+					</Button>
 
 					{simResult && (
 						<div className="flex flex-col gap-2 mt-1">
@@ -825,7 +818,7 @@ export function RuleBuilderEditor({
 				)}
 
 				<div className="mt-auto border-t border-tw-border px-3 py-2.5">
-					<button
+					<Button variant="ghost"
 						type="button"
 						onClick={handleSave}
 						disabled={isSaving || !name.trim()}
@@ -836,7 +829,7 @@ export function RuleBuilderEditor({
 							: isEditMode
 								? "Update Rule"
 								: "Create Rule"}
-					</button>
+					</Button>
 				</div>
 			</div>
 		</div>

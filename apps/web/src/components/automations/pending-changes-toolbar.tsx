@@ -1,4 +1,10 @@
 import { useEffect, useState } from "react";
+import { Button } from "#/components/ui/button";
+import {
+	SmallPlusStrokeIcon12,
+	SmallCheckStrokeIcon12,
+	SmallXStrokeIcon12,
+} from "#/components/icons/app-chrome-icons";
 import { cn } from "@tripwire/ui/utils";
 
 interface PendingChangesToolbarProps {
@@ -29,9 +35,7 @@ export function PendingChangesToolbar({ summary, onAccept, onCancel }: PendingCh
     >
       <div className="flex items-center gap-2">
         <span className="flex items-center justify-center size-5 rounded-md bg-tw-accent/15">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-tw-accent">
-            <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
+          <SmallPlusStrokeIcon12 className="text-tw-accent" />
         </span>
         <span className="text-[13px] text-tw-text-primary font-medium">AI proposed changes</span>
       </div>
@@ -39,26 +43,22 @@ export function PendingChangesToolbar({ summary, onAccept, onCancel }: PendingCh
       <span className="text-[12px] text-tw-text-muted">{summary}</span>
 
       <div className="flex items-center gap-1.5 ml-1">
-        <button
+        <Button variant="ghost"
           type="button"
           onClick={onAccept}
           className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-tw-success/15 text-tw-success text-[12px] font-medium hover:bg-tw-success/25 transition-colors"
         >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <SmallCheckStrokeIcon12 className="text-tw-success" />
           Accept
-        </button>
-        <button
+        </Button>
+        <Button variant="ghost"
           type="button"
           onClick={onCancel}
           className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-tw-hover text-tw-text-muted text-[12px] font-medium hover:text-tw-text-primary hover:bg-[#FFFFFF12] transition-colors"
         >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
+          <SmallXStrokeIcon12 className="text-tw-text-muted" />
           Revert
-        </button>
+        </Button>
       </div>
     </div>
   );

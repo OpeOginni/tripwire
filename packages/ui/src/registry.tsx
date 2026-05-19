@@ -1,5 +1,13 @@
 import { defineRegistry, Renderer, JSONUIProvider } from "@json-render/react";
 import { useState } from "react";
+import { Button } from "./button";
+import {
+	RegistryActionErrorIcon,
+	RegistryActionSuccessIcon,
+	RegistryListCheckIcon,
+	RegistryListMinusIcon,
+	RegistryStarIcon10,
+} from "./icons/registry-icons";
 import type { RenderSpec } from "./types";
 import { catalog } from "./catalog";
 
@@ -345,38 +353,9 @@ export const { registry } = defineRegistry(catalog, {
 			return (
 				<div className={`rounded-xl border p-3 flex items-center gap-2 ${bgColor}`}>
 					{props.success ? (
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 14 14"
-							fill="none"
-							className={iconColor}
-						>
-							<circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
-							<path
-								d="M4 7L6 9L10 5"
-								stroke="currentColor"
-								strokeWidth="1.2"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-							/>
-						</svg>
+						<RegistryActionSuccessIcon className={iconColor} />
 					) : (
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 14 14"
-							fill="none"
-							className={iconColor}
-						>
-							<circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
-							<path
-								d="M5 5L9 9M9 5L5 9"
-								stroke="currentColor"
-								strokeWidth="1.2"
-								strokeLinecap="round"
-							/>
-						</svg>
+						<RegistryActionErrorIcon className={iconColor} />
 					)}
 					<span className="text-[13px] text-tw-text-primary">{props.message}</span>
 				</div>
@@ -402,10 +381,7 @@ export const { registry } = defineRegistry(catalog, {
 					{hasBlacklist && (
 						<div className="rounded-xl bg-tw-card p-3 flex flex-col gap-2">
 							<div className="flex items-center gap-1.5 text-[12px] text-tw-text-muted uppercase tracking-wider">
-								<svg width="10" height="10" viewBox="0 0 14 14" fill="none" className="text-tw-error">
-									<circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
-									<path d="M4 7h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-								</svg>
+								<RegistryListMinusIcon className="text-tw-error" />
 								Blacklist
 							</div>
 							<div className="space-y-1.5">
@@ -426,10 +402,7 @@ export const { registry } = defineRegistry(catalog, {
 					{hasWhitelist && (
 						<div className="rounded-xl bg-tw-card p-3 flex flex-col gap-2">
 							<div className="flex items-center gap-1.5 text-[12px] text-tw-text-muted uppercase tracking-wider">
-								<svg width="10" height="10" viewBox="0 0 14 14" fill="none" className="text-tw-success">
-									<circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
-									<path d="M4 7L6 9L10 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-								</svg>
+								<RegistryListCheckIcon className="text-tw-success" />
 								Whitelist
 							</div>
 							<div className="space-y-1.5">
@@ -520,10 +493,7 @@ export const { registry } = defineRegistry(catalog, {
 			return (
 				<div className="rounded-xl bg-tw-card p-3 flex flex-col gap-2">
 					<div className="flex items-center gap-1.5 text-[12px] text-tw-text-muted uppercase tracking-wider">
-						<svg width="10" height="10" viewBox="0 0 14 14" fill="none" className="text-tw-error">
-							<circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
-							<path d="M4 7h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-						</svg>
+						<RegistryListMinusIcon className="text-tw-error" />
 						Most Blocked Users
 					</div>
 					<div className="space-y-1.5">
@@ -674,7 +644,7 @@ export const { registry } = defineRegistry(catalog, {
 					<div className="flex flex-col gap-0.5">
 						{props.prs.map((pr, i) => (
 							<div key={pr.number}>
-								<button
+								<Button variant="ghost"
 									type="button"
 									onClick={() => setExpanded(expanded === i ? null : i)}
 									className="w-full flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-[#ffffff08] transition-colors text-left"
@@ -694,7 +664,7 @@ export const { registry } = defineRegistry(catalog, {
 									<span className="text-[10px] text-tw-text-muted shrink-0 tabular-nums">
 										{relativeDate(pr.mergedAt ?? pr.createdAt)}
 									</span>
-								</button>
+								</Button>
 								{expanded === i && (
 									<div className="ml-5 pb-2 pt-0.5 flex flex-col gap-1.5">
 										{/* Repo + PR meta */}
@@ -898,13 +868,13 @@ export const { registry } = defineRegistry(catalog, {
 					{/* Files toggle */}
 					{props.files.length > 0 && (
 						<div>
-							<button
+							<Button variant="ghost"
 								type="button"
 								onClick={() => setShowFiles(!showFiles)}
 								className="text-[11px] text-tw-text-muted hover:text-tw-text-secondary transition-colors"
 							>
 								{showFiles ? "Hide" : "Show"} {props.files.length} file{props.files.length !== 1 ? "s" : ""}
-							</button>
+							</Button>
 							{showFiles && (
 								<div className="mt-1 flex flex-col gap-0.5 max-h-48 overflow-auto">
 									{props.files.map((f) => (
@@ -923,13 +893,13 @@ export const { registry } = defineRegistry(catalog, {
 					{/* Commits toggle */}
 					{props.commitMessages.length > 0 && (
 						<div>
-							<button
+							<Button variant="ghost"
 								type="button"
 								onClick={() => setShowCommits(!showCommits)}
 								className="text-[11px] text-tw-text-muted hover:text-tw-text-secondary transition-colors"
 							>
 								{showCommits ? "Hide" : "Show"} {props.commitMessages.length} commit{props.commitMessages.length !== 1 ? "s" : ""}
-							</button>
+							</Button>
 							{showCommits && (
 								<div className="mt-1 flex flex-col gap-0.5 max-h-36 overflow-auto">
 									{props.commitMessages.map((msg, i) => (
@@ -945,13 +915,13 @@ export const { registry } = defineRegistry(catalog, {
 					{/* Comments thread */}
 					{props.comments.length > 0 && (
 						<div>
-							<button
+							<Button variant="ghost"
 								type="button"
 								onClick={() => setShowComments(!showComments)}
 								className="text-[11px] text-tw-text-muted hover:text-tw-text-secondary transition-colors"
 							>
 								{showComments ? "Hide" : "Show"} {props.comments.length} comment{props.comments.length !== 1 ? "s" : ""}
-							</button>
+							</Button>
 							{showComments && (
 								<div className="mt-1.5 flex flex-col gap-2 max-h-72 overflow-auto">
 									{props.comments.map((c, i) => (
@@ -1069,7 +1039,7 @@ export const { registry } = defineRegistry(catalog, {
 					<div className="flex flex-col gap-0.5">
 						{props.repos.map((repo, i) => (
 							<div key={repo.fullName}>
-								<button
+								<Button variant="ghost"
 									type="button"
 									onClick={() => setExpanded(expanded === i ? null : i)}
 									className="w-full flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-[#ffffff08] transition-colors text-left"
@@ -1099,7 +1069,7 @@ export const { registry } = defineRegistry(catalog, {
 											<span className="text-tw-text-muted tabular-nums">{fmtCompact(repo.stars)}</span>
 										)}
 									</div>
-								</button>
+								</Button>
 								{expanded === i && (
 									<div className="ml-4 pb-2 pt-0.5 flex flex-col gap-1.5">
 										<div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[11px] text-tw-text-muted">
@@ -1174,7 +1144,7 @@ export const { registry } = defineRegistry(catalog, {
 									)}
 									{repo.stars > 0 && (
 										<span className="text-[10px] text-tw-text-muted tabular-nums ml-auto flex items-center gap-0.5">
-											<svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>
+											<RegistryStarIcon10 className="text-tw-text-muted" />
 											{fmtCompact(repo.stars)}
 										</span>
 									)}
@@ -1283,27 +1253,27 @@ function ScoreBreakdownButton({ username }: { username: string }) {
 				<JSONUIProvider registry={registry}>
 					<Renderer spec={state.spec} registry={registry} />
 				</JSONUIProvider>
-				<button
+				<Button variant="ghost"
 					type="button"
 					onClick={() => setState({ phase: "idle" })}
 					className="self-start text-[10px] text-tw-text-muted hover:text-tw-text-secondary transition-colors"
 				>
 					Hide breakdown
-				</button>
+				</Button>
 			</div>
 		);
 	}
 
 	return (
 		<div className="flex items-center gap-2 pt-0.5">
-			<button
+			<Button variant="ghost"
 				type="button"
 				onClick={load}
 				disabled={state.phase === "loading"}
 				className="text-[11px] px-2 py-1 rounded-md bg-[#FAFAFA08] hover:bg-[#FAFAFA12] text-tw-text-secondary hover:text-tw-text-primary transition-colors disabled:opacity-50"
 			>
 				{state.phase === "loading" ? "Loading…" : "Score breakdown"}
-			</button>
+			</Button>
 			{state.phase === "error" && (
 				<span className="text-[11px] text-tw-error">{state.message}</span>
 			)}

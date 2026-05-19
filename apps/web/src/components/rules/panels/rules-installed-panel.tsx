@@ -11,6 +11,7 @@ import {
 	VouchedUsersViz,
 } from "#/components/rules/rule-card-grid";
 import { useRulesWorkspace } from "#/components/rules/rules-workspace-context";
+import { Button } from "#/components/ui/button";
 
 
 export function RulesInstalledPanel() {
@@ -75,7 +76,7 @@ export function RulesInstalledPanel() {
 										configureHint={({ close }) => (
 											<>
 												Honeypot phrases and the hidden line injected into your PR template live in the{" "}
-												<button
+												<Button variant="ghost"
 													type="button"
 													onClick={() => {
 														navigateToRulesTab("files");
@@ -84,7 +85,7 @@ export function RulesInstalledPanel() {
 													className="text-tw-accent hover:underline underline-offset-2 cursor-pointer"
 												>
 													Files tab
-												</button>
+												</Button>
 												. This dialog only changes how Tripwire reacts when the phrase is detected.
 											</>
 										)}

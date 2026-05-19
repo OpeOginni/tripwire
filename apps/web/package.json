@@ -9,6 +9,8 @@
 		"dev": "vite dev --port 3000",
 		"build": "vite build",
 		"preview": "vite preview",
+		"lint": "biome check . --formatter-enabled=false --assist-enabled=false",
+		"lint:fix": "biome check --write . --formatter-enabled=false --assist-enabled=false",
 		"test": "vitest run",
 		"typecheck": "tsc --noEmit",
 		"db:generate": "drizzle-kit generate",
@@ -116,6 +118,7 @@
 		"tsx": "^4.21.0",
 		"typescript": "^5.7.2",
 		"vite": "^7.3.1",
-		"vitest": "^3.0.5"
+		"vitest": "^3.0.5",
+		"@biomejs/biome": "2.2.4"
 	}
 }

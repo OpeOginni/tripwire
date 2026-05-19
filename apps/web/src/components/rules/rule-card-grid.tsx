@@ -19,7 +19,7 @@ export {
 	ProfileReadmeViz,
 	CryptoViz,
 	VouchedUsersViz,
-} from "../landing/visuals";
+} from "#/components/icons/landing-visuals";
 
 const ACTION_LABELS: Record<RuleAction, string> = {
 	block: "Block",
@@ -180,7 +180,7 @@ export function RuleCardGrid({
 						{onActionChange && actionEditing ? (
 							<div className="flex items-center gap-1">
 								{(["block", "warn", "log"] as const).map((a) => (
-									<button
+									<Button variant="ghost"
 										key={a}
 										type="button"
 										onClick={(e) => {
@@ -195,9 +195,9 @@ export function RuleCardGrid({
 										}`}
 									>
 										{ACTION_LABELS[a]}
-									</button>
+									</Button>
 								))}
-								<button
+								<Button variant="ghost"
 									type="button"
 									onClick={(e) => {
 										e.stopPropagation();
@@ -207,10 +207,10 @@ export function RuleCardGrid({
 									aria-label="Close action picker"
 								>
 									✕
-								</button>
+								</Button>
 							</div>
 						) : (
-							<button
+							<Button variant="ghost"
 								type="button"
 								onClick={(e) => {
 									e.stopPropagation();
@@ -224,7 +224,7 @@ export function RuleCardGrid({
 								title={onActionChange ? "Change action" : undefined}
 							>
 								{ACTION_LABELS[action]}
-							</button>
+							</Button>
 						)}
 						{numericConfig && (
 							numericEditing ? (
@@ -249,7 +249,7 @@ export function RuleCardGrid({
 									className="w-14 px-2 py-0.5 rounded-md text-[11px] font-medium bg-tw-surface text-tw-text-primary border border-tw-accent/40 outline-none text-center"
 								/>
 							) : (
-								<button
+								<Button variant="ghost"
 									type="button"
 									onClick={(e) => {
 										e.stopPropagation();
@@ -260,7 +260,7 @@ export function RuleCardGrid({
 									title={`Edit ${numericConfig.label.toLowerCase()}`}
 								>
 									{numericConfig.value}
-								</button>
+								</Button>
 							)
 						)}
 					</div>
@@ -319,7 +319,7 @@ export function RuleCardGrid({
 								</label>
 								<div className="flex flex-wrap items-center gap-1">
 									{(["block", "warn", "log"] as const).map((a) => (
-										<button
+										<Button variant="ghost"
 											key={a}
 											type="button"
 											onClick={() => onActionChange(a)}
@@ -330,7 +330,7 @@ export function RuleCardGrid({
 											}`}
 										>
 											{ACTION_LABELS[a]}
-										</button>
+										</Button>
 									))}
 								</div>
 							</div>
@@ -432,20 +432,20 @@ function ScopeOverrideSection({ global, override, onChange }: ScopeOverrideSecti
 					Content scope
 				</label>
 				{hasOverride && (
-					<button
+					<Button variant="ghost"
 						type="button"
 						onClick={handleReset}
 						className="text-[11px] text-tw-text-tertiary hover:text-tw-text-secondary transition-colors"
 					>
 						Reset to repo default
-					</button>
+					</Button>
 				)}
 			</div>
 			<div className="flex flex-wrap items-center gap-1">
 				{SCOPE_TYPES.map(({ key, label }) => {
 					const on = effective(key);
 					return (
-						<button
+						<Button variant="ghost"
 							key={key}
 							type="button"
 							onClick={() => handleToggle(key)}
@@ -456,7 +456,7 @@ function ScopeOverrideSection({ global, override, onChange }: ScopeOverrideSecti
 							}`}
 						>
 							{label}
-						</button>
+						</Button>
 					);
 				})}
 			</div>

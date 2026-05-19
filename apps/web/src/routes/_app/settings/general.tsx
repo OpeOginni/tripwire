@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { Button } from "#/components/ui/button";
 import { env } from "@tripwire/env/client";
 
 export const Route = createFileRoute("/_app/settings/general")({
@@ -123,7 +124,7 @@ function ThemePicker() {
 	return (
 		<div className="flex gap-3">
 			{themes.map((theme) => (
-				<button
+				<Button variant="ghost"
 					key={theme.key}
 					type="button"
 					onClick={() => setSelected(theme.key)}
@@ -158,7 +159,7 @@ function ThemePicker() {
 						)}
 					</div>
 					<span className="text-[12px] font-medium text-tw-text-secondary">{theme.label}</span>
-				</button>
+				</Button>
 			))}
 		</div>
 	);
@@ -181,7 +182,7 @@ function NotificationRow({
 				<div className="text-[13px] font-medium text-tw-text-primary">{title}</div>
 				<div className="text-[12px] text-tw-text-muted mt-0.5">{description}</div>
 			</div>
-			<button
+			<Button variant="ghost"
 				type="button"
 				role="switch"
 				aria-checked={checked}
@@ -195,7 +196,7 @@ function NotificationRow({
 						checked ? "translate-x-[18px] bg-[#0D0D0F]" : "translate-x-[3px] bg-tw-text-muted"
 					}`}
 				/>
-			</button>
+			</Button>
 		</div>
 	);
 }

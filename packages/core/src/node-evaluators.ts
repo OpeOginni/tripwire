@@ -201,12 +201,39 @@ register("rule", "language", {
     { key: "contentText", label: "Content text", type: "string", source: "content", default: "" },
   ],
   evaluate(data, ctx) {
-    const required = (data.params as Record<string, unknown>)?.language as string ?? "English";
+    const params = (data.params as Record<string, unknown>) ?? data;
+    const lang = (params.language as string) ?? "en";
+    const customCode = (params.languageCode as string) ?? "";
+    const code = lang === "custom" ? customCode : lang;
     const text = str(ctx, "contentText");
     if (!text) return { pass: true, detail: "SKIP -- no content text provided" };
-    const looksEnglish = /^[a-zA-Z0-9\s.,!?;:'"()\-\n]+$/.test(text.slice(0, 200));
-    const pass = required === "English" ? looksEnglish : true;
-    return { pass, detail: `${pass ? "PASS" : "FAIL"} -- content ${pass ? "matches" : "does not match"} ${required}` };
+
+    const latinPattern = /^[\u0000-\u024F\u1E00-\u1EFF\s\d.,!?;:'"()\-\n]+$/;
+    const cyrillicPattern = /[\u0400-\u04FF]/;
+    const cjkPattern = /[\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/;
+    const arabicPattern = /[\u0600-\u06FF]/;
+    const devanagariPattern = /[\u0900-\u097F]/;
+
+    const sample = text.slice(0, 300);
+    let pass = true;
+    const scriptChecks: Record<string, RegExp> = {
+      en: latinPattern, es: latinPattern, fr: latinPattern, de: latinPattern, pt: latinPattern,
+      Latn: latinPattern, ru: cyrillicPattern, Cyrl: cyrillicPattern,
+      zh: cjkPattern, ja: cjkPattern, ko: cjkPattern, Hani: cjkPattern, Kana: cjkPattern, Hang: cjkPattern,
+      ar: arabicPattern, Arab: arabicPattern,
+      hi: devanagariPattern, Deva: devanagariPattern,
+    };
+
+    const pattern = scriptChecks[code];
+    if (pattern) {
+      if (code === "en" || code === "es" || code === "fr" || code === "de" || code === "pt" || code === "Latn") {
+        pass = pattern.test(sample);
+      } else {
+        pass = pattern.test(sample);
+      }
+    }
+
+    return { pass, detail: `${pass ? "PASS" : "FAIL"} -- content ${pass ? "matches" : "does not match"} language: ${code}` };
   },
 });
 
@@ -396,7 +423,9 @@ register("transform", "detect_language", {
 register("delay", "wait", {
   requiredContext: [],
   evaluate(data) {
-    const duration = (data.duration as string) ?? "5m";
+    const value = (data.durationValue as number) ?? 5;
+    const unit = (data.durationUnit as string) ?? "m";
+    const duration = `${value}${unit}`;
     const ms = parseDurationMs(duration);
     return {
       pass: true,

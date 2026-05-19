@@ -322,7 +322,6 @@ export default function FaultyTerminal({
 		const w = cursorMask.width ?? 1.4;
 		const h = (w * vbH) / vbW;
 		return new Float32Array([w / 2, h / 2]);
-		// biome-ignore lint/correctness/useExhaustiveDependencies: maskKey is the content hash for cursorMask
 	}, [maskKey]);
 
 	const handleMouseMove = useCallback((e: MouseEvent) => {

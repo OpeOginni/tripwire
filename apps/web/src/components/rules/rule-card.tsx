@@ -1,5 +1,8 @@
+import type { ReactNode } from "react";
+import { Button } from "#/components/ui/button";
+
 interface RuleCardProps {
-	title: React.ReactNode;
+	title: ReactNode;
 	description: string;
 	enabled: boolean;
 	onToggle: (enabled: boolean) => void;
@@ -16,7 +19,7 @@ export function RuleCard({ title, description, enabled, onToggle }: RuleCardProp
 					{description}
 				</div>
 			</div>
-			<button
+			<Button variant="ghost"
 				type="button"
 				role="switch"
 				aria-checked={enabled}
@@ -32,7 +35,7 @@ export function RuleCard({ title, description, enabled, onToggle }: RuleCardProp
 							: "left-0.5 bg-[#FFFFFF59]"
 					}`}
 				/>
-			</button>
+			</Button>
 		</div>
 	);
 }

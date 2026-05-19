@@ -3,6 +3,7 @@
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 import type * as React from "react";
 import { cn } from '@tripwire/ui/utils';
+import { CheckboxSmCheckIcon } from "#/components/icons/checkbox-sm-check-icon";
 
 interface CheckboxProps
 	extends Omit<React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>, "render"> {
@@ -24,15 +25,7 @@ export function Checkbox({ className, ...props }: CheckboxProps) {
 			)}
 		>
 			<CheckboxPrimitive.Indicator className="absolute inset-0 flex items-center justify-center text-white">
-				<svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-					<path
-						d="M2 5.25 4 7.25 8.25 3"
-						stroke="currentColor"
-						strokeWidth="1.5"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-					/>
-				</svg>
+				<CheckboxSmCheckIcon />
 			</CheckboxPrimitive.Indicator>
 		</CheckboxPrimitive.Root>
 	);

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button } from "#/components/ui/button";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "#/integrations/trpc/react";
@@ -8,6 +9,14 @@ import { toastManager } from "#/components/ui/toast";
 import { toastFromError } from "#/lib/toast-error";
 import { invalidateListCaches } from "#/lib/cache";
 import { isCustomRuleName, stripCustomRulePrefix } from "#/lib/custom-rules-utils";
+import {
+	EventPageExternalLinkIcon11,
+	EventIssueDotCircleIcon12,
+	EventShieldStrokeIcon14,
+	EventShieldCheckStrokeIcon14,
+	EventUserPlusStrokeIcon14,
+	EventRuleResultGlyph,
+} from "#/components/icons/event-detail-icons";
 
 export const Route = createFileRoute("/_app/$orgHandle/events/$eventId")({
 	component: EventDetailPage,
@@ -98,13 +107,13 @@ function EventDetailPage() {
 		return (
 			<div className="min-h-full flex flex-col items-center justify-center gap-4">
 				<p className="text-tw-text-secondary">Event not found</p>
-				<button
+				<Button variant="ghost"
 					type="button"
 					onClick={() => navigate({ to: eventsPath })}
 					className="text-tw-accent hover:underline"
 				>
 					Back to Events
-				</button>
+				</Button>
 			</div>
 		);
 	}
@@ -174,34 +183,13 @@ function EventDetailPage() {
 							const ghUrl = buildGitHubRefUrl(fullName, ref, displayEvent?.contentType);
 							const body = (
 								<>
-									<IssueCircle color={sevColor} />
+									<EventIssueDotCircleIcon12 color={sevColor} />
 									{fullName || "unknown/repo"}{" "}
 									<span className="font-mono text-tw-text-secondary">
 										{ref || "#???"}
 									</span>
 									{ghUrl ? (
-										<svg
-											className="ml-0.5 opacity-60 group-hover:opacity-100 transition-opacity"
-											width="11"
-											height="11"
-											viewBox="0 0 12 12"
-											fill="none"
-											aria-hidden="true"
-										>
-											<path
-												d="M4.5 2.5h-2A1.5 1.5 0 0 0 1 4v5.5A1.5 1.5 0 0 0 2.5 11H8a1.5 1.5 0 0 0 1.5-1.5v-2"
-												stroke="currentColor"
-												strokeWidth="1.2"
-												strokeLinecap="round"
-											/>
-											<path
-												d="M7 1h4v4M11 1 5.5 6.5"
-												stroke="currentColor"
-												strokeWidth="1.2"
-												strokeLinecap="round"
-												strokeLinejoin="round"
-											/>
-										</svg>
+										<EventPageExternalLinkIcon11 className="ml-0.5 opacity-60 group-hover:opacity-100 transition-opacity" />
 									) : null}
 								</>
 							);
@@ -230,7 +218,7 @@ function EventDetailPage() {
 							{/* Show what Tripwire already did */}
 							{isAlreadyActioned(displayEvent?.action) && (
 								<div className="flex items-center gap-2 px-3 py-2 rounded-[10px] bg-tw-inner text-[13px] text-tw-text-secondary">
-									<ShieldCheckIcon />
+									<EventShieldCheckStrokeIcon14 />
 									<span>
 									Tripwire {getActionedLabel(displayEvent?.action, displayEvent?.severity)}
 								</span>
@@ -250,7 +238,7 @@ function EventDetailPage() {
 								}}
 								disabled={blacklistMutation.isPending || isAlreadyBlacklisted}
 							>
-								<ShieldIcon />
+								<EventShieldStrokeIcon14 />
 								{isAlreadyBlacklisted
 									? `@${username} is blacklisted`
 									: blacklistMutation.isPending
@@ -271,7 +259,7 @@ function EventDetailPage() {
 								}}
 								disabled={whitelistMutation.isPending}
 							>
-								<UserPlusIcon />
+								<EventUserPlusStrokeIcon14 />
 								{whitelistMutation.isPending ? "Adding..." : "Add to whitelist"}
 							</ActionPill>
 						</>
@@ -279,7 +267,7 @@ function EventDetailPage() {
 						<div className="flex items-center gap-2 px-3 py-2 rounded-[10px] bg-tw-inner text-[13px]">
 							{actionStatus === "blacklisted" && (
 								<>
-									<ShieldIcon />
+									<EventShieldStrokeIcon14 />
 									<span className="text-tw-text-primary">
 										@{username} has been blacklisted
 									</span>
@@ -287,7 +275,7 @@ function EventDetailPage() {
 							)}
 							{actionStatus === "safe" && (
 								<>
-									<UserPlusIcon />
+									<EventUserPlusStrokeIcon14 />
 									<span className="text-tw-text-primary">
 										@{username} added to whitelist
 									</span>
@@ -570,37 +558,37 @@ function ActionPill({
 		"flex items-center gap-1.5 h-8 px-3 rounded-[10px] text-[13px] leading-none transition-colors whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
 	if (variant === "primary") {
 		return (
-			<button
+			<Button variant="ghost"
 				type="button"
 				onClick={onClick}
 				disabled={disabled}
 				className={`${base} bg-tw-text-primary text-tw-bg hover:bg-white`}
 			>
 				{children}
-			</button>
+			</Button>
 		);
 	}
 	if (variant === "ghost") {
 		return (
-			<button
+			<Button variant="ghost"
 				type="button"
 				onClick={onClick}
 				disabled={disabled}
 				className={`${base} text-tw-text-secondary hover:text-tw-text-primary hover:bg-tw-card`}
 			>
 				{children}
-			</button>
+			</Button>
 		);
 	}
 	return (
-		<button
+		<Button variant="ghost"
 			type="button"
 			onClick={onClick}
 			disabled={disabled}
 			className={`${base} bg-tw-card text-tw-text-primary hover:bg-tw-hover`}
 		>
 			{children}
-		</button>
+		</Button>
 	);
 }
 
@@ -631,68 +619,6 @@ function StatusChip({ status }: { status: string }) {
 	);
 }
 
-function IssueCircle({ color }: { color: string }) {
-	return (
-		<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-			<circle cx="6" cy="6" r="4.5" stroke={color} strokeWidth="1.3" />
-			<circle cx="6" cy="6" r="1.3" fill={color} />
-		</svg>
-	);
-}
-
-function ShieldIcon() {
-	return (
-		<svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-			<path
-				d="M12 2L4 5V11C4 16 7.5 20.5 12 22C16.5 20.5 20 16 20 11V5L12 2Z"
-				stroke="currentColor"
-				strokeWidth="1.8"
-				strokeLinejoin="round"
-			/>
-		</svg>
-	);
-}
-
-function ShieldCheckIcon() {
-	return (
-		<svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-			<path
-				d="M12 2L4 5V11C4 16 7.5 20.5 12 22C16.5 20.5 20 16 20 11V5L12 2Z"
-				stroke="currentColor"
-				strokeWidth="1.8"
-				strokeLinejoin="round"
-			/>
-			<path
-				d="M8.75 12L11 14.25L15.25 10"
-				stroke="currentColor"
-				strokeWidth="1.8"
-				strokeLinecap="round"
-				strokeLinejoin="round"
-			/>
-		</svg>
-	);
-}
-
-function UserPlusIcon() {
-	return (
-		<svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-			<circle cx="9" cy="8" r="3.25" stroke="currentColor" strokeWidth="1.8" />
-			<path
-				d="M3.5 19.5C3.5 16.46 5.96 14 9 14C12.04 14 14.5 16.46 14.5 19.5"
-				stroke="currentColor"
-				strokeWidth="1.8"
-				strokeLinecap="round"
-			/>
-			<path
-				d="M18.5 8.5V14.5M21.5 11.5H15.5"
-				stroke="currentColor"
-				strokeWidth="1.8"
-				strokeLinecap="round"
-			/>
-		</svg>
-	);
-}
-
 function RuleTraceRow({
 	label,
 	result,
@@ -710,7 +636,7 @@ function RuleTraceRow({
 	};
 	return (
 		<div className="rounded-[10px] bg-tw-inner px-3 py-2.5 flex items-center gap-3">
-			<RuleResultGlyph result={result} />
+			<EventRuleResultGlyph result={result} />
 			<div className="flex-1 min-w-0">
 				<div className="text-[14px] leading-5 text-tw-text-primary">{label}</div>
 				<div className="text-[12px] leading-[18px] text-tw-text-tertiary truncate">
@@ -725,42 +651,6 @@ function RuleTraceRow({
 				{result.charAt(0).toUpperCase() + result.slice(1)}
 			</span>
 		</div>
-	);
-}
-
-function RuleResultGlyph({ result }: { result: string }) {
-	if (result === "blocked" || result === "flagged") {
-		const color = result === "blocked" ? "#F56D5D" : "#D1BC00";
-		return (
-			<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-				<path
-					fillRule="evenodd"
-					clipRule="evenodd"
-					d="M13.998 21.75C16.253 21.75 18.033 21.75 19.352 21.554C20.69 21.354 21.776 20.922 22.376 19.863C22.975 18.806 22.79 17.65 22.276 16.395C21.772 15.161 20.866 13.633 19.717 11.696L19.669 11.616L17.744 8.371L17.698 8.293C16.596 6.434 15.723 4.963 14.911 3.965C14.083 2.946 13.184 2.25 12 2.25C10.816 2.25 9.917 2.946 9.089 3.965C8.277 4.963 7.405 6.434 6.303 8.293L6.256 8.371L4.331 11.616L4.283 11.696C3.135 13.633 2.228 15.161 1.724 16.395C1.21 17.65 1.025 18.806 1.624 19.863C2.224 20.922 3.31 21.354 4.648 21.554C5.967 21.75 7.747 21.75 10.002 21.75L13.998 21.75ZM12 10.25C11.448 10.25 11 9.802 11 9.25C11 8.698 11.448 8.25 12 8.25C12.552 8.25 13 8.698 13 9.25C13 9.802 12.552 10.25 12 10.25ZM12 18C11.448 18 11 17.552 11 17L11 13C11 12.448 11.448 12 12 12C12.552 12 13 12.448 13 13L13 17C13 17.552 12.552 18 12 18Z"
-					fill={color}
-				/>
-			</svg>
-		);
-	}
-	if (result === "passed") {
-		return (
-			<svg width="16" height="16" viewBox="0 0 16 16" fill="#67E19F">
-				<circle cx="8" cy="8" r="8" />
-				<path
-					d="M5 8L7 10L11 6"
-					stroke="#0D0D0F"
-					strokeWidth="1.5"
-					strokeLinecap="round"
-					strokeLinejoin="round"
-					fill="none"
-				/>
-			</svg>
-		);
-	}
-	return (
-		<span className="w-4 h-4 flex items-center justify-center">
-			<span className="w-2 h-[2px] bg-tw-text-tertiary" />
-		</span>
 	);
 }
 
