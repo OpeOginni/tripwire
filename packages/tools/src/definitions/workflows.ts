@@ -401,7 +401,7 @@ const getWorkflow = defineTool({
     if (!output.found) {
       return makeSpec("Text", { content: `Workflow not found.` })
     }
-    const def = output.definition as {
+    const def = output.definition as unknown as {
       nodes: Array<Record<string, unknown>>
       edges: Array<Record<string, unknown>>
     }

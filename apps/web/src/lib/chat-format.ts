@@ -9,7 +9,7 @@ export function getPartKey(
 ): string {
   const mid = messageId || "msg"
   if (part.type === "tool-result") {
-    return `${mid}-tool-result-${part.toolCallId ?? part.id ?? index ?? 0}`
+    return `${mid}-tool-result-${part.toolCallId ?? (part as Record<string, unknown>).id ?? index ?? 0}`
   }
   if (isToolPart(part)) {
     return `${mid}-tool-call-${getToolCallId(part) ?? index ?? 0}`

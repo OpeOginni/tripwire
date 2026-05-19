@@ -361,7 +361,7 @@ function UserProfilePage() {
                 return (
                   <Link
                     key={event.id}
-                    to={org?.slug ? "/$orgHandle/events/$eventId" : "#"}
+                    to={org?.slug ? "/$orgHandle/events/$eventId" : ("/" as string)}
                     params={
                       org?.slug
                         ? { orgHandle: org.slug, eventId: event.id }

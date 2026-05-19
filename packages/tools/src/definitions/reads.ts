@@ -1020,7 +1020,7 @@ const describeWorkflow = defineTool({
     const wf = rows.find((w) => w.name.toLowerCase().includes(nameLower))
     if (!wf) return { found: false, name }
 
-    const def = wf.definition as {
+    const def = wf.definition as unknown as {
       nodes: Array<Record<string, unknown>>
       edges: Array<Record<string, unknown>>
     }
