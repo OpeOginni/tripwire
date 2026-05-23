@@ -3,6 +3,7 @@ import { db } from "@tripwire/db/client"
 import { researchContributors, researchPrs, researchRuns } from "@tripwire/db"
 import { env } from "@tripwire/env/server"
 import {
+  GH_CALLS_PER_CONTRIBUTOR,
   githubBucket,
   processContributor,
   withBucket,
@@ -56,6 +57,7 @@ export const processResearchRun = inngest.createFunction(
     const usernames = params.usernames
     const cutoffDate = params.cutoffDate
     const prLimit = params.prLimitPerUser ?? 100
+    const contextRepoId = params.contextRepoId
     const bucket = githubBucket()
 
     let completed = 0
@@ -80,56 +82,62 @@ export const processResearchRun = inngest.createFunction(
           await Promise.all(
             chunk.map(async (username) => {
               try {
-                const { contributor, prs } = await withBucket(bucket, () =>
-                  processContributor(username, token, {
-                    cutoffDate,
-                    prLimit,
-                  })
+                const { contributor, prs } = await withBucket(
+                  bucket,
+                  () =>
+                    processContributor(username, token, {
+                      cutoffDate,
+                      prLimit,
+                      contextRepoId,
+                    }),
+                  GH_CALLS_PER_CONTRIBUTOR
                 )
 
-                const [inserted] = await db
-                  .insert(researchContributors)
-                  .values({
-                    runId,
-                    username: contributor.username,
-                    accountCreatedAt: contributor.accountCreatedAt
-                      ? new Date(contributor.accountCreatedAt)
-                      : null,
-                    accountAgeDays: contributor.accountAgeDays,
-                    cohort: contributor.cohort,
-                    signals: contributor.signals,
-                    score: contributor.score,
-                    evaluations: contributor.evaluations,
-                    prCount: contributor.prCount,
-                    fetchedAt: new Date(contributor.fetchedAt),
-                    error: contributor.error ?? null,
-                  })
-                  .returning({ id: researchContributors.id })
+                await db.transaction(async (tx) => {
+                  const [inserted] = await tx
+                    .insert(researchContributors)
+                    .values({
+                      runId,
+                      username: contributor.username,
+                      accountCreatedAt: contributor.accountCreatedAt
+                        ? new Date(contributor.accountCreatedAt)
+                        : null,
+                      accountAgeDays: contributor.accountAgeDays,
+                      cohort: contributor.cohort,
+                      signals: contributor.signals,
+                      score: contributor.score,
+                      evaluations: contributor.evaluations,
+                      prCount: contributor.prCount,
+                      fetchedAt: new Date(contributor.fetchedAt),
+                      error: contributor.error ?? null,
+                    })
+                    .returning({ id: researchContributors.id })
 
-                if (inserted && prs.length > 0) {
-                  await db.insert(researchPrs).values(
-                    prs.map((pr) => ({
-                      contributorId: inserted.id,
-                      prNumber: pr.prNumber,
-                      repoFullName: pr.repoFullName,
-                      title: pr.title,
-                      body: pr.body,
-                      state: pr.state,
-                      createdAt: new Date(pr.createdAt),
-                      mergedAt: pr.mergedAt ? new Date(pr.mergedAt) : null,
-                      closedAt: pr.closedAt ? new Date(pr.closedAt) : null,
-                      timeToMergeMinutes: pr.timeToMergeMinutes,
-                      additions: pr.additions,
-                      deletions: pr.deletions,
-                      changedFiles: pr.changedFiles,
-                      commits: pr.commits,
-                      selfClosed: pr.selfClosed,
-                      labels: pr.labels,
-                      cohort: pr.cohort,
-                      ruleEvaluations: pr.ruleEvaluations,
-                    }))
-                  )
-                }
+                  if (inserted && prs.length > 0) {
+                    await tx.insert(researchPrs).values(
+                      prs.map((pr) => ({
+                        contributorId: inserted.id,
+                        prNumber: pr.prNumber,
+                        repoFullName: pr.repoFullName,
+                        title: pr.title,
+                        body: pr.body,
+                        state: pr.state,
+                        createdAt: new Date(pr.createdAt),
+                        mergedAt: pr.mergedAt ? new Date(pr.mergedAt) : null,
+                        closedAt: pr.closedAt ? new Date(pr.closedAt) : null,
+                        timeToMergeMinutes: pr.timeToMergeMinutes,
+                        additions: pr.additions,
+                        deletions: pr.deletions,
+                        changedFiles: pr.changedFiles,
+                        commits: pr.commits,
+                        selfClosed: pr.selfClosed,
+                        labels: pr.labels,
+                        cohort: pr.cohort,
+                        ruleEvaluations: pr.ruleEvaluations,
+                      }))
+                    )
+                  }
+                })
 
                 chunkCompleted += 1
                 chunkPrs += prs.length

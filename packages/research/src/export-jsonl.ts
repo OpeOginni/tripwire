@@ -1,4 +1,4 @@
-import type { ProcessResult, RuleEvaluation } from "./types"
+import type { PersistedRunResult, RuleEvaluation } from "./types"
 
 export interface JsonlContributorRecord {
   type: "contributor"
@@ -6,8 +6,6 @@ export interface JsonlContributorRecord {
   accountCreatedAt: string | null
   accountAgeDays: number
   cohort: string
-  status: string
-  badges: string[]
   prCount: number
   fetchedAt: string
   signals: Record<string, unknown>
@@ -38,7 +36,7 @@ export interface JsonlPrRecord {
 }
 
 export function* iterJsonlContributors(
-  results: ProcessResult[]
+  results: PersistedRunResult[]
 ): Generator<string> {
   for (const { contributor } of results) {
     const record: JsonlContributorRecord = {
@@ -47,8 +45,6 @@ export function* iterJsonlContributors(
       accountCreatedAt: contributor.accountCreatedAt,
       accountAgeDays: contributor.accountAgeDays,
       cohort: contributor.cohort,
-      status: contributor.status,
-      badges: contributor.badges,
       prCount: contributor.prCount,
       fetchedAt: contributor.fetchedAt,
       signals: contributor.signals,
@@ -60,7 +56,9 @@ export function* iterJsonlContributors(
   }
 }
 
-export function* iterJsonlPrs(results: ProcessResult[]): Generator<string> {
+export function* iterJsonlPrs(
+  results: PersistedRunResult[]
+): Generator<string> {
   for (const { contributor, prs } of results) {
     for (const pr of prs) {
       const record: JsonlPrRecord = {
@@ -88,7 +86,7 @@ export function* iterJsonlPrs(results: ProcessResult[]): Generator<string> {
   }
 }
 
-export function toJsonl(results: ProcessResult[]): string {
+export function toJsonl(results: PersistedRunResult[]): string {
   const lines: string[] = []
   for (const line of iterJsonlContributors(results)) lines.push(line)
   for (const line of iterJsonlPrs(results)) lines.push(line)

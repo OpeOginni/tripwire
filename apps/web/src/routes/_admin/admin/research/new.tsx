@@ -115,7 +115,7 @@ function NewResearchRunPage() {
 
         <div>
           <label className="mb-1 block text-sm font-medium">
-            Repo context (optional)
+            Tripwire repo context (optional)
           </label>
           <input
             value={repoFullName}
@@ -124,9 +124,11 @@ function NewResearchRunPage() {
             className="w-full rounded border border-white/10 bg-transparent px-3 py-2"
           />
           <p className="mt-1 text-xs text-zinc-500">
-            Authenticated via <code>RESEARCH_GH_TOKEN</code> (PAT with{" "}
-            <code>public_repo</code> scope). Works against any public repo — the
-            GH App does not need to be installed.
+            If set, evaluates each contributor against this repo's
+            whitelist/blacklist/event history. Must be a repo the Tripwire GH
+            App is installed on. Leave blank to evaluate globally — GH data
+            fetched via <code>RESEARCH_GH_TOKEN</code> works against any public
+            repo.
           </p>
         </div>
 

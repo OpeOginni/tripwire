@@ -9,29 +9,10 @@ import { BLOCKS } from "@tripwire/core/blocks"
 import type { Block, EvalResult } from "@tripwire/core/blocks"
 import type { RuleEvaluation } from "@tripwire/core/filter-pipeline"
 import { fetchUserPRs } from "@tripwire/github/data-factory"
+import type { CachedPR } from "@tripwire/db/schema/github-cache"
 import { cohortForPr, cohortFromPrs } from "./labeling"
+import { CONTENT_RULE_SUBTYPES, CONTRIBUTOR_RULE_SUBTYPES } from "./rule-groups"
 import type { ProcessOptions, ProcessResult, ProcessedPr } from "./types"
-
-/**
- * Rule subtypes that consume contributor-level signals (account age, repo
- * counts, score, etc.). These get evaluated against the contributor's
- * resolved signal map.
- */
-const CONTRIBUTOR_RULE_SUBTYPES = [
-  "accountAge",
-  "minMergedPrs",
-  "requireProfileReadme",
-  "repoActivityMinimum",
-  "maxFilesChanged",
-  "vouchedUsersOnly",
-  "contributorScore",
-] as const
-
-/**
- * Rule subtypes that consume PR content text. Evaluated per-PR against the
- * PR body (or title fallback).
- */
-const CONTENT_RULE_SUBTYPES = ["crypto", "language", "aiHoneypot"] as const
 
 export async function processContributor(
   username: string,
@@ -57,16 +38,25 @@ export async function processContributor(
 
   const contributorEvaluations = CONTRIBUTOR_RULE_SUBTYPES.map((subtype) =>
     evaluateRuleBlock(subtype, {}, baseCtx)
-  ).filter((e): e is RuleEvaluation => e !== null)
+  )
 
-  const prResult = await fetchUserPRs(token, username, {
-    limit: opts.prLimit ?? 100,
-    state: "merged",
-  })
+  const prLimit = opts.prLimit ?? 100
+  const cached = signals.mergedPrs
+  const prs: CachedPR[] =
+    cached.length >= prLimit
+      ? cached.slice(0, prLimit)
+      : cached.length > 0
+        ? cached
+        : (
+            await fetchUserPRs(token, username, {
+              limit: prLimit,
+              state: "merged",
+            })
+          ).items
 
   const languageCode = opts.languageCode ?? "en"
 
-  const prs: ProcessedPr[] = prResult.items.map((pr) => {
+  const prRecords: ProcessedPr[] = prs.map((pr) => {
     const body = pr.body ?? ""
     const prCtx: Record<string, unknown> = {
       ...baseCtx,
@@ -77,7 +67,7 @@ export async function processContributor(
       const data: Record<string, unknown> =
         subtype === "language" ? { params: { language: languageCode } } : {}
       return evaluateRuleBlock(subtype, data, prCtx)
-    }).filter((e): e is RuleEvaluation => e !== null)
+    })
 
     return {
       prNumber: pr.number,
@@ -100,7 +90,7 @@ export async function processContributor(
     }
   })
 
-  const cohort = cohortFromPrs(prs)
+  const cohort = cohortFromPrs(prRecords)
 
   return {
     contributor: {
@@ -115,10 +105,10 @@ export async function processContributor(
       score: score as unknown as Record<string, unknown>,
       evaluations: contributorEvaluations,
       scoreInput: signals.scoreInput,
-      prCount: prs.length,
+      prCount: prRecords.length,
       fetchedAt: new Date().toISOString(),
     },
-    prs,
+    prs: prRecords,
   }
 }
 
@@ -126,11 +116,15 @@ function evaluateRuleBlock(
   subtype: string,
   data: Record<string, unknown>,
   ctx: Record<string, unknown>
-): RuleEvaluation | null {
+): RuleEvaluation {
   const block: Block | undefined = BLOCKS.find(
     (b) => b.type === "rule" && b.subtype === subtype
   )
-  if (!block) return null
+  if (!block) {
+    throw new Error(
+      `research engine: no rule block found for subtype "${subtype}" — was it renamed or removed from BLOCKS?`
+    )
+  }
   const result: EvalResult = block.evaluate({ rule: subtype, ...data }, ctx)
   return {
     rule: subtype,

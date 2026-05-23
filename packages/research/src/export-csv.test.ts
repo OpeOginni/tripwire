@@ -8,23 +8,19 @@ import {
   prsCsvHeader,
   prsToCsv,
 } from "./export-csv"
-import type { ProcessResult } from "./types"
+import type { PersistedRunResult } from "./types"
 
 function makeContributor(
-  overrides: Partial<ProcessResult["contributor"]> = {}
-): ProcessResult["contributor"] {
+  overrides: Partial<PersistedRunResult["contributor"]> = {}
+): PersistedRunResult["contributor"] {
   return {
     username: "u",
-    ghUser: null,
     accountCreatedAt: null,
     accountAgeDays: 0,
     cohort: "post_ai_only",
-    status: "normal",
-    badges: [],
     signals: {},
     score: {},
     evaluations: [],
-    scoreInput: {} as ProcessResult["contributor"]["scoreInput"],
     prCount: 0,
     fetchedAt: "2024-01-01T00:00:00Z",
     ...overrides,
@@ -32,8 +28,8 @@ function makeContributor(
 }
 
 function makePr(
-  overrides: Partial<ProcessResult["prs"][number]> = {}
-): ProcessResult["prs"][number] {
+  overrides: Partial<PersistedRunResult["prs"][number]> = {}
+): PersistedRunResult["prs"][number] {
   return {
     prNumber: 1,
     repoFullName: "a/b",
@@ -97,7 +93,6 @@ describe("contributors CSV", () => {
     const cols = header.split(",")
     expect(cols).toContain("username")
     expect(cols).toContain("cohort")
-    expect(cols).toContain("status")
     for (const signal of SIGNALS) expect(cols).toContain(signal.id)
     expect(cols).toContain("accountAge_passed")
     expect(cols).toContain("accountAge_detail")
@@ -105,7 +100,7 @@ describe("contributors CSV", () => {
   })
 
   it("emits passed + detail cells per rule from evaluations", () => {
-    const results: ProcessResult[] = [
+    const results: PersistedRunResult[] = [
       {
         contributor: makeContributor({
           username: "grim",
@@ -150,7 +145,7 @@ describe("PRs CSV", () => {
   })
 
   it("emits rule evaluation cells per PR", () => {
-    const results: ProcessResult[] = [
+    const results: PersistedRunResult[] = [
       {
         contributor: makeContributor({ username: "grim" }),
         prs: [
@@ -184,12 +179,36 @@ describe("PRs CSV", () => {
   })
 
   it("escapes PR titles with commas and quotes", () => {
-    const results: ProcessResult[] = [
+    const results: PersistedRunResult[] = [
       {
         contributor: makeContributor(),
         prs: [makePr({ title: 'Fix bug, also added "thing"' })],
       },
     ]
     expect(prsToCsv(results)).toContain('"Fix bug, also added ""thing"""')
+  })
+
+  it("emits PR rows for every contributor when a run has multiple", () => {
+    const results: PersistedRunResult[] = [
+      {
+        contributor: makeContributor({ username: "alice" }),
+        prs: [
+          makePr({ prNumber: 1, repoFullName: "a/x" }),
+          makePr({ prNumber: 2, repoFullName: "a/y" }),
+        ],
+      },
+      {
+        contributor: makeContributor({ username: "bob" }),
+        prs: [makePr({ prNumber: 3, repoFullName: "b/z" })],
+      },
+    ]
+    const csv = prsToCsv(results)
+    const lines = csv.trim().split("\n")
+    expect(lines).toHaveLength(1 + 3) // header + 3 PRs
+    expect(csv).toContain("alice")
+    expect(csv).toContain("bob")
+    expect(csv).toContain("a/x")
+    expect(csv).toContain("a/y")
+    expect(csv).toContain("b/z")
   })
 })

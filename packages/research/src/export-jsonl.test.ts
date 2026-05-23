@@ -1,16 +1,13 @@
 import { describe, it, expect } from "vitest"
 import { iterJsonlContributors, iterJsonlPrs, toJsonl } from "./export-jsonl"
-import type { ProcessResult } from "./types"
+import type { PersistedRunResult } from "./types"
 
-const result: ProcessResult = {
+const result: PersistedRunResult = {
   contributor: {
     username: "grim",
-    ghUser: null,
     accountCreatedAt: "2020-01-01T00:00:00Z",
     accountAgeDays: 1000,
     cohort: "spans_both",
-    status: "normal",
-    badges: ["GitHub Star"],
     signals: { hasBio: true, accountAgeDays: 1000 },
     score: { total: 88 },
     evaluations: [
@@ -21,7 +18,6 @@ const result: ProcessResult = {
         reason: "PASS -- account is 1000d old (requires >= 30d)",
       },
     ],
-    scoreInput: {} as ProcessResult["contributor"]["scoreInput"],
     prCount: 1,
     fetchedAt: "2024-03-15T00:00:00Z",
   },
@@ -66,7 +62,6 @@ describe("iterJsonlContributors", () => {
     expect(parsed.signals.hasBio).toBe(true)
     expect(parsed.evaluations).toHaveLength(1)
     expect(parsed.evaluations[0].rule).toBe("accountAge")
-    expect(parsed.badges).toEqual(["GitHub Star"])
   })
 
   it("omits the error key when no error is set", () => {
@@ -75,7 +70,7 @@ describe("iterJsonlContributors", () => {
   })
 
   it("includes the error key when an error is set", () => {
-    const withError: ProcessResult = {
+    const withError: PersistedRunResult = {
       ...result,
       contributor: { ...result.contributor, error: "rate limit" },
     }

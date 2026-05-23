@@ -89,6 +89,12 @@ export function TopNav({ askOpen, onToggleAsk }: TopNavProps) {
   const routerState = useRouterState()
   const currentPath = routerState.location.pathname
 
+  const meQuery = useQuery({
+    ...trpc.auth.me.queryOptions(),
+    staleTime: 60_000,
+  })
+  const isAdmin = meQuery.data?.isAdmin ?? false
+
   // Fetch event counts for badge
   const countsQuery = useQuery({
     ...trpc.events.countsByAction.queryOptions({
@@ -206,6 +212,7 @@ export function TopNav({ askOpen, onToggleAsk }: TopNavProps) {
               Send Feedback
             </MenuItem>
             <AdminMenuItem
+              isAdmin={isAdmin}
               onNavigate={() => navigate({ to: "/admin/research" })}
             />
             <MenuSeparator />
@@ -279,10 +286,14 @@ export function TopNav({ askOpen, onToggleAsk }: TopNavProps) {
   )
 }
 
-function AdminMenuItem({ onNavigate }: { onNavigate: () => void }) {
-  const trpc = useTRPC()
-  const me = useQuery({ ...trpc.auth.me.queryOptions() })
-  if (!me.data?.isAdmin) return null
+function AdminMenuItem({
+  isAdmin,
+  onNavigate,
+}: {
+  isAdmin: boolean
+  onNavigate: () => void
+}) {
+  if (!isAdmin) return null
   return (
     <>
       <MenuSeparator />

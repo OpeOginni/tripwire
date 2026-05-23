@@ -1,28 +1,16 @@
 import { SIGNALS } from "@tripwire/core/signals"
-import type { ProcessResult, RuleEvaluation } from "./types"
+import { CONTENT_RULE_SUBTYPES, CONTRIBUTOR_RULE_SUBTYPES } from "./rule-groups"
+import type { PersistedRunResult, RuleEvaluation } from "./types"
 
 const CONTRIBUTOR_META_COLUMNS = [
   "username",
   "accountCreatedAt",
   "accountAgeDays",
   "cohort",
-  "status",
   "prCount",
   "fetchedAt",
   "error",
 ] as const
-
-const CONTRIBUTOR_RULE_COLUMNS = [
-  "accountAge",
-  "minMergedPrs",
-  "requireProfileReadme",
-  "repoActivityMinimum",
-  "maxFilesChanged",
-  "vouchedUsersOnly",
-  "contributorScore",
-] as const
-
-const PR_RULE_COLUMNS = ["crypto", "language", "aiHoneypot"] as const
 
 const PR_META_COLUMNS = [
   "username",
@@ -51,14 +39,14 @@ function findEval(
 
 export function contributorsCsvHeader(): string {
   const signalCols = SIGNALS.map((s) => s.id)
-  const ruleCols = CONTRIBUTOR_RULE_COLUMNS.flatMap((r) => [
+  const ruleCols = CONTRIBUTOR_RULE_SUBTYPES.flatMap((r) => [
     `${r}_passed`,
     `${r}_detail`,
   ])
   return csvRow([...CONTRIBUTOR_META_COLUMNS, ...signalCols, ...ruleCols])
 }
 
-export function contributorsToCsv(results: ProcessResult[]): string {
+export function contributorsToCsv(results: PersistedRunResult[]): string {
   const lines = [contributorsCsvHeader()]
   for (const { contributor } of results) {
     const meta = [
@@ -66,13 +54,12 @@ export function contributorsToCsv(results: ProcessResult[]): string {
       contributor.accountCreatedAt,
       contributor.accountAgeDays,
       contributor.cohort,
-      contributor.status,
       contributor.prCount,
       contributor.fetchedAt,
       contributor.error ?? "",
     ]
     const signals = SIGNALS.map((s) => contributor.signals[s.id] ?? "")
-    const ruleCells = CONTRIBUTOR_RULE_COLUMNS.flatMap((r) => {
+    const ruleCells = CONTRIBUTOR_RULE_SUBTYPES.flatMap((r) => {
       const ev = findEval(contributor.evaluations, r)
       return [ev?.passed ?? "", ev?.reason ?? ""]
     })
@@ -82,18 +69,18 @@ export function contributorsToCsv(results: ProcessResult[]): string {
 }
 
 export function prsCsvHeader(): string {
-  const ruleCols = PR_RULE_COLUMNS.flatMap((r) => [
+  const ruleCols = CONTENT_RULE_SUBTYPES.flatMap((r) => [
     `${r}_passed`,
     `${r}_detail`,
   ])
   return csvRow([...PR_META_COLUMNS, ...ruleCols])
 }
 
-export function prsToCsv(results: ProcessResult[]): string {
+export function prsToCsv(results: PersistedRunResult[]): string {
   const lines = [prsCsvHeader()]
   for (const { contributor, prs } of results) {
     for (const pr of prs) {
-      const ruleCells = PR_RULE_COLUMNS.flatMap((r) => {
+      const ruleCells = CONTENT_RULE_SUBTYPES.flatMap((r) => {
         const ev = findEval(pr.ruleEvaluations, r)
         return [ev?.passed ?? "", ev?.reason ?? ""]
       })

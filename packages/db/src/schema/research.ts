@@ -27,6 +27,9 @@ export interface ResearchRuleEvaluation {
 
 export interface ResearchRunParams {
   cutoffDate: string
+  /** Tripwire repo UUID — if set, the engine joins the repo's whitelist/blacklist/events/reputation when evaluating each contributor. */
+  contextRepoId?: string
+  /** The fullName the user typed at kickoff, for display only — `contextRepoId` is the load-bearing field. */
   repoFullName?: string
   usernames: string[]
   prLimitPerUser?: number

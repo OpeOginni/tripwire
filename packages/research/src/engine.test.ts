@@ -35,6 +35,7 @@ const baseSignals = {
   ghUser: baseGhUser,
   status: "normal" as const,
   badges: [],
+  mergedPrs: [],
   scoreInput: {
     accountAgeDays: 1500,
     followers: 50,

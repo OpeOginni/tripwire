@@ -1,41 +1,16 @@
-import {
-  createFileRoute,
-  Link,
-  Outlet,
-  useNavigate,
-} from "@tanstack/react-router"
-import { useEffect } from "react"
-import { useQuery } from "@tanstack/react-query"
-import { useTRPC } from "#/integrations/trpc/react"
+import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router"
+import { trpcClient } from "#/integrations/tanstack-query/root-provider"
 
 export const Route = createFileRoute("/_admin")({
+  beforeLoad: async () => {
+    const me = await trpcClient.auth.me.query()
+    if (!me) throw redirect({ to: "/login" })
+    if (!me.isAdmin) throw redirect({ to: "/home" })
+  },
   component: AdminShell,
 })
 
 function AdminShell() {
-  const trpc = useTRPC()
-  const navigate = useNavigate()
-  const me = useQuery({ ...trpc.auth.me.queryOptions() })
-
-  useEffect(() => {
-    if (me.isLoading) return
-    if (!me.data) {
-      navigate({ to: "/login" })
-      return
-    }
-    if (!me.data.isAdmin) {
-      navigate({ to: "/home" })
-    }
-  }, [me.data, me.isLoading, navigate])
-
-  if (me.isLoading || !me.data || !me.data.isAdmin) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-black">
-        <div className="size-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-black text-white">
       <header className="border-b border-white/10 bg-zinc-950">

@@ -4,7 +4,7 @@ export interface TokenBucketOptions {
 }
 
 export interface TokenBucket {
-  acquire(): Promise<void>
+  acquire(count?: number): Promise<void>
   available(): number
 }
 
@@ -21,15 +21,20 @@ export function createTokenBucket(opts: TokenBucketOptions): TokenBucket {
   }
 
   return {
-    async acquire() {
+    async acquire(count = 1) {
+      if (count > opts.capacity) {
+        throw new Error(
+          `cannot acquire ${count} tokens — bucket capacity is ${opts.capacity}`
+        )
+      }
       refill()
-      while (tokens < 1) {
-        const deficit = 1 - tokens
+      while (tokens < count) {
+        const deficit = count - tokens
         const waitMs = Math.ceil((deficit / opts.refillPerSecond) * 1000)
         await sleep(Math.min(waitMs, 1000))
         refill()
       }
-      tokens -= 1
+      tokens -= count
     },
     available() {
       refill()
@@ -38,15 +43,20 @@ export function createTokenBucket(opts: TokenBucketOptions): TokenBucket {
   }
 }
 
+/** Sized for the GitHub 5,000 req/hr/token cap. Tokens are individual requests. */
 export function githubBucket(): TokenBucket {
   return createTokenBucket({ capacity: 5000, refillPerSecond: 5000 / 3600 })
 }
 
+/** Approximate REST + GraphQL calls one `processContributor` run makes. */
+export const GH_CALLS_PER_CONTRIBUTOR = 12
+
 export async function withBucket<T>(
   bucket: TokenBucket,
-  fn: () => Promise<T>
+  fn: () => Promise<T>,
+  count = 1
 ): Promise<T> {
-  await bucket.acquire()
+  await bucket.acquire(count)
   return fn()
 }
 

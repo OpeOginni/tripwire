@@ -21,13 +21,9 @@ export interface ProcessedContributor {
   cohort: ContributorCohort
   status: UserSignals["status"]
   badges: string[]
-  /** Full output of `resolveAllSignals` — 44 keyed signal values. */
   signals: Record<string, unknown>
-  /** Full output of `computeContributorScore`. */
   score: Record<string, unknown>
-  /** Real Tripwire rule evaluations applied to this contributor. */
   evaluations: ResearchRuleEvaluation[]
-  /** Raw ScoreInput so consumers can re-derive anything downstream. */
   scoreInput: ScoreInput
   prCount: number
   fetchedAt: string
@@ -51,7 +47,6 @@ export interface ProcessedPr {
   selfClosed: boolean | null
   labels: Array<{ name: string; color: string }>
   cohort: PrCohort
-  /** Real Tripwire content-rule evaluations applied to this PR's body. */
   ruleEvaluations: ResearchRuleEvaluation[]
 }
 
@@ -60,11 +55,96 @@ export interface ProcessResult {
   prs: ProcessedPr[]
 }
 
+/** Subset of `ProcessedContributor` that maps 1:1 to `research_contributors` columns. */
+export interface PersistedContributor {
+  username: string
+  accountCreatedAt: string | null
+  accountAgeDays: number
+  cohort: ContributorCohort
+  signals: Record<string, unknown>
+  score: Record<string, unknown>
+  evaluations: ResearchRuleEvaluation[]
+  prCount: number
+  fetchedAt: string
+  error?: string
+}
+
+export interface PersistedPr {
+  prNumber: number
+  repoFullName: string
+  title: string
+  body: string | null
+  state: string
+  createdAt: string
+  mergedAt: string | null
+  closedAt: string | null
+  timeToMergeMinutes: number | null
+  additions: number
+  deletions: number
+  changedFiles: number
+  commits: number
+  selfClosed: boolean | null
+  labels: Array<{ name: string; color: string }>
+  cohort: PrCohort
+  ruleEvaluations: ResearchRuleEvaluation[]
+}
+
+export interface PersistedRunResult {
+  contributor: PersistedContributor
+  prs: PersistedPr[]
+}
+
+export function toPersisted(result: ProcessResult): PersistedRunResult {
+  const {
+    username,
+    accountCreatedAt,
+    accountAgeDays,
+    cohort,
+    signals,
+    score,
+    evaluations,
+    prCount,
+    fetchedAt,
+    error,
+  } = result.contributor
+  return {
+    contributor: {
+      username,
+      accountCreatedAt,
+      accountAgeDays,
+      cohort,
+      signals,
+      score,
+      evaluations,
+      prCount,
+      fetchedAt,
+      ...(error !== undefined ? { error } : {}),
+    },
+    prs: result.prs.map((pr) => ({
+      prNumber: pr.prNumber,
+      repoFullName: pr.repoFullName,
+      title: pr.title,
+      body: pr.body,
+      state: pr.state,
+      createdAt: pr.createdAt,
+      mergedAt: pr.mergedAt,
+      closedAt: pr.closedAt,
+      timeToMergeMinutes: pr.timeToMergeMinutes,
+      additions: pr.additions,
+      deletions: pr.deletions,
+      changedFiles: pr.changedFiles,
+      commits: pr.commits,
+      selfClosed: pr.selfClosed,
+      labels: pr.labels,
+      cohort: pr.cohort,
+      ruleEvaluations: pr.ruleEvaluations,
+    })),
+  }
+}
+
 export interface ProcessOptions {
   cutoffDate: string
   prLimit?: number
-  /** Optional repo context — runs the contributor through the repo's reputation slice. */
   contextRepoId?: string
-  /** Optional configured language code for the language rule (defaults to "en"). */
   languageCode?: string
 }

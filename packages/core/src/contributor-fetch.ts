@@ -18,6 +18,7 @@ import {
   getPublicNonForkRepoCount,
   hasProfileReadme,
 } from "@tripwire/github"
+import type { CachedPR } from "@tripwire/db/schema/github-cache"
 import type { ScoreInput } from "./contributor-score"
 
 export interface GitHubUser {
@@ -43,13 +44,12 @@ export interface UserSignals {
   scoreInput: ScoreInput
   status: "normal" | "blacklisted" | "whitelisted"
   badges: string[]
+  mergedPrs: CachedPR[]
 }
 
 export interface FetchContributorSignalsOpts {
   username: string
-  /** PAT or installation token. Some endpoints work unauthenticated but rate limit is much tighter. */
   token: string | null
-  /** Optional Tripwire repo id — when set, joins whitelist/blacklist/events/reputation for that repo. */
   contextRepoId?: string
 }
 
@@ -77,16 +77,6 @@ export async function fetchGitHubUser(
   return res.json() as Promise<GitHubUser>
 }
 
-/**
- * The full GH + DB fan-out that produces a ScoreInput ready for
- * `computeContributorScore` and `resolveAllSignals`. Used by:
- *   - the `lookup_user` chat tool (auth-gated via gatherUserSignals)
- *   - the research harness (admin-gated via the tRPC layer)
- *
- * `contextRepoId` opts a contributor into the per-repo reputation slice
- * (whitelist/blacklist/events/scoreResetAt). Omit it and the contributor
- * is evaluated globally (no Tripwire history applied).
- */
 export async function fetchContributorSignals(
   opts: FetchContributorSignalsOpts
 ): Promise<UserSignals> {
@@ -257,6 +247,7 @@ export async function fetchContributorSignals(
     maxPrsInOneHourWindow: number
     reposInDensestWindow: number
   } | null = null
+  let mergedPrItems: CachedPR[] = []
 
   if (token && mergedPrs > 0) {
     try {
@@ -266,6 +257,7 @@ export async function fetchContributorSignals(
         state: "merged",
       })
       const prs = prResult.items
+      mergedPrItems = prs
 
       if (prs.length > 0) {
         let qualityWeightedCount = 0
@@ -374,5 +366,6 @@ export async function fetchContributorSignals(
     },
     status,
     badges,
+    mergedPrs: mergedPrItems,
   }
 }

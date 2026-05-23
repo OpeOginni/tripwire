@@ -1,9 +1,10 @@
 import { z } from "zod"
-import { and, desc, eq } from "drizzle-orm"
+import { and, desc, eq, inArray } from "drizzle-orm"
 import { adminProcedure } from "../init"
 import { trpcError } from "../error"
 import { db } from "@tripwire/db/client"
 import {
+  repositories,
   researchContributors,
   researchPrs,
   researchRuns,
@@ -11,13 +12,13 @@ import {
   type PrCohort,
   type ResearchRuleEvaluation,
 } from "@tripwire/db"
+import { sql } from "drizzle-orm"
 import {
   contributorsToCsv,
   prsToCsv,
   toJsonl,
-  type ProcessResult,
+  type PersistedRunResult,
 } from "@tripwire/research"
-import type { ScoreInput } from "@tripwire/core"
 import { inngest } from "#/inngest/client"
 import type { TRPCRouterRecord } from "@trpc/server"
 
@@ -35,12 +36,34 @@ export const researchRouter = {
         usernames: z.array(usernameSchema).min(1).max(5000),
         cutoffDate: z.string().datetime().optional(),
         prLimitPerUser: z.number().int().min(1).max(500).optional(),
-        repoFullName: z.string().optional(),
+        /** "owner/repo" — must match a Tripwire-tracked repo for context to apply. */
+        repoFullName: z
+          .string()
+          .regex(/^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/)
+          .optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const cutoffDate = input.cutoffDate ?? "2022-11-30T00:00:00.000Z"
       const usernames = Array.from(new Set(input.usernames))
+
+      let contextRepoId: string | undefined
+      if (input.repoFullName) {
+        const [repo] = await db
+          .select({ id: repositories.id })
+          .from(repositories)
+          .where(
+            sql`lower(${repositories.fullName}) = ${input.repoFullName.toLowerCase()}`
+          )
+          .limit(1)
+        if (!repo) {
+          throw trpcError({
+            message: `Tripwire doesn't track "${input.repoFullName}". Install the GH App on that repo first, or leave the field blank to run without repo context.`,
+            trpcCode: "NOT_FOUND",
+          })
+        }
+        contextRepoId = repo.id
+      }
 
       const [run] = await db
         .insert(researchRuns)
@@ -49,6 +72,7 @@ export const researchRouter = {
           status: "queued",
           params: {
             cutoffDate,
+            contextRepoId,
             repoFullName: input.repoFullName,
             usernames,
             prLimitPerUser: input.prLimitPerUser,
@@ -161,7 +185,7 @@ export const researchRouter = {
     }),
 } satisfies TRPCRouterRecord
 
-async function loadResults(runId: string): Promise<ProcessResult[]> {
+async function loadResults(runId: string): Promise<PersistedRunResult[]> {
   const contributors = await db
     .select()
     .from(researchContributors)
@@ -172,7 +196,12 @@ async function loadResults(runId: string): Promise<ProcessResult[]> {
   const prRows = await db
     .select()
     .from(researchPrs)
-    .where(and(...contributors.map((c) => eq(researchPrs.contributorId, c.id))))
+    .where(
+      inArray(
+        researchPrs.contributorId,
+        contributors.map((c) => c.id)
+      )
+    )
 
   const prsByContributor = new Map<string, typeof prRows>()
   for (const pr of prRows) {
@@ -184,16 +213,12 @@ async function loadResults(runId: string): Promise<ProcessResult[]> {
   return contributors.map((c) => ({
     contributor: {
       username: c.username,
-      ghUser: null,
       accountCreatedAt: c.accountCreatedAt?.toISOString() ?? null,
       accountAgeDays: c.accountAgeDays ?? 0,
       cohort: (c.cohort ?? "post_ai_only") as ContributorCohort,
-      status: "normal" as const,
-      badges: [],
       signals: c.signals,
       score: c.score,
       evaluations: c.evaluations as ResearchRuleEvaluation[],
-      scoreInput: {} as ScoreInput,
       prCount: c.prCount,
       fetchedAt: c.fetchedAt.toISOString(),
       error: c.error ?? undefined,
