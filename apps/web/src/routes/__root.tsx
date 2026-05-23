@@ -33,6 +33,11 @@ export const Route = createRootRoute({
         content: "width=device-width, initial-scale=1",
       },
       { title: "Tripwire" },
+      { property: "og:site_name", content: "Tripwire" },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://tripwire.sh/og.jpg" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://tripwire.sh/og.jpg" },
     ],
     links: [
       { rel: "icon", type: "image/png", href: "/favicon.png" },

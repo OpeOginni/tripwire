@@ -21,7 +21,7 @@ const abs = (urlOrPath: string) =>
 export function buildSeoMeta(input: SeoInput): SeoMeta[] {
   const title = input.rawTitle ? input.title : `${input.title} — ${APP_NAME}`
   const url = abs(input.path)
-  const image = abs(input.image ?? "/og")
+  const image = abs(input.image ?? "/og.jpg")
   const type = input.type ?? "website"
 
   return [
@@ -33,7 +33,7 @@ export function buildSeoMeta(input: SeoInput): SeoMeta[] {
     { property: "og:description", content: input.description },
     { property: "og:url", content: url },
     { property: "og:image", content: image },
-    { name: "twitter:card", content: "summary" },
+    { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: input.description },
     { name: "twitter:image", content: image },
