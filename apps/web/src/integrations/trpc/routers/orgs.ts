@@ -1,10 +1,19 @@
 import { z } from "zod"
-import { and, eq } from "drizzle-orm"
+import { and, eq, sql } from "drizzle-orm"
 import { TRPCError } from "@trpc/server"
 import { authedProcedure } from "../init"
 import { assertOrgOwner } from "@tripwire/core"
 import { db } from "@tripwire/db/client"
-import { organizations, repositories, member } from "@tripwire/db"
+import {
+  organizations,
+  repositories,
+  member,
+  organization as baOrganization,
+} from "@tripwire/db"
+import {
+  isReservedOrgSlug,
+  ORG_SLUG_PATTERN,
+} from "#/lib/reserved-org-slugs"
 
 import type { TRPCRouterRecord } from "@trpc/server"
 
@@ -138,5 +147,26 @@ export const orgsRouter = {
         .where(eq(organizations.id, input.installationId))
 
       return { ok: true }
+    }),
+
+  checkSlugAvailable: authedProcedure
+    .input(z.object({ slug: z.string().min(1).max(39) }))
+    .query(async ({ input }) => {
+      const slug = input.slug.trim().toLowerCase()
+      if (!ORG_SLUG_PATTERN.test(slug)) {
+        return { available: false as const, reason: "invalid_format" as const }
+      }
+      if (isReservedOrgSlug(slug)) {
+        return { available: false as const, reason: "reserved" as const }
+      }
+      const [existing] = await db
+        .select({ id: baOrganization.id })
+        .from(baOrganization)
+        .where(sql`lower(${baOrganization.slug}) = ${slug}`)
+        .limit(1)
+      if (existing) {
+        return { available: false as const, reason: "taken" as const }
+      }
+      return { available: true as const }
     }),
 } satisfies TRPCRouterRecord

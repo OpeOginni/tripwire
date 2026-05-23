@@ -18,6 +18,23 @@ export type ResearchRunRequestedEvent = {
   }
 }
 
+export type VisibilitySyncRequestedEvent = {
+  name: "visibility/sync.requested"
+  data: {
+    runId: string
+  }
+}
+
+export type VisibilityScoreUserRequestedEvent = {
+  name: "visibility/score-user.requested"
+  data: {
+    repoId: string
+    username: string
+  }
+}
+
 export type Events = {
   "research/run.requested": ResearchRunRequestedEvent
+  "visibility/sync.requested": VisibilitySyncRequestedEvent
+  "visibility/score-user.requested": VisibilityScoreUserRequestedEvent
 }

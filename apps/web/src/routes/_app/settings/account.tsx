@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
 import { Button } from "@tripwire/ui/button"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@tripwire/auth/components"
 import { authClient } from "@tripwire/auth/client"
+import { useTRPC } from "#/integrations/trpc/react"
 import { toastFromError } from "#/lib/toast-error"
 import {
   Dialog,
@@ -123,6 +124,14 @@ function AccountSettingsPage() {
         <SessionsList />
       </SettingsSection>
 
+      {/* Onboarding */}
+      <SettingsSection
+        title="Onboarding"
+        description="Replay the welcome tour and pick a different main repo."
+      >
+        <ResetOnboardingRow />
+      </SettingsSection>
+
       {/* Danger zone */}
       <SettingsSection
         title="Danger zone"
@@ -150,6 +159,45 @@ function AccountSettingsPage() {
           <DeleteAccountRow />
         </div>
       </SettingsSection>
+    </div>
+  )
+}
+
+function ResetOnboardingRow() {
+  const navigate = useNavigate()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+  const mutation = useMutation(
+    trpc.onboarding.reset.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: trpc.onboarding.getState.queryKey(),
+        })
+        navigate({ to: "/onboarding/step/1" })
+      },
+      onError: (err) =>
+        toastFromError(err, { fallbackTitle: "Couldn't reset onboarding" }),
+    })
+  )
+  return (
+    <div className="flex items-center justify-between rounded-xl bg-tw-card p-4">
+      <div>
+        <div className="text-[13px] font-medium text-tw-text-primary">
+          Reset onboarding
+        </div>
+        <div className="mt-0.5 text-[12px] text-tw-text-muted">
+          Wipes your setup answers and restarts the welcome flow.
+        </div>
+      </div>
+      <Button
+        variant="ghost"
+        type="button"
+        loading={mutation.isPending}
+        onClick={() => mutation.mutate()}
+        className="flex h-8 items-center rounded-lg border border-[#27272A] px-3 text-[13px] font-medium text-tw-text-primary transition-colors hover:bg-tw-hover"
+      >
+        Reset
+      </Button>
     </div>
   )
 }

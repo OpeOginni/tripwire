@@ -8,6 +8,7 @@ import {
   WorkflowsNavIcon,
   EventsNavIcon,
   IntegrationsNavIcon,
+  VisibilityNavIcon,
   TripwireSparkIcon,
 } from "../icons/nav-icons"
 import {
@@ -62,6 +63,12 @@ const navItems: NavItem[] = [
     label: "Events",
     Icon: EventsNavIcon,
     badgeKey: "events",
+  },
+  {
+    key: "visibility",
+    path: "visibility",
+    label: "Visibility",
+    Icon: VisibilityNavIcon,
   },
   {
     key: "integrations",

@@ -13,12 +13,14 @@ import { Route as VouchedRouteImport } from './routes/vouched'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AdminRouteImport } from './routes/_admin'
+import { Route as OnboardingRouteRouteImport } from './routes/onboarding/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
 import { Route as ApiMcpRouteImport } from './routes/api/mcp'
 import { Route as ApiInngestRouteImport } from './routes/api/inngest'
 import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as AppVisibilityRouteImport } from './routes/_app/visibility'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppSearchRouteImport } from './routes/_app/search'
 import { Route as AppRulesRouteImport } from './routes/_app/rules'
@@ -31,6 +33,10 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotwellKnownChar93OauthAuthorizationServerRouteImport } from './routes/[.well-known]/oauth-authorization-server'
 import { Route as AppEventsIndexRouteImport } from './routes/_app/events/index'
 import { Route as RequestOwnerRepoRouteImport } from './routes/request.$owner.$repo'
+import { Route as OnboardingStep4RouteImport } from './routes/onboarding/step.4'
+import { Route as OnboardingStep3RouteImport } from './routes/onboarding/step.3'
+import { Route as OnboardingStep2RouteImport } from './routes/onboarding/step.2'
+import { Route as OnboardingStep1RouteImport } from './routes/onboarding/step.1'
 import { Route as ApiV1VouchedRouteImport } from './routes/api/v1/vouched'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc/$'
 import { Route as ApiToolsRunRouteImport } from './routes/api/tools/run'
@@ -46,6 +52,8 @@ import { Route as AppSettingsBillingRouteImport } from './routes/_app/settings/b
 import { Route as AppSettingsAccountRouteImport } from './routes/_app/settings/account'
 import { Route as AppEventsEventIdRouteImport } from './routes/_app/events/$eventId'
 import { Route as AppChatChatIdRouteImport } from './routes/_app/chat/$chatId'
+import { Route as AppOrgHandleVisibilityRouteImport } from './routes/_app/$orgHandle/visibility'
+import { Route as AppOrgHandleSettingsRouteImport } from './routes/_app/$orgHandle/settings'
 import { Route as AppOrgHandleIntegrationsRouteImport } from './routes/_app/$orgHandle/integrations'
 import { Route as AppOrgHandleInsightsRouteImport } from './routes/_app/$orgHandle/insights'
 import { Route as AppOrgHandleHomeRouteImport } from './routes/_app/$orgHandle/home'
@@ -88,6 +96,11 @@ const AdminRoute = AdminRouteImport.update({
   id: '/_admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnboardingRouteRoute = OnboardingRouteRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -117,6 +130,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppVisibilityRoute = AppVisibilityRouteImport.update({
+  id: '/visibility',
+  path: '/visibility',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
@@ -179,6 +197,26 @@ const RequestOwnerRepoRoute = RequestOwnerRepoRouteImport.update({
   id: '/request/$owner/$repo',
   path: '/request/$owner/$repo',
   getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingStep4Route = OnboardingStep4RouteImport.update({
+  id: '/step/4',
+  path: '/step/4',
+  getParentRoute: () => OnboardingRouteRoute,
+} as any)
+const OnboardingStep3Route = OnboardingStep3RouteImport.update({
+  id: '/step/3',
+  path: '/step/3',
+  getParentRoute: () => OnboardingRouteRoute,
+} as any)
+const OnboardingStep2Route = OnboardingStep2RouteImport.update({
+  id: '/step/2',
+  path: '/step/2',
+  getParentRoute: () => OnboardingRouteRoute,
+} as any)
+const OnboardingStep1Route = OnboardingStep1RouteImport.update({
+  id: '/step/1',
+  path: '/step/1',
+  getParentRoute: () => OnboardingRouteRoute,
 } as any)
 const ApiV1VouchedRoute = ApiV1VouchedRouteImport.update({
   id: '/api/v1/vouched',
@@ -254,6 +292,16 @@ const AppChatChatIdRoute = AppChatChatIdRouteImport.update({
   id: '/chat/$chatId',
   path: '/chat/$chatId',
   getParentRoute: () => AppRoute,
+} as any)
+const AppOrgHandleVisibilityRoute = AppOrgHandleVisibilityRouteImport.update({
+  id: '/visibility',
+  path: '/visibility',
+  getParentRoute: () => AppOrgHandleRoute,
+} as any)
+const AppOrgHandleSettingsRoute = AppOrgHandleSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppOrgHandleRoute,
 } as any)
 const AppOrgHandleIntegrationsRoute =
   AppOrgHandleIntegrationsRouteImport.update({
@@ -386,6 +434,7 @@ const AppOrgHandleRulesCustomRuleIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/onboarding': typeof OnboardingRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/vouched': typeof VouchedRoute
   '/.well-known/oauth-authorization-server': typeof Char91DotwellKnownChar93OauthAuthorizationServerRouteWithChildren
@@ -398,6 +447,7 @@ export interface FileRoutesByFullPath {
   '/rules': typeof AppRulesRoute
   '/search': typeof AppSearchRoute
   '/settings': typeof AppSettingsRouteWithChildren
+  '/visibility': typeof AppVisibilityRoute
   '/api/chat': typeof ApiChatRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/inngest': typeof ApiInngestRoute
@@ -409,6 +459,8 @@ export interface FileRoutesByFullPath {
   '/$orgHandle/home': typeof AppOrgHandleHomeRoute
   '/$orgHandle/insights': typeof AppOrgHandleInsightsRoute
   '/$orgHandle/integrations': typeof AppOrgHandleIntegrationsRoute
+  '/$orgHandle/settings': typeof AppOrgHandleSettingsRoute
+  '/$orgHandle/visibility': typeof AppOrgHandleVisibilityRoute
   '/chat/$chatId': typeof AppChatChatIdRoute
   '/events/$eventId': typeof AppEventsEventIdRoute
   '/settings/account': typeof AppSettingsAccountRoute
@@ -424,6 +476,10 @@ export interface FileRoutesByFullPath {
   '/api/tools/run': typeof ApiToolsRunRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/v1/vouched': typeof ApiV1VouchedRoute
+  '/onboarding/step/1': typeof OnboardingStep1Route
+  '/onboarding/step/2': typeof OnboardingStep2Route
+  '/onboarding/step/3': typeof OnboardingStep3Route
+  '/onboarding/step/4': typeof OnboardingStep4Route
   '/request/$owner/$repo': typeof RequestOwnerRepoRoute
   '/events/': typeof AppEventsIndexRoute
   '/admin/research/$runId': typeof AdminAdminResearchRunIdRoute
@@ -446,6 +502,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/onboarding': typeof OnboardingRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/vouched': typeof VouchedRoute
   '/.well-known/oauth-authorization-server': typeof Char91DotwellKnownChar93OauthAuthorizationServerRouteWithChildren
@@ -458,6 +515,7 @@ export interface FileRoutesByTo {
   '/rules': typeof AppRulesRoute
   '/search': typeof AppSearchRoute
   '/settings': typeof AppSettingsRouteWithChildren
+  '/visibility': typeof AppVisibilityRoute
   '/api/chat': typeof ApiChatRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/inngest': typeof ApiInngestRoute
@@ -468,6 +526,8 @@ export interface FileRoutesByTo {
   '/$orgHandle/home': typeof AppOrgHandleHomeRoute
   '/$orgHandle/insights': typeof AppOrgHandleInsightsRoute
   '/$orgHandle/integrations': typeof AppOrgHandleIntegrationsRoute
+  '/$orgHandle/settings': typeof AppOrgHandleSettingsRoute
+  '/$orgHandle/visibility': typeof AppOrgHandleVisibilityRoute
   '/chat/$chatId': typeof AppChatChatIdRoute
   '/events/$eventId': typeof AppEventsEventIdRoute
   '/settings/account': typeof AppSettingsAccountRoute
@@ -483,6 +543,10 @@ export interface FileRoutesByTo {
   '/api/tools/run': typeof ApiToolsRunRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/v1/vouched': typeof ApiV1VouchedRoute
+  '/onboarding/step/1': typeof OnboardingStep1Route
+  '/onboarding/step/2': typeof OnboardingStep2Route
+  '/onboarding/step/3': typeof OnboardingStep3Route
+  '/onboarding/step/4': typeof OnboardingStep4Route
   '/request/$owner/$repo': typeof RequestOwnerRepoRoute
   '/events': typeof AppEventsIndexRoute
   '/admin/research/$runId': typeof AdminAdminResearchRunIdRoute
@@ -506,6 +570,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/onboarding': typeof OnboardingRouteRouteWithChildren
   '/_admin': typeof AdminRouteWithChildren
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
@@ -520,6 +585,7 @@ export interface FileRoutesById {
   '/_app/rules': typeof AppRulesRoute
   '/_app/search': typeof AppSearchRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
+  '/_app/visibility': typeof AppVisibilityRoute
   '/api/chat': typeof ApiChatRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/inngest': typeof ApiInngestRoute
@@ -531,6 +597,8 @@ export interface FileRoutesById {
   '/_app/$orgHandle/home': typeof AppOrgHandleHomeRoute
   '/_app/$orgHandle/insights': typeof AppOrgHandleInsightsRoute
   '/_app/$orgHandle/integrations': typeof AppOrgHandleIntegrationsRoute
+  '/_app/$orgHandle/settings': typeof AppOrgHandleSettingsRoute
+  '/_app/$orgHandle/visibility': typeof AppOrgHandleVisibilityRoute
   '/_app/chat/$chatId': typeof AppChatChatIdRoute
   '/_app/events/$eventId': typeof AppEventsEventIdRoute
   '/_app/settings/account': typeof AppSettingsAccountRoute
@@ -546,6 +614,10 @@ export interface FileRoutesById {
   '/api/tools/run': typeof ApiToolsRunRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/api/v1/vouched': typeof ApiV1VouchedRoute
+  '/onboarding/step/1': typeof OnboardingStep1Route
+  '/onboarding/step/2': typeof OnboardingStep2Route
+  '/onboarding/step/3': typeof OnboardingStep3Route
+  '/onboarding/step/4': typeof OnboardingStep4Route
   '/request/$owner/$repo': typeof RequestOwnerRepoRoute
   '/_app/events/': typeof AppEventsIndexRoute
   '/_admin/admin/research/$runId': typeof AdminAdminResearchRunIdRoute
@@ -570,6 +642,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/onboarding'
     | '/login'
     | '/vouched'
     | '/.well-known/oauth-authorization-server'
@@ -582,6 +655,7 @@ export interface FileRouteTypes {
     | '/rules'
     | '/search'
     | '/settings'
+    | '/visibility'
     | '/api/chat'
     | '/api/feedback'
     | '/api/inngest'
@@ -593,6 +667,8 @@ export interface FileRouteTypes {
     | '/$orgHandle/home'
     | '/$orgHandle/insights'
     | '/$orgHandle/integrations'
+    | '/$orgHandle/settings'
+    | '/$orgHandle/visibility'
     | '/chat/$chatId'
     | '/events/$eventId'
     | '/settings/account'
@@ -608,6 +684,10 @@ export interface FileRouteTypes {
     | '/api/tools/run'
     | '/api/trpc/$'
     | '/api/v1/vouched'
+    | '/onboarding/step/1'
+    | '/onboarding/step/2'
+    | '/onboarding/step/3'
+    | '/onboarding/step/4'
     | '/request/$owner/$repo'
     | '/events/'
     | '/admin/research/$runId'
@@ -630,6 +710,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/onboarding'
     | '/login'
     | '/vouched'
     | '/.well-known/oauth-authorization-server'
@@ -642,6 +723,7 @@ export interface FileRouteTypes {
     | '/rules'
     | '/search'
     | '/settings'
+    | '/visibility'
     | '/api/chat'
     | '/api/feedback'
     | '/api/inngest'
@@ -652,6 +734,8 @@ export interface FileRouteTypes {
     | '/$orgHandle/home'
     | '/$orgHandle/insights'
     | '/$orgHandle/integrations'
+    | '/$orgHandle/settings'
+    | '/$orgHandle/visibility'
     | '/chat/$chatId'
     | '/events/$eventId'
     | '/settings/account'
@@ -667,6 +751,10 @@ export interface FileRouteTypes {
     | '/api/tools/run'
     | '/api/trpc/$'
     | '/api/v1/vouched'
+    | '/onboarding/step/1'
+    | '/onboarding/step/2'
+    | '/onboarding/step/3'
+    | '/onboarding/step/4'
     | '/request/$owner/$repo'
     | '/events'
     | '/admin/research/$runId'
@@ -689,6 +777,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/onboarding'
     | '/_admin'
     | '/_app'
     | '/login'
@@ -703,6 +792,7 @@ export interface FileRouteTypes {
     | '/_app/rules'
     | '/_app/search'
     | '/_app/settings'
+    | '/_app/visibility'
     | '/api/chat'
     | '/api/feedback'
     | '/api/inngest'
@@ -714,6 +804,8 @@ export interface FileRouteTypes {
     | '/_app/$orgHandle/home'
     | '/_app/$orgHandle/insights'
     | '/_app/$orgHandle/integrations'
+    | '/_app/$orgHandle/settings'
+    | '/_app/$orgHandle/visibility'
     | '/_app/chat/$chatId'
     | '/_app/events/$eventId'
     | '/_app/settings/account'
@@ -729,6 +821,10 @@ export interface FileRouteTypes {
     | '/api/tools/run'
     | '/api/trpc/$'
     | '/api/v1/vouched'
+    | '/onboarding/step/1'
+    | '/onboarding/step/2'
+    | '/onboarding/step/3'
+    | '/onboarding/step/4'
     | '/request/$owner/$repo'
     | '/_app/events/'
     | '/_admin/admin/research/$runId'
@@ -752,6 +848,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  OnboardingRouteRoute: typeof OnboardingRouteRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
@@ -804,6 +901,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -845,6 +949,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/chat'
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/visibility': {
+      id: '/_app/visibility'
+      path: '/visibility'
+      fullPath: '/visibility'
+      preLoaderRoute: typeof AppVisibilityRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/settings': {
       id: '/_app/settings'
@@ -929,6 +1040,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/request/$owner/$repo'
       preLoaderRoute: typeof RequestOwnerRepoRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/step/4': {
+      id: '/onboarding/step/4'
+      path: '/step/4'
+      fullPath: '/onboarding/step/4'
+      preLoaderRoute: typeof OnboardingStep4RouteImport
+      parentRoute: typeof OnboardingRouteRoute
+    }
+    '/onboarding/step/3': {
+      id: '/onboarding/step/3'
+      path: '/step/3'
+      fullPath: '/onboarding/step/3'
+      preLoaderRoute: typeof OnboardingStep3RouteImport
+      parentRoute: typeof OnboardingRouteRoute
+    }
+    '/onboarding/step/2': {
+      id: '/onboarding/step/2'
+      path: '/step/2'
+      fullPath: '/onboarding/step/2'
+      preLoaderRoute: typeof OnboardingStep2RouteImport
+      parentRoute: typeof OnboardingRouteRoute
+    }
+    '/onboarding/step/1': {
+      id: '/onboarding/step/1'
+      path: '/step/1'
+      fullPath: '/onboarding/step/1'
+      preLoaderRoute: typeof OnboardingStep1RouteImport
+      parentRoute: typeof OnboardingRouteRoute
     }
     '/api/v1/vouched': {
       id: '/api/v1/vouched'
@@ -1034,6 +1173,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/chat/$chatId'
       preLoaderRoute: typeof AppChatChatIdRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/$orgHandle/visibility': {
+      id: '/_app/$orgHandle/visibility'
+      path: '/visibility'
+      fullPath: '/$orgHandle/visibility'
+      preLoaderRoute: typeof AppOrgHandleVisibilityRouteImport
+      parentRoute: typeof AppOrgHandleRoute
+    }
+    '/_app/$orgHandle/settings': {
+      id: '/_app/$orgHandle/settings'
+      path: '/settings'
+      fullPath: '/$orgHandle/settings'
+      preLoaderRoute: typeof AppOrgHandleSettingsRouteImport
+      parentRoute: typeof AppOrgHandleRoute
     }
     '/_app/$orgHandle/integrations': {
       id: '/_app/$orgHandle/integrations'
@@ -1199,6 +1352,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface OnboardingRouteRouteChildren {
+  OnboardingStep1Route: typeof OnboardingStep1Route
+  OnboardingStep2Route: typeof OnboardingStep2Route
+  OnboardingStep3Route: typeof OnboardingStep3Route
+  OnboardingStep4Route: typeof OnboardingStep4Route
+}
+
+const OnboardingRouteRouteChildren: OnboardingRouteRouteChildren = {
+  OnboardingStep1Route: OnboardingStep1Route,
+  OnboardingStep2Route: OnboardingStep2Route,
+  OnboardingStep3Route: OnboardingStep3Route,
+  OnboardingStep4Route: OnboardingStep4Route,
+}
+
+const OnboardingRouteRouteWithChildren = OnboardingRouteRoute._addFileChildren(
+  OnboardingRouteRouteChildren,
+)
+
 interface AdminRouteChildren {
   AdminAdminResearchRunIdRoute: typeof AdminAdminResearchRunIdRoute
   AdminAdminResearchNewRoute: typeof AdminAdminResearchNewRoute
@@ -1248,6 +1419,8 @@ interface AppOrgHandleRouteChildren {
   AppOrgHandleHomeRoute: typeof AppOrgHandleHomeRoute
   AppOrgHandleInsightsRoute: typeof AppOrgHandleInsightsRoute
   AppOrgHandleIntegrationsRoute: typeof AppOrgHandleIntegrationsRoute
+  AppOrgHandleSettingsRoute: typeof AppOrgHandleSettingsRoute
+  AppOrgHandleVisibilityRoute: typeof AppOrgHandleVisibilityRoute
   AppOrgHandleAutomationsAutomationIdRoute: typeof AppOrgHandleAutomationsAutomationIdRoute
   AppOrgHandleAutomationsPreviewRoute: typeof AppOrgHandleAutomationsPreviewRoute
   AppOrgHandleEventsEventIdRoute: typeof AppOrgHandleEventsEventIdRoute
@@ -1260,6 +1433,8 @@ const AppOrgHandleRouteChildren: AppOrgHandleRouteChildren = {
   AppOrgHandleHomeRoute: AppOrgHandleHomeRoute,
   AppOrgHandleInsightsRoute: AppOrgHandleInsightsRoute,
   AppOrgHandleIntegrationsRoute: AppOrgHandleIntegrationsRoute,
+  AppOrgHandleSettingsRoute: AppOrgHandleSettingsRoute,
+  AppOrgHandleVisibilityRoute: AppOrgHandleVisibilityRoute,
   AppOrgHandleAutomationsAutomationIdRoute:
     AppOrgHandleAutomationsAutomationIdRoute,
   AppOrgHandleAutomationsPreviewRoute: AppOrgHandleAutomationsPreviewRoute,
@@ -1299,6 +1474,7 @@ interface AppRouteChildren {
   AppRulesRoute: typeof AppRulesRoute
   AppSearchRoute: typeof AppSearchRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
+  AppVisibilityRoute: typeof AppVisibilityRoute
   AppChatChatIdRoute: typeof AppChatChatIdRoute
   AppEventsEventIdRoute: typeof AppEventsEventIdRoute
   AppUsersUsernameRoute: typeof AppUsersUsernameRoute
@@ -1314,6 +1490,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppRulesRoute: AppRulesRoute,
   AppSearchRoute: AppSearchRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
+  AppVisibilityRoute: AppVisibilityRoute,
   AppChatChatIdRoute: AppChatChatIdRoute,
   AppEventsEventIdRoute: AppEventsEventIdRoute,
   AppUsersUsernameRoute: AppUsersUsernameRoute,
@@ -1354,6 +1531,7 @@ const Char91DotwellKnownChar93OauthProtectedResourceRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  OnboardingRouteRoute: OnboardingRouteRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,

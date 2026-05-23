@@ -7,6 +7,10 @@ import {
   checkFakeBountyReference,
   handleFakeBountyCatch,
 } from "@tripwire/core"
+// Side-effect import: registers the reputation-update → rescore hook so
+// `updateReputation` calls from any webhook in this process fan out to the
+// background scorer.
+import "#/inngest/score-user"
 import { db } from "@tripwire/db/client"
 import { repositories } from "@tripwire/db"
 import { eq } from "drizzle-orm"

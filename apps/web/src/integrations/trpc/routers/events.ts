@@ -158,7 +158,11 @@ export const eventsRouter = {
         conditions.push(inArray(events.severity, input.severities))
       }
       if (input.targetUsername) {
-        conditions.push(eq(events.targetGithubUsername, input.targetUsername))
+        // GitHub usernames are case-insensitive; match on lower() so we don't
+        // miss events stored with a different casing than the caller passed.
+        conditions.push(
+          sql`lower(${events.targetGithubUsername}) = ${input.targetUsername.toLowerCase()}`
+        )
       }
       if (input.ruleName) {
         conditions.push(eq(events.ruleName, input.ruleName))

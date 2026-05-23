@@ -133,15 +133,24 @@ export function DialogHeader({
 
 export function DialogFooter({
   className,
+  side = "end",
   variant = "default",
   render,
   ...props
 }: useRender.ComponentProps<"div"> & {
+  side?: "start" | "end"
   variant?: "default" | "bare"
 }): React.ReactElement {
+  // Static class strings so Tailwind's scanner can pick them up at build time.
+  const justifyClass =
+    side === "start"
+      ? "justify-start sm:justify-start"
+      : "justify-end sm:justify-end"
+
   const defaultProps = {
     className: cn(
-      "flex flex-col-reverse gap-2 px-5 sm:flex-row sm:justify-end",
+      "flex flex-col-reverse gap-2 px-5 sm:flex-row",
+      justifyClass,
       variant === "default" &&
         "rounded-b-xl border-t border-tw-border bg-tw-bg/50 py-4",
       variant === "bare" &&
@@ -149,6 +158,7 @@ export function DialogFooter({
       className
     ),
     "data-slot": "dialog-footer",
+    "data-side": side,
   }
 
   return useRender({

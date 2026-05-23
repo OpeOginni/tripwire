@@ -117,6 +117,31 @@ export function EventsNavIcon({ active, showDot }: NavIconProps) {
   )
 }
 
+export function VisibilityNavIcon({ active }: NavIconProps) {
+  const c = active ? "#FAFAFA" : "rgba(159, 159, 169, 1)"
+  return (
+    <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+      <circle
+        cx="6.25"
+        cy="5.75"
+        r="2.75"
+        fill={c}
+        fillOpacity={active ? "1" : "0.4"}
+      />
+      <path
+        d="M11.25,9c-.97,0-1.846,.397-2.485,1.029,.626,.776,1.084,1.701,1.295,2.721h4.69c.69,0,1.25-.56,1.25-1.25,0-1.379-1.121-2.5-2.5-2.5h-2.25Z"
+        fill={c}
+      />
+      <path
+        d="M6.25,9.5c-2.347,0-4.25,1.903-4.25,4.25,0,.69,.56,1.25,1.25,1.25H9.25c.69,0,1.25-.56,1.25-1.25,0-2.347-1.903-4.25-4.25-4.25Z"
+        fill={c}
+        fillOpacity={active ? "1" : "0.4"}
+      />
+      <circle cx="12.25" cy="5.75" r="2.25" fill={c} />
+    </svg>
+  )
+}
+
 export function IntegrationsNavIcon({ active }: NavIconProps) {
   const c = active ? "#FAFAFA" : "rgba(159, 159, 169, 1)"
   return (

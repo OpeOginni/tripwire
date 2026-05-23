@@ -63,6 +63,7 @@ function extractOrgHandle(pathname: string): string | null {
     pathname.startsWith("/events") ||
     pathname.startsWith("/insights") ||
     pathname.startsWith("/automations") ||
+    pathname.startsWith("/visibility") ||
     pathname.startsWith("/integrations")
   ) {
     return null

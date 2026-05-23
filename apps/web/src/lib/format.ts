@@ -38,3 +38,24 @@ export function safePercent(used: number, max: number): number {
   if (max <= 0) return 0
   return Math.max(0, Math.min(used / max, 1))
 }
+
+export function formatRelativeTime(
+  date: Date | string | null | undefined
+): string {
+  if (!date) return "—"
+  const d = date instanceof Date ? date : new Date(date)
+  if (Number.isNaN(d.getTime())) return "—"
+  const diffMs = Math.max(0, Date.now() - d.getTime())
+  const diffMin = Math.floor(diffMs / 60_000)
+  if (diffMin < 1) return "just now"
+  if (diffMin < 60) return `${diffMin}m ago`
+  const diffHr = Math.floor(diffMin / 60)
+  if (diffHr < 24) return `${diffHr}h ago`
+  const diffDay = Math.floor(diffHr / 24)
+  if (diffDay < 7) return `${diffDay}d ago`
+  const diffWk = Math.floor(diffDay / 7)
+  if (diffWk < 5) return `${diffWk}w ago`
+  const diffMo = Math.floor(diffDay / 30)
+  if (diffMo < 12) return `${diffMo}mo ago`
+  return `${Math.floor(diffDay / 365)}y ago`
+}

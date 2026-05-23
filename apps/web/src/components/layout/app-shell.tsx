@@ -21,6 +21,7 @@ import { ChatThread } from "#/components/chat/chat-thread"
 import { useTRPC } from "#/integrations/trpc/react"
 import { useCustomer } from "autumn-js/react"
 import { useRequestNotifications } from "#/lib/use-request-notifications"
+import { useOnboardingRedirect } from "#/lib/use-onboarding-redirect"
 import Dither from "#/components/Dither"
 import {
   Context,
@@ -59,6 +60,7 @@ export function AppShell() {
 
 function AppShellInner() {
   useRequestNotifications()
+  useOnboardingRedirect()
   // Handles auto-redirects: no org in URL → default workspace, "_" placeholder → first repo
 
   const {

@@ -1,17 +1,26 @@
 import { useWorkspace } from "#/lib/workspace-context"
 import { GithubIcon } from "#/components/icons/github"
-import { Menu, MenuTrigger, MenuPopup, MenuItem } from "#/components/ui/menu"
+import {
+  Menu,
+  MenuTrigger,
+  MenuPopup,
+  MenuItem,
+  MenuSeparator,
+} from "#/components/ui/menu"
 import { useAuth } from "@tripwire/auth/components"
 import { useState } from "react"
 import {
   MenuChevronDownIcon10,
+  PlusStrokeIcon11,
   SmallCheckStrokeIcon12,
 } from "#/components/icons/app-chrome-icons"
+import { CreateOrgDialog } from "#/components/orgs/create-org-dialog"
 
 export function OrgSwitcher() {
   const { org, orgs, setOrg, isLoading } = useWorkspace()
   const { user } = useAuth()
   const [open, setOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
 
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen)
@@ -89,7 +98,18 @@ export function OrgSwitcher() {
             )}
           </MenuItem>
         ))}
+        <MenuSeparator />
+        <MenuItem
+          onClick={() => {
+            setTimeout(() => setCreateOpen(true), 0)
+          }}
+          className="flex items-center gap-2 text-tw-text-secondary"
+        >
+          <PlusStrokeIcon11 className="text-tw-text-tertiary" />
+          Create new org
+        </MenuItem>
       </MenuPopup>
+      <CreateOrgDialog open={createOpen} onOpenChange={setCreateOpen} />
     </Menu>
   )
 }
