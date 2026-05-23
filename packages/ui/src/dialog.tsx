@@ -142,8 +142,10 @@ export function DialogFooter({
   const defaultProps = {
     className: cn(
       "flex flex-col-reverse gap-2 px-5 sm:flex-row sm:justify-end",
-      variant === "default" && "border-t border-tw-border bg-tw-bg/50 py-4 rounded-b-xl",
-      variant === "bare" && "pt-2 pb-5 in-[[data-slot=dialog-popup]:has([data-slot=dialog-panel])]:pt-2",
+      variant === "default" &&
+        "rounded-b-xl border-t border-tw-border bg-tw-bg/50 py-4",
+      variant === "bare" &&
+        "pt-2 pb-5 in-[[data-slot=dialog-popup]:has([data-slot=dialog-panel])]:pt-2",
       className
     ),
     "data-slot": "dialog-footer",
@@ -178,7 +180,10 @@ export function DialogDescription({
 }: DialogPrimitive.Description.Props): React.ReactElement {
   return (
     <DialogPrimitive.Description
-      className={cn("text-[13px] leading-relaxed text-tw-text-muted", className)}
+      className={cn(
+        "text-[13px] leading-relaxed text-tw-text-muted",
+        className
+      )}
       data-slot="dialog-description"
       {...props}
     />
