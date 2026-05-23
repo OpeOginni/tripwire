@@ -52,10 +52,15 @@ interface LogEventOptions {
  * });
  */
 export async function logEvent(options: LogEventOptions) {
-  // GitHub Apps and the `ghost` deleted-user account are never real
-  // contributors — drop them at the ingest boundary so no downstream
-  // surface (visibility, insights, reputation) has to defend against them.
-  if (isBotOrGhost(options.targetGithubUsername)) return
+  // Drop bot/ghost-targeted events at the ingest boundary, but only when the
+  // event actually targets a user — admin/config events with no target must
+  // still log.
+  if (
+    options.targetGithubUsername &&
+    isBotOrGhost(options.targetGithubUsername)
+  ) {
+    return
+  }
 
   try {
     await db.insert(events).values({
@@ -83,7 +88,8 @@ export async function logEvent(options: LogEventOptions) {
  */
 export async function logEvents(eventList: LogEventOptions[]) {
   const filtered = eventList.filter(
-    (e) => !isBotOrGhost(e.targetGithubUsername)
+    (e) =>
+      !e.targetGithubUsername || !isBotOrGhost(e.targetGithubUsername)
   )
   if (filtered.length === 0) return
 

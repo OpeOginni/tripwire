@@ -75,7 +75,7 @@ function VisibilityPage() {
   const bulkMutation = useMutation(
     trpc.visibility.bulkAction.mutationOptions({
       onSuccess: (data, vars) => {
-        if (repoId) invalidateRepoData(queryClient, repoId)
+        invalidateRepoData(queryClient, vars.repoId)
         setSelection({})
         const verb =
           vars.action === "whitelist" ? "Whitelisted" : "Blacklisted"
@@ -152,6 +152,7 @@ function VisibilityPage() {
         <div className="flex flex-wrap items-center gap-2 rounded-xl border border-tw-border bg-tw-card px-3 py-2">
           <input
             type="search"
+            aria-label="Search contributors by username"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by username"

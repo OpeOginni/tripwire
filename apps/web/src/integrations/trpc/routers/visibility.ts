@@ -136,6 +136,14 @@ export const visibilityRouter = {
         since.setDate(since.getDate() - input.sinceDays)
         conditions.push(gte(githubReputation.lastSeenAt, since))
       }
+      if (input.status === "whitelisted") {
+        conditions.push(sql`${whitelistEntries.id} is not null`)
+      } else if (input.status === "blacklisted") {
+        conditions.push(sql`${blacklistEntries.id} is not null`)
+      } else if (input.status === "normal") {
+        conditions.push(sql`${whitelistEntries.id} is null`)
+        conditions.push(sql`${blacklistEntries.id} is null`)
+      }
 
       const sortCol = SORT_COLUMN[input.sort]
       const orderBy =
@@ -183,17 +191,15 @@ export const visibilityRouter = {
             : "normal",
       }))
 
-      const statusFiltered = input.status
-        ? filtered.filter((r) => r.status === input.status)
-        : filtered
-
-      const hasMore = statusFiltered.length > input.limit
-      const items = statusFiltered.slice(0, input.limit)
+      const hasMore = filtered.length > input.limit
+      const items = filtered.slice(0, input.limit)
 
       const [totalRow] = await db
         .select({ count: sql<number>`count(*)::int` })
         .from(githubReputation)
-        .where(eq(githubReputation.repoId, input.repoId))
+        .leftJoin(whitelistEntries, whitelistJoinClause(input.repoId))
+        .leftJoin(blacklistEntries, blacklistJoinClause(input.repoId))
+        .where(and(...conditions))
 
       return {
         items,
@@ -267,8 +273,10 @@ export const visibilityRouter = {
             description: `@${username} was ${config.verb}`,
             targetGithubUsername: username,
             targetGithubUserId:
-              repRows.find((r) => r.githubUsername === username)
-                ?.githubUserId ?? undefined,
+              repRows.find(
+                (r) =>
+                  r.githubUsername.toLowerCase() === username.toLowerCase()
+              )?.githubUserId ?? undefined,
             metadata: { actor, source: "visibility_bulk" },
           })
         )

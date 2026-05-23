@@ -30,6 +30,7 @@ export function excludeMaintainerSelf(
 }
 
 export function lowerInArray(column: Column, usernames: string[]): SQL {
+  if (usernames.length === 0) return sql`false`
   return sql`lower(${column}) in (${sql.join(
     usernames.map((u) => sql`${u.toLowerCase()}`),
     sql`, `

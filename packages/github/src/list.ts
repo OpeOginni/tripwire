@@ -28,27 +28,37 @@ export interface GitHubIssueMin {
   pull_request?: unknown
 }
 
+const REQUEST_TIMEOUT_MS = 15_000
+
 async function fetchPage<T>(
   path: string,
   token: string,
   page: number
 ): Promise<T[]> {
   const sep = path.includes("?") ? "&" : "?"
-  const res = await fetch(
-    `https://api.github.com${path}${sep}per_page=${PER_PAGE}&page=${page}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-    }
-  )
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  let res: Response
+  try {
+    res = await fetch(
+      `https://api.github.com${path}${sep}per_page=${PER_PAGE}&page=${page}`,
+      {
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      }
+    )
+  } finally {
+    clearTimeout(timeout)
+  }
   if (!res.ok) {
     const text = await res.text()
     throw createError({
       code: `github.api.${res.status}`,
-      status: res.status >= 500 ? 502 : 500,
+      status: res.status >= 500 ? 502 : res.status,
       message: `GitHub API ${res.status}: ${text}`,
       internal: { path, page, githubStatus: res.status, githubBody: text },
     })

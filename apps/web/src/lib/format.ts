@@ -44,7 +44,8 @@ export function formatRelativeTime(
 ): string {
   if (!date) return "—"
   const d = date instanceof Date ? date : new Date(date)
-  const diffMs = Date.now() - d.getTime()
+  if (Number.isNaN(d.getTime())) return "—"
+  const diffMs = Math.max(0, Date.now() - d.getTime())
   const diffMin = Math.floor(diffMs / 60_000)
   if (diffMin < 1) return "just now"
   if (diffMin < 60) return `${diffMin}m ago`

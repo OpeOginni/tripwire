@@ -1,8 +1,10 @@
+// GitHub App accounts (`name[bot]`) and conventional bot suffixes
+// (`name-bot`, `name_bot`). Won't false-positive on `abbot`, `robotic`.
+const BOT_SUFFIX = /(?:\[bot\]|[-_]bot)$/
+
 export function isBotOrGhost(username: string | null | undefined): boolean {
   if (!username) return true
   const lower = username.toLowerCase()
   if (lower === "ghost") return true
-  if (lower.endsWith("[bot]")) return true
-  if (lower.endsWith("bot")) return true
-  return false
+  return BOT_SUFFIX.test(lower)
 }
