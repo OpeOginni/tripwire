@@ -43,9 +43,7 @@ export function SyncBar({ repoId, repoFullName }: SyncBarProps) {
     trpc.visibility.requestSync.mutationOptions({
       onSuccess: () => {
         setConfirmOpen(false)
-        queryClient.invalidateQueries({
-          queryKey: trpc.visibility.syncStatus.queryKey({ repoId }),
-        })
+        invalidateRepoData(queryClient, repoId)
         toastManager.add({ type: "success", title: "Sync started" })
       },
       onError: (err) =>
