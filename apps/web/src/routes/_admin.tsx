@@ -5,7 +5,7 @@ import {
   redirect,
   useRouterState,
 } from "@tanstack/react-router"
-import { FlaskConical, ShieldUser } from "lucide-react"
+import { FlaskConical, LayoutDashboard, ShieldUser } from "lucide-react"
 import { trpcClient } from "#/integrations/tanstack-query/root-provider"
 import { TripwireLogo } from "#/components/icons/tripwire-logo"
 
@@ -36,7 +36,7 @@ function AdminTopNav() {
     <div className="flex shrink-0 items-center justify-between gap-3 px-3 py-2">
       <div className="flex items-center gap-3">
         <Link
-          to="/admin/research"
+          to="/admin"
           className="flex size-8 items-center justify-center rounded-full transition-opacity hover:opacity-80"
         >
           <TripwireLogo className="size-6 text-tw-text-primary" />
@@ -45,6 +45,17 @@ function AdminTopNav() {
           Admin
         </span>
         <nav className="flex items-center gap-0.5">
+          <Link
+            to="/admin"
+            className={tabClass(currentPath === "/admin")}
+          >
+            <LayoutDashboard
+              className={iconClass(currentPath === "/admin")}
+            />
+            <span className={labelClass(currentPath === "/admin")}>
+              Overview
+            </span>
+          </Link>
           <Link
             to="/admin/research"
             className={tabClass(currentPath.startsWith("/admin/research"))}

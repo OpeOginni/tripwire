@@ -220,7 +220,7 @@ export function TopNav({ askOpen, onToggleAsk }: TopNavProps) {
             </MenuItem>
             <AdminMenuItem
               isAdmin={isAdmin}
-              onNavigate={() => navigate({ to: "/admin/research" })}
+              onNavigate={() => navigate({ to: "/admin" })}
             />
             <MenuSeparator />
             <MenuItem onClick={handleSignOut}>Sign out</MenuItem>
