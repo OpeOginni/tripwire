@@ -1,32 +1,68 @@
+import { useEffect } from "react"
 import {
   createFileRoute,
   Link,
   Outlet,
-  redirect,
+  useNavigate,
   useRouterState,
 } from "@tanstack/react-router"
+import { useQuery } from "@tanstack/react-query"
 import { FlaskConical, LayoutDashboard, ShieldUser } from "lucide-react"
-import { trpcClient } from "#/integrations/tanstack-query/root-provider"
+import { AuthProvider } from "@tripwire/auth/components"
+import { useTRPC } from "#/integrations/trpc/react"
 import { TripwireLogo } from "#/components/icons/tripwire-logo"
 
 export const Route = createFileRoute("/_admin")({
-  beforeLoad: async () => {
-    const me = await trpcClient.auth.me.query()
-    if (!me) throw redirect({ to: "/login" })
-    if (!me.isAdmin) throw redirect({ to: "/home" })
-  },
   component: AdminShell,
 })
 
 function AdminShell() {
   return (
-    <div className="tw-root flex h-screen flex-col overflow-hidden bg-tw-bg text-tw-text-primary antialiased">
-      <AdminTopNav />
-      <main className="flex-1 overflow-y-auto">
-        <Outlet />
-      </main>
-    </div>
+    <AuthProvider>
+      <AdminGuard>
+        <div className="tw-root flex h-screen flex-col overflow-hidden bg-tw-bg text-tw-text-primary antialiased">
+          <AdminTopNav />
+          <main className="flex-1 overflow-y-auto">
+            <Outlet />
+          </main>
+        </div>
+      </AdminGuard>
+    </AuthProvider>
   )
+}
+
+function AdminGuard({ children }: { children: React.ReactNode }) {
+  const trpc = useTRPC()
+  const navigate = useNavigate()
+  // Auth check runs client-side so the user's cookies actually reach the
+  // tRPC endpoint. Doing this in beforeLoad would use the module-level
+  // trpcClient on SSR, which has no cookie context, and bounce the user to
+  // /login even when they're signed in.
+  const me = useQuery({
+    ...trpc.auth.me.queryOptions(),
+    staleTime: 60_000,
+  })
+
+  useEffect(() => {
+    if (me.isPending) return
+    if (!me.data) {
+      navigate({ to: "/login" })
+      return
+    }
+    if (!me.data.isAdmin) {
+      navigate({ to: "/home" })
+    }
+  }, [me.isPending, me.data, navigate])
+
+  if (me.isPending || !me.data?.isAdmin) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-tw-bg text-[12px] text-tw-text-tertiary">
+        Checking access…
+      </div>
+    )
+  }
+
+  return <>{children}</>
 }
 
 function AdminTopNav() {
