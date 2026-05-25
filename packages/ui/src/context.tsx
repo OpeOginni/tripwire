@@ -93,7 +93,7 @@ export const ContextTrigger = ({ children, ...props }: ContextTriggerProps) => {
     <HoverCardTrigger asChild>
       {children ?? (
         <Button type="button" variant="ghost" {...props}>
-          <span className="font-medium text-muted-foreground">
+          <span className="font-medium text-tw-text-muted">
             {renderedPercent}
           </span>
           <ContextIcon />
@@ -134,7 +134,7 @@ export const ContextContentHeader = ({
         <>
           <div className="flex items-center justify-between gap-3 text-xs">
             <p>{displayPct}</p>
-            <p className="font-mono text-muted-foreground">
+            <p className="font-mono text-tw-text-muted">
               {used} / {total}
             </p>
           </div>
@@ -172,14 +172,14 @@ export const ContextContentFooter = ({
   return (
     <div
       className={cn(
-        "bg-secondary flex w-full items-center justify-between gap-3 p-3 text-xs",
+        "flex w-full items-center justify-between gap-3 bg-tw-card p-3 text-xs",
         className
       )}
       {...props}
     >
       {children ?? (
         <>
-          <span className="text-muted-foreground">Total cost</span>
+          <span className="text-tw-text-muted">Total cost</span>
           <span>{totalCost}</span>
         </>
       )}
@@ -197,7 +197,7 @@ const TokensWithCost = ({
   <span>
     {tokens === undefined ? "—" : formatCompact(tokens)}
     {costText ? (
-      <span className="ml-2 text-muted-foreground">• {costText}</span>
+      <span className="ml-2 text-tw-text-muted">• {costText}</span>
     ) : null}
   </span>
 )
@@ -227,7 +227,7 @@ export const ContextInputUsage = ({
       className={cn("flex items-center justify-between text-xs", className)}
       {...props}
     >
-      <span className="text-muted-foreground">Input</span>
+      <span className="text-tw-text-muted">Input</span>
       <TokensWithCost costText={inputCostText} tokens={inputTokens} />
     </div>
   )
@@ -258,7 +258,7 @@ export const ContextOutputUsage = ({
       className={cn("flex items-center justify-between text-xs", className)}
       {...props}
     >
-      <span className="text-muted-foreground">Output</span>
+      <span className="text-tw-text-muted">Output</span>
       <TokensWithCost costText={outputCostText} tokens={outputTokens} />
     </div>
   )
@@ -289,7 +289,7 @@ export const ContextReasoningUsage = ({
       className={cn("flex items-center justify-between text-xs", className)}
       {...props}
     >
-      <span className="text-muted-foreground">Reasoning</span>
+      <span className="text-tw-text-muted">Reasoning</span>
       <TokensWithCost costText={reasoningCostText} tokens={reasoningTokens} />
     </div>
   )
@@ -320,7 +320,7 @@ export const ContextCacheUsage = ({
       className={cn("flex items-center justify-between text-xs", className)}
       {...props}
     >
-      <span className="text-muted-foreground">Cache</span>
+      <span className="text-tw-text-muted">Cache</span>
       <TokensWithCost costText={cacheCostText} tokens={cacheTokens} />
     </div>
   )

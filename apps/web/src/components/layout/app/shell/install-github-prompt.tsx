@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router"
 import { useQueryClient } from "@tanstack/react-query"
 import { useCallback } from "react"
 import { Button } from "@tripwire/ui/button"
@@ -33,12 +32,16 @@ export function InstallGitHubPrompt() {
             configure rules, run automations, and monitor contributions.
           </p>
         </div>
-        <Button variant="default" size="sm">
-          <Link to={routes.api.githubInstall} className="flex gap-2">
-            <GithubIcon className="mt-0.5 size-4" />
-            Install GitHub App
-          </Link>
-        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          render={
+            <a href={routes.api.githubInstall} className="flex gap-2">
+              <GithubIcon className="mt-0.5 size-4" />
+              Install GitHub App
+            </a>
+          }
+        />
       </div>
     </div>
   )

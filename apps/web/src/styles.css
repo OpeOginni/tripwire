@@ -57,20 +57,25 @@
   --color-tw-linear: #5e6ad2;
   --color-tw-github: #000000;
 
-  /* shadcn/ui variables */
-  --color-background: #0d0d0f;
-  --color-foreground: #eeeeee;
-  --color-popover: #1f1e1e;
-  --color-popover-foreground: #eeeeee;
-  --color-border: #27272a;
-  --color-accent: #202023;
-  --color-accent-foreground: #eeeeee;
-  --color-muted: #202023;
-  --color-muted-foreground: #b4b4b4;
-  --color-primary: #34a6ff;
+  /* shadcn-style aliases for third-party libs that hard-code these tokens.
+     UI lib components in `packages/ui/src/*` should reach for the
+     `--color-tw-*` palette above instead. */
+  --color-background: var(--color-tw-bg);
+  --color-foreground: var(--color-tw-text-primary);
+  --color-popover: var(--color-tw-card);
+  --color-popover-foreground: var(--color-tw-text-primary);
+  --color-border: var(--color-tw-border);
+  --color-accent: var(--color-tw-hover-light);
+  --color-accent-foreground: var(--color-tw-text-primary);
+  --color-muted: var(--color-tw-card);
+  --color-muted-foreground: var(--color-tw-text-secondary);
+  --color-primary: var(--color-tw-accent);
   --color-primary-foreground: #ffffff;
-  --color-input: #202023;
-  --color-ring: #34a6ff;
+  --color-input: var(--color-tw-border);
+  --color-ring: var(--color-tw-accent);
+  --color-secondary: var(--color-tw-button-muted);
+  --color-secondary-foreground: var(--color-tw-text-primary);
+  --color-destructive: var(--color-tw-error);
   --radius-lg: 0.5rem;
 }
 

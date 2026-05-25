@@ -7,8 +7,5 @@
   "printWidth": 80,
   "plugins": ["prettier-plugin-tailwindcss"],
   "tailwindStylesheet": "apps/web/src/styles.css",
-  "importOrder": ["^components/(.*)$", "^[./]"],
-  "tailwindFunctions": ["cn", "cva"],
-  "importOrderSeparation": true,
-  "importOrderSortSpecifiers": true
+  "tailwindFunctions": ["cn", "cva"]
 }
