@@ -83,12 +83,12 @@ export function EventGroupCard({ group, onOpenEvent }: EventGroupCardProps) {
             </span>
           </div>
           {first.action ? (
-            <span
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               onClick={handleAction}
               onKeyDown={handleActionKeyDown}
               aria-label={first.action.label}
+              tabIndex={0}
               className="flex h-8 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[10px] bg-[#363639] px-2.5 whitespace-nowrap text-tw-text-primary transition-colors hover:bg-[#404044] focus:outline-none focus-visible:ring-2 focus-visible:ring-tw-text-primary"
             >
               {first.action.kind === "close" ? (
@@ -99,7 +99,7 @@ export function EventGroupCard({ group, onOpenEvent }: EventGroupCardProps) {
               <span className="text-center text-[13px] leading-none text-tw-text-primary">
                 {first.action.label}
               </span>
-            </span>
+            </button>
           ) : null}
         </div>
       </div>
@@ -117,7 +117,7 @@ function SingleUserPreview({ user, preview }: SingleUserPreviewProps) {
     if (preview.includes("Payout")) {
       return [
         preview.split(" Payout")[0],
-        "Payout" + preview.split(" Payout")[1],
+        `Payout${preview.split(" Payout")[1]}`,
       ]
     }
     return [preview, ""]

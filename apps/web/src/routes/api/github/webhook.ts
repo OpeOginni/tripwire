@@ -72,12 +72,8 @@ type GitHubWebhookPayload = {
     private: boolean
   }>
   repositories_removed?: Array<{ id: number }>
-  pull_request?: {
-    number: number
-    title?: string | null
-    body?: string | null
-  }
-  issue?: { number: number; title?: string | null; body?: string | null }
+  pull_request?: { number: number; title: string; body?: string | null }
+  issue?: { number: number; title: string; body?: string | null }
   comment?: { id: number; body?: string | null }
 }
 
@@ -245,66 +241,70 @@ async function handleRepoEvent(
 ): Promise<void> {
   switch (event) {
     case "pull_request": {
-      if (payload.action === "opened" || payload.action === "reopened") {
-        const prContent = `${payload.pull_request.title ?? ""}\n${payload.pull_request.body ?? ""}`
-        const [repoRow] = await db
-          .select({ id: repositories.id })
-          .from(repositories)
-          .where(eq(repositories.githubRepoId, repo.id))
-
-        if (repoRow) {
-          const bountyHit = await checkFakeBountyReference(
-            repoRow.id,
-            prContent
-          )
-          if (bountyHit) {
-            await handleFakeBountyCatch({
-              repoId: repoRow.id,
-              bountyId: bountyHit.bountyId,
-              githubUsername: ctx.senderLogin,
-              githubUserId: ctx.senderId,
-              githubRef: `#${payload.pull_request.number}`,
-              refType: "pr",
-              prNumber: payload.pull_request.number,
-              installationId: ctx.installationId,
-              repoFullName: ctx.repoFullName,
-            })
-            break
-          }
-        }
-
-        await handlePullRequest(
-          ctx,
-          payload.pull_request.number,
-          payload.pull_request.title,
-          payload.pull_request.body ?? undefined
-        )
+      const pr = payload.pull_request
+      if (
+        !pr ||
+        (payload.action !== "opened" && payload.action !== "reopened")
+      ) {
+        break
       }
+      const prContent = `${pr.title}\n${pr.body ?? ""}`
+      const [repoRow] = await db
+        .select({ id: repositories.id })
+        .from(repositories)
+        .where(eq(repositories.githubRepoId, repo.id))
+
+      if (repoRow) {
+        const bountyHit = await checkFakeBountyReference(repoRow.id, prContent)
+        if (bountyHit) {
+          await handleFakeBountyCatch({
+            repoId: repoRow.id,
+            bountyId: bountyHit.bountyId,
+            githubUsername: ctx.senderLogin,
+            githubUserId: ctx.senderId,
+            githubRef: `#${pr.number}`,
+            refType: "pr",
+            prNumber: pr.number,
+            installationId: ctx.installationId,
+            repoFullName: ctx.repoFullName,
+          })
+          break
+        }
+      }
+
+      await handlePullRequest(ctx, pr.number, pr.title, pr.body ?? undefined)
       break
     }
 
     case "issues": {
-      if (payload.action === "opened" || payload.action === "reopened") {
-        await handleIssue(
-          ctx,
-          payload.issue.number,
-          payload.issue.title,
-          payload.issue.body ?? undefined
-        )
+      const issue = payload.issue
+      if (
+        !issue ||
+        (payload.action !== "opened" && payload.action !== "reopened")
+      ) {
+        break
       }
+      await handleIssue(ctx, issue.number, issue.title, issue.body ?? undefined)
       break
     }
 
     case "issue_comment": {
-      if (payload.sender?.type === "Bot") break
-      if (payload.action === "created") {
-        await handleComment(
-          ctx,
-          payload.comment.id,
-          payload.issue.number,
-          payload.comment.body ?? undefined
-        )
+      const issue = payload.issue
+      const comment = payload.comment
+      if (
+        !issue ||
+        !comment ||
+        payload.sender?.type === "Bot" ||
+        payload.action !== "created"
+      ) {
+        break
       }
+      await handleComment(
+        ctx,
+        comment.id,
+        issue.number,
+        comment.body ?? undefined
+      )
       break
     }
   }
