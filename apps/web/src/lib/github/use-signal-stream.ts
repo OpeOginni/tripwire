@@ -7,6 +7,21 @@ export type GitHubSignalStreamTarget = {
   signalKeys: readonly string[]
 }
 
+/**
+ * Minimal slice of `QueryClient` the invalidator actually touches.
+ * Narrow contract makes the helper unit-testable with a 2-method stub.
+ */
+type SignalAwareQueryClient = {
+  getQueryState(queryKey: QueryKey):
+    | { dataUpdatedAt: number; fetchStatus: string }
+    | undefined
+  invalidateQueries(filters: {
+    queryKey: QueryKey
+    exact?: boolean
+    refetchType?: "active" | "inactive" | "all" | "none"
+  }): Promise<void>
+}
+
 type ServerMessage = {
   type: "signals"
   keys: string[]
@@ -31,7 +46,7 @@ function buildStreamUrl(keys: readonly string[]): string {
 }
 
 function invalidateMatching(
-  queryClient: ReturnType<typeof useQueryClient>,
+  queryClient: SignalAwareQueryClient,
   targets: readonly GitHubSignalStreamTarget[],
   receivedKeys: readonly string[],
 ): number {

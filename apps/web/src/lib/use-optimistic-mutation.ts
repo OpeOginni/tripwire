@@ -39,8 +39,8 @@ export type OptimisticPatchHandle = {
  *   use when multiple variants of a list (different sort/filter/page)
  *   need the same patch.
  *
- * Returning `current` from the updater (or never being called when
- * `current === undefined`) leaves the slot untouched.
+ * The updater is called only when the slot has a value; loaded slots
+ * pass through, empty slots are left alone.
  */
 export function patchOptimistic<TData>(
   queryClient: OptimisticPatchClient,
@@ -76,76 +76,4 @@ export function patchOptimistic<TData>(
       }
     },
   }
-}
-
-/**
- * Build a predicate that matches every tRPC `listContributors` cache
- * variant for one repo, regardless of search/sort/filter/pagination
- * params. Used by the bulk-action optimistic patches in visibility +
- * the contributor drawer — exact key isn't enough because the table
- * may have several open at once with different filters.
- */
-export function matchesContributorsListForRepo(repoId: string) {
-  return (queryKey: QueryKey): boolean => {
-    if (!Array.isArray(queryKey) || queryKey.length < 2) return false
-    const serialized = JSON.stringify(queryKey)
-    return (
-      serialized.includes("listContributors") &&
-      serialized.includes(`"repoId":"${repoId}"`)
-    )
-  }
-}
-
-export type ContributorAction =
-  | "whitelist"
-  | "blacklist"
-  | "removeWhitelist"
-  | "removeBlacklist"
-
-/**
- * Translate a `bulkAction` verb into the steady-state contributor
- * status it produces. Shared so visibility-page + drawer flip rows the
- * same way during optimistic updates.
- */
-export function nextContributorStatus(
-  action: ContributorAction,
-): "whitelisted" | "blacklisted" | "normal" {
-  if (action === "whitelist") return "whitelisted"
-  if (action === "blacklist") return "blacklisted"
-  return "normal"
-}
-
-/**
- * Updater that flips status on every row whose username is in the
- * target set. Composes with `patchOptimistic({ predicate: ... })`.
- */
-export function flipContributorStatuses<
-  TList extends {
-    items: Array<{ githubUsername: string; status: string }>
-  },
->(targetUsernames: readonly string[], nextStatus: string) {
-  const targetSet = new Set(targetUsernames.map((u) => u.toLowerCase()))
-  return (current: TList): TList => ({
-    ...current,
-    items: current.items.map((row) =>
-      targetSet.has(row.githubUsername.toLowerCase())
-        ? { ...row, status: nextStatus }
-        : row,
-    ),
-  })
-}
-
-/**
- * Remove every row whose username matches. Used by the recommendation
- * panels — whitelisting a "suggested whitelist" row should make it
- * disappear from THAT panel's list immediately.
- */
-export function removeContributorRows<
-  TList extends Array<{ githubUsername: string }>,
->(targetUsernames: readonly string[]) {
-  const targetSet = new Set(targetUsernames.map((u) => u.toLowerCase()))
-  return (current: TList): TList =>
-    current.filter(
-      (row) => !targetSet.has(row.githubUsername.toLowerCase()),
-    ) as TList
 }

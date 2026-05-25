@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
-  flipContributorStatuses,
-  matchesContributorsListForRepo,
   type OptimisticPatchClient,
-  nextContributorStatus,
   patchOptimistic,
-  removeContributorRows,
 } from "./use-optimistic-mutation"
 
 /**
@@ -80,7 +76,6 @@ describe("patchOptimistic — exact queryKey", () => {
       { queryKey: ["repos", "missing"] },
       (current) => ({ count: current.count + 1 }),
     )
-    // setQueryData still gets called, but the safe-updater swallows undefined.
     expect(data.get(JSON.stringify(["repos", "missing"]))).toBeUndefined()
   })
 
@@ -110,7 +105,10 @@ describe("patchOptimistic — predicate", () => {
       client,
       {
         predicate: (key) =>
-          Array.isArray(key) && JSON.stringify(key).includes(`"repoId":"r1"`),
+          Array.isArray(key) &&
+          typeof key[1] === "object" &&
+          key[1] !== null &&
+          (key[1] as { repoId?: unknown }).repoId === "r1",
       },
       (current) => ({ items: [...current.items, 42] }),
     )
@@ -135,7 +133,10 @@ describe("patchOptimistic — predicate", () => {
       client,
       {
         predicate: (key) =>
-          Array.isArray(key) && JSON.stringify(key).includes(`"repoId":"r1"`),
+          Array.isArray(key) &&
+          typeof key[1] === "object" &&
+          key[1] !== null &&
+          (key[1] as { repoId?: unknown }).repoId === "r1",
       },
       (current) => ({ items: [...current.items, 999] }),
     )
@@ -143,98 +144,5 @@ describe("patchOptimistic — predicate", () => {
     for (const [key, value] of initial) {
       expect(data.get(JSON.stringify(key))).toEqual(value)
     }
-  })
-})
-
-describe("matchesContributorsListForRepo", () => {
-  it("matches listContributors keys with the requested repoId", () => {
-    const matcher = matchesContributorsListForRepo("repo-a")
-    expect(
-      matcher([
-        "visibility",
-        "listContributors",
-        { input: { repoId: "repo-a", sort: "score" } },
-      ]),
-    ).toBe(true)
-  })
-
-  it("rejects listContributors keys for a different repo", () => {
-    const matcher = matchesContributorsListForRepo("repo-a")
-    expect(
-      matcher([
-        "visibility",
-        "listContributors",
-        { input: { repoId: "repo-b" } },
-      ]),
-    ).toBe(false)
-  })
-
-  it("rejects keys for unrelated queries even when the repoId substring matches", () => {
-    const matcher = matchesContributorsListForRepo("repo-a")
-    expect(matcher(["visibility", "otherQuery", { repoId: "repo-a" }])).toBe(
-      false,
-    )
-  })
-
-  it("rejects short keys", () => {
-    const matcher = matchesContributorsListForRepo("repo-a")
-    expect(matcher(["listContributors"])).toBe(false)
-  })
-})
-
-describe("nextContributorStatus", () => {
-  it("maps whitelist verbs to whitelisted", () => {
-    expect(nextContributorStatus("whitelist")).toBe("whitelisted")
-  })
-  it("maps blacklist verbs to blacklisted", () => {
-    expect(nextContributorStatus("blacklist")).toBe("blacklisted")
-  })
-  it("maps both remove verbs back to normal", () => {
-    expect(nextContributorStatus("removeWhitelist")).toBe("normal")
-    expect(nextContributorStatus("removeBlacklist")).toBe("normal")
-  })
-})
-
-describe("flipContributorStatuses", () => {
-  it("flips only rows whose username matches (case-insensitive)", () => {
-    const list = {
-      items: [
-        { githubUsername: "Alice", status: "normal" },
-        { githubUsername: "bob", status: "normal" },
-      ],
-      total: 2,
-    }
-    const updated = flipContributorStatuses(["alice"], "whitelisted")(list)
-    expect(updated.items[0].status).toBe("whitelisted")
-    expect(updated.items[1].status).toBe("normal")
-  })
-
-  it("returns a new array/object — does not mutate input", () => {
-    const list = {
-      items: [{ githubUsername: "alice", status: "normal" }],
-    }
-    const updated = flipContributorStatuses(["alice"], "whitelisted")(list)
-    expect(updated).not.toBe(list)
-    expect(updated.items).not.toBe(list.items)
-    expect(list.items[0].status).toBe("normal")
-  })
-})
-
-describe("removeContributorRows", () => {
-  it("drops only rows whose username matches", () => {
-    const rows = [
-      { githubUsername: "alice" },
-      { githubUsername: "bob" },
-      { githubUsername: "Carol" },
-    ]
-    expect(removeContributorRows(["carol"])(rows)).toEqual([
-      { githubUsername: "alice" },
-      { githubUsername: "bob" },
-    ])
-  })
-
-  it("returns an empty array when nothing remains", () => {
-    const rows = [{ githubUsername: "alice" }]
-    expect(removeContributorRows(["alice"])(rows)).toEqual([])
   })
 })

@@ -12,19 +12,19 @@ import {
   githubResponseCache,
   githubRevalidationSignal,
 } from "@tripwire/db"
+import {
+  type GitHubConditionalHeaders,
+  type GitHubFetchResult,
+  type GitHubResponseMetadata,
+  parseNullableInt,
+} from "./response-metadata"
 
-export type GitHubConditionalHeaders = {
-  etag?: string | null
-  lastModified?: string | null
-}
-
-export type GitHubResponseMetadata = {
-  etag: string | null
-  lastModified: string | null
-  rateLimitRemaining: number | null
-  rateLimitReset: number | null
-  statusCode: number
-}
+export type {
+  GitHubConditionalHeaders,
+  GitHubFetchResult,
+  GitHubResponseMetadata,
+} from "./response-metadata"
+export { createGitHubResponseMetadata } from "./response-metadata"
 
 export type GitHubCacheStoreEntry = {
   cacheKey: string
@@ -47,10 +47,6 @@ export type GitHubCacheStore = {
   delete(cacheKey: string): Promise<void>
 }
 
-export type GitHubFetchResult<TData> =
-  | { kind: "not-modified"; metadata: GitHubResponseMetadata }
-  | { kind: "success"; data: TData; metadata: GitHubResponseMetadata }
-
 export type GitHubLocalFirstMeta = {
   /** "fresh" = served from a still-valid cache entry. "stale" = served stale, background revalidate kicked off. "miss" = no cache, fetched live. */
   cacheStatus: "fresh" | "stale" | "miss"
@@ -58,7 +54,7 @@ export type GitHubLocalFirstMeta = {
   isRevalidating: boolean
 }
 
-type GetOrRevalidateGitHubResourceOptions<TData> = {
+export type GetOrRevalidateGitHubResourceOptions<TData> = {
   scope: string
   resource: string
   params?: unknown
@@ -153,12 +149,6 @@ function parseCachedPayload<TData>(payloadJson: string) {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object"
-}
-
-function parseNullableInt(value: string | null | undefined) {
-  if (!value) return null
-  const parsed = Number.parseInt(value, 10)
-  return Number.isFinite(parsed) ? parsed : null
 }
 
 function getRateLimitResetMs(rateLimitReset: number | null | undefined) {
@@ -394,19 +384,6 @@ export async function peekGitHubCache<TData>(
   const entry = await store.get(cacheKey)
   if (!entry) return null
   return parseCachedPayload<TData>(entry.payloadJson)
-}
-
-export function createGitHubResponseMetadata(
-  statusCode: number,
-  headers: Record<string, string | null | undefined>,
-): GitHubResponseMetadata {
-  return {
-    etag: headers.etag ?? null,
-    lastModified: headers["last-modified"] ?? null,
-    rateLimitRemaining: parseNullableInt(headers["x-ratelimit-remaining"]),
-    rateLimitReset: parseNullableInt(headers["x-ratelimit-reset"]),
-    statusCode,
-  }
 }
 
 export async function getOrRevalidateGitHubResource<TData>({

@@ -14,12 +14,34 @@ import type { CachedPR, CachedRepo } from "@tripwire/db"
 import { githubApi } from "./app"
 import {
   createGitHubResponseMetadata,
+  type GetOrRevalidateGitHubResourceOptions,
   type GitHubFetchResult,
   getGitHubResourceLocalFirst,
   getOrRevalidateGitHubResource,
   peekGitHubCache,
 } from "./cache"
 import { cachedFetchGitHub } from "./request"
+
+/**
+ * Cache-engine entry shared by every fetcher in this file.
+ *
+ * - `forceRefresh = false` (default): serve stale-while-revalidate. The
+ *   user sees the cached payload immediately and a background refresh
+ *   reconciles to fresh in the next tick.
+ * - `forceRefresh = true`: bypass freshness entirely (`freshForMs: 0`)
+ *   so the caller actually waits on a fresh fetch. Used when a user
+ *   action explicitly demands canonical data.
+ */
+async function cacheOrRefresh<TData>(
+  options: GetOrRevalidateGitHubResourceOptions<TData>,
+  forceRefresh: boolean | undefined,
+): Promise<TData> {
+  if (forceRefresh) {
+    return getOrRevalidateGitHubResource<TData>({ ...options, freshForMs: 0 })
+  }
+  const result = await getGitHubResourceLocalFirst<TData>(options)
+  return result.data
+}
 import type { ContributionsData, GitHubUserGraphQL, PinnedRepo } from "./user"
 import { fetchUserContributions, fetchUserGraphQL } from "./user"
 
@@ -286,20 +308,15 @@ export async function fetchUserPRs(
     }
   }
 
-  const engineOpts = {
-    scope: username.toLowerCase(),
-    resource: "user.merged-prs",
-    freshForMs: CACHE_TTL_MS,
-    fetcher,
-  }
-  const cached = opts.forceRefresh
-    ? await getOrRevalidateGitHubResource<MergedPrsCachePayload>({
-        ...engineOpts,
-        freshForMs: 0,
-      })
-    : (
-        await getGitHubResourceLocalFirst<MergedPrsCachePayload>(engineOpts)
-      ).data
+  const cached = await cacheOrRefresh<MergedPrsCachePayload>(
+    {
+      scope: username.toLowerCase(),
+      resource: "user.merged-prs",
+      freshForMs: CACHE_TTL_MS,
+      fetcher,
+    },
+    opts.forceRefresh,
+  )
 
   return {
     items: cached.items.slice(0, limit),
@@ -367,20 +384,15 @@ export async function fetchUserRepos(
       metadata: reposResult.metadata,
     }
   }
-  const engineOpts = {
-    scope,
-    resource: "user.repos",
-    freshForMs: CACHE_TTL_MS,
-    fetcher,
-  }
-  const cached = opts.forceRefresh
-    ? await getOrRevalidateGitHubResource<UserReposCachePayload>({
-        ...engineOpts,
-        freshForMs: 0,
-      })
-    : (
-        await getGitHubResourceLocalFirst<UserReposCachePayload>(engineOpts)
-      ).data
+  const cached = await cacheOrRefresh<UserReposCachePayload>(
+    {
+      scope,
+      resource: "user.repos",
+      freshForMs: CACHE_TTL_MS,
+      fetcher,
+    },
+    opts.forceRefresh,
+  )
 
   return {
     items: cached.items.slice(0, limit),
@@ -405,21 +417,16 @@ export async function fetchUserActivity(
     const data = await fetchUserGraphQL(token, username).catch(() => null)
     return { kind: "success" as const, data, metadata: syntheticMetadata() }
   }
-  const graphqlEngineOpts = {
-    scope,
-    resource: "user.activity.graphql",
-    freshForMs: CACHE_TTL_MS,
-    fetcher: graphqlFetcher,
-  }
   const [graphql, contribs] = await Promise.all([
-    opts.forceRefresh
-      ? getOrRevalidateGitHubResource<GitHubUserGraphQL | null>({
-          ...graphqlEngineOpts,
-          freshForMs: 0,
-        })
-      : getGitHubResourceLocalFirst<GitHubUserGraphQL | null>(
-          graphqlEngineOpts,
-        ).then((r) => r.data),
+    cacheOrRefresh<GitHubUserGraphQL | null>(
+      {
+        scope,
+        resource: "user.activity.graphql",
+        freshForMs: CACHE_TTL_MS,
+        fetcher: graphqlFetcher,
+      },
+      opts.forceRefresh,
+    ),
     fetchUserContributions(token, username).catch(() => null),
   ])
 

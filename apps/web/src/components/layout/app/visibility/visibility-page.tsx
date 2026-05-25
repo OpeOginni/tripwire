@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@tripwire/ui/button"
 import { toastManager } from "@tripwire/ui/toast"
 import { EmptyState } from "#/components/shared/empty-state"
@@ -16,16 +16,16 @@ import { SyncBar } from "#/components/layout/app/visibility/sync-bar"
 import { useTRPC } from "#/integrations/trpc/react"
 import { useWorkspace } from "#/providers/workspace-context"
 import { formatCompact } from "#/lib/format"
-import { useLiveGitHubQuery } from "#/lib/github/use-live-query"
-import { useRepoSignalKeys } from "#/lib/github/use-repo-signal-targets"
+import { useGitHubSignalStream } from "#/lib/github/use-signal-stream"
+import { useRepoSignalTargets } from "#/lib/github/use-repo-signal-targets"
 import { routes } from "#/lib/routes"
 import { toastFromError } from "#/lib/toast-error"
+import { patchOptimistic } from "#/lib/use-optimistic-mutation"
 import {
   flipContributorStatuses,
-  matchesContributorsListForRepo,
+  matchContributorsListForRepo,
   nextContributorStatus,
-  patchOptimistic,
-} from "#/lib/use-optimistic-mutation"
+} from "#/components/layout/app/visibility/contributor-cache"
 
 type StatusFilter = "all" | "whitelisted" | "blacklisted" | "normal"
 
@@ -73,11 +73,15 @@ export function VisibilityPage() {
     },
     { enabled: !!repoId, staleTime: 30_000 },
   )
-  const listQuery = useLiveGitHubQuery(
-    listQueryOpts,
-    useRepoSignalKeys(repo?.fullName),
+  const listQuery = useQuery({
+    ...listQueryOpts,
+    meta: { persist: true },
+  })
+  useGitHubSignalStream(
+    useRepoSignalTargets(repo?.fullName, [listQueryOpts.queryKey]),
   )
 
+  const contributorsListPrefix = trpc.visibility.listContributors.queryKey()
   const bulkMutation = useMutation(
     trpc.visibility.bulkAction.mutationOptions({
       // Optimistic patch: flip status on every cached `listContributors`
@@ -86,8 +90,16 @@ export function VisibilityPage() {
       onMutate: (vars) =>
         patchOptimistic(
           queryClient,
-          { predicate: matchesContributorsListForRepo(vars.repoId) },
-          flipContributorStatuses(vars.usernames, nextContributorStatus(vars.action)),
+          {
+            predicate: matchContributorsListForRepo(
+              contributorsListPrefix,
+              vars.repoId,
+            ),
+          },
+          flipContributorStatuses(
+            vars.usernames,
+            nextContributorStatus(vars.action),
+          ),
         ),
       onError: (err, _vars, handle) => {
         handle?.rollback()

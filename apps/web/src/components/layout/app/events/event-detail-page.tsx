@@ -12,6 +12,7 @@ import {
 } from "@tripwire/ui/icons/event-detail-icons"
 import { RULE_META } from "@tripwire/db/schema/rule-meta"
 import { useGitHubUserFormatted } from "#/hooks/use-github-user"
+import type { RouterOutputs } from "#/integrations/trpc/router"
 import { useTRPC } from "#/integrations/trpc/react"
 import { useWorkspace, useWorkspacePath } from "#/providers/workspace-context"
 import { invalidateListCaches } from "#/lib/cache"
@@ -163,32 +164,68 @@ export function EventDetailPage() {
           </span>
         </div>
 
-        <EventHero
-          event={event}
-          eventId={eventId}
-          sevColor={sevColor}
-          username={username}
-        />
+        <EventHero event={event} eventId={eventId} sevColor={sevColor} username={username} />
 
-        <EventActions
-          actionBanner={actionBanner}
-          isAlreadyActioned={isAlreadyActioned(event.action)}
-          actionedLabel={getActionedLabel(event.action, event.severity)}
-          isAlreadyBlacklisted={isAlreadyBlacklisted}
-          username={username}
-          blacklistPending={blacklistMutation.isPending}
-          whitelistPending={whitelistMutation.isPending}
-          onBlacklist={() => {
-            if (repoId && username !== "unknown") {
-              blacklistMutation.mutate({ repoId, githubUsername: username })
-            }
-          }}
-          onWhitelist={() => {
-            if (repoId && username !== "unknown") {
-              whitelistMutation.mutate({ repoId, githubUsername: username })
-            }
-          }}
-        />
+        {actionBanner ? (
+          <div className="flex items-center gap-2 px-2">
+            <div className="flex items-center gap-2 rounded-[10px] bg-tw-inner px-3 py-2 text-[13px]">
+              {actionBanner.kind === "blacklisted" ? (
+                <>
+                  <EventShieldStrokeIcon14 />
+                  <span className="text-tw-text-primary">
+                    @{actionBanner.username} has been blacklisted
+                  </span>
+                </>
+              ) : (
+                <>
+                  <EventUserPlusStrokeIcon14 />
+                  <span className="text-tw-text-primary">
+                    @{actionBanner.username} added to whitelist
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 px-2">
+            {isAlreadyActioned(event.action) && (
+              <div className="flex items-center gap-2 rounded-[10px] bg-tw-inner px-3 py-2 text-[13px] text-tw-text-secondary">
+                <EventShieldCheckStrokeIcon14 />
+                <span>
+                  Tripwire {getActionedLabel(event.action, event.severity)}
+                </span>
+              </div>
+            )}
+            <ActionPill
+              variant={isAlreadyActioned(event.action) ? "default" : "primary"}
+              onClick={() => {
+                if (repoId && username !== "unknown") {
+                  blacklistMutation.mutate({ repoId, githubUsername: username })
+                }
+              }}
+              disabled={blacklistMutation.isPending || isAlreadyBlacklisted}
+            >
+              <EventShieldStrokeIcon14 />
+              {isAlreadyBlacklisted
+                ? `@${username} is blacklisted`
+                : blacklistMutation.isPending
+                  ? "Adding..."
+                  : `Blacklist @${username}`}
+            </ActionPill>
+            <ActionPill
+              variant="ghost"
+              onClick={() => {
+                if (repoId && username !== "unknown") {
+                  whitelistMutation.mutate({ repoId, githubUsername: username })
+                }
+              }}
+              disabled={whitelistMutation.isPending}
+            >
+              <EventUserPlusStrokeIcon14 />
+              {whitelistMutation.isPending ? "Adding..." : "Add to whitelist"}
+            </ActionPill>
+          </div>
+        )}
 
         <Block label="Flagged content">
           <div className="flex flex-col gap-2.5 pt-1">
@@ -286,21 +323,7 @@ export function EventDetailPage() {
   )
 }
 
-type EventDoc = NonNullable<
-  ReturnType<typeof useQuery<unknown>>["data"]
-> extends infer _T
-  ? {
-      action: string
-      severity: string | null
-      contentType: string | null
-      ruleName: string | null
-      description: string | null
-      githubRef: string | null
-      targetGithubUsername: string | null
-      createdAt: Date | string
-      repo: { fullName?: string | null } | null
-    }
-  : never
+type EventDoc = NonNullable<RouterOutputs["events"]["get"]>
 
 function EventHero({
   event,
@@ -363,83 +386,6 @@ function EventHero({
         <span className="text-[#363639]">·</span>
         <span>{formatRelativeTime(event.createdAt)}</span>
       </div>
-    </div>
-  )
-}
-
-function EventActions({
-  actionBanner,
-  isAlreadyActioned,
-  actionedLabel,
-  isAlreadyBlacklisted,
-  username,
-  blacklistPending,
-  whitelistPending,
-  onBlacklist,
-  onWhitelist,
-}: {
-  actionBanner: { kind: "blacklisted" | "safe"; username: string } | null
-  isAlreadyActioned: boolean
-  actionedLabel: string
-  isAlreadyBlacklisted: boolean
-  username: string
-  blacklistPending: boolean
-  whitelistPending: boolean
-  onBlacklist: () => void
-  onWhitelist: () => void
-}) {
-  if (actionBanner) {
-    return (
-      <div className="flex items-center gap-2 px-2">
-        <div className="flex items-center gap-2 rounded-[10px] bg-tw-inner px-3 py-2 text-[13px]">
-          {actionBanner.kind === "blacklisted" ? (
-            <>
-              <EventShieldStrokeIcon14 />
-              <span className="text-tw-text-primary">
-                @{actionBanner.username} has been blacklisted
-              </span>
-            </>
-          ) : (
-            <>
-              <EventUserPlusStrokeIcon14 />
-              <span className="text-tw-text-primary">
-                @{actionBanner.username} added to whitelist
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex items-center gap-2 px-2">
-      {isAlreadyActioned && (
-        <div className="flex items-center gap-2 rounded-[10px] bg-tw-inner px-3 py-2 text-[13px] text-tw-text-secondary">
-          <EventShieldCheckStrokeIcon14 />
-          <span>Tripwire {actionedLabel}</span>
-        </div>
-      )}
-      <ActionPill
-        variant={isAlreadyActioned ? "default" : "primary"}
-        onClick={onBlacklist}
-        disabled={blacklistPending || isAlreadyBlacklisted}
-      >
-        <EventShieldStrokeIcon14 />
-        {isAlreadyBlacklisted
-          ? `@${username} is blacklisted`
-          : blacklistPending
-            ? "Adding..."
-            : `Blacklist @${username}`}
-      </ActionPill>
-      <ActionPill
-        variant="ghost"
-        onClick={onWhitelist}
-        disabled={whitelistPending}
-      >
-        <EventUserPlusStrokeIcon14 />
-        {whitelistPending ? "Adding..." : "Add to whitelist"}
-      </ActionPill>
     </div>
   )
 }

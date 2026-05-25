@@ -1,4 +1,5 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMemo } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   Dialog,
   DialogPopup,
@@ -13,14 +14,14 @@ import { formatCompact, formatRelativeTime } from "#/lib/format"
 import { toastFromError } from "#/lib/toast-error"
 import { toastManager } from "@tripwire/ui/toast"
 import { githubRevalidationSignalKeys } from "#/lib/github/revalidation"
-import { useLiveGitHubQuery } from "#/lib/github/use-live-query"
+import { useGitHubSignalStream } from "#/lib/github/use-signal-stream"
+import { patchOptimistic } from "#/lib/use-optimistic-mutation"
 import {
   type ContributorAction,
   flipContributorStatuses,
-  matchesContributorsListForRepo,
+  matchContributorsListForRepo,
   nextContributorStatus,
-  patchOptimistic,
-} from "#/lib/use-optimistic-mutation"
+} from "#/components/layout/app/visibility/contributor-cache"
 import type { ContributorRow } from "./contributors-table"
 
 const actionToastTitle: Record<ContributorAction, (n: string) => string> = {
@@ -110,20 +111,40 @@ export function ContributorDetailDrawer({
   // Persisted + signal-streamed: reopening the drawer renders last-known
   // events instantly while a fresh fetch runs. The `user:USERNAME` signal
   // invalidates within ~1s of a webhook for this contributor.
-  const eventsQuery = useLiveGitHubQuery(
-    trpc.events.list.queryOptions(
-      { repoId, targetUsername: username, limit: 30 },
-      { enabled: !!contributor && open },
-    ),
-    username ? [githubRevalidationSignalKeys.user({ username })] : [],
+  const eventsQueryOpts = trpc.events.list.queryOptions(
+    { repoId, targetUsername: username, limit: 30 },
+    { enabled: !!contributor && open },
   )
+  const eventsQuery = useQuery({
+    ...eventsQueryOpts,
+    meta: { persist: true },
+  })
+  const userSignalTargets = useMemo(
+    () =>
+      username
+        ? [
+            {
+              queryKey: eventsQueryOpts.queryKey,
+              signalKeys: [githubRevalidationSignalKeys.user({ username })],
+            },
+          ]
+        : [],
+    [username, eventsQueryOpts.queryKey],
+  )
+  useGitHubSignalStream(userSignalTargets)
 
+  const contributorsListPrefix = trpc.visibility.listContributors.queryKey()
   const mutation = useMutation(
     trpc.visibility.bulkAction.mutationOptions({
       onMutate: (vars) =>
         patchOptimistic(
           queryClient,
-          { predicate: matchesContributorsListForRepo(vars.repoId) },
+          {
+            predicate: matchContributorsListForRepo(
+              contributorsListPrefix,
+              vars.repoId,
+            ),
+          },
           flipContributorStatuses(
             vars.usernames,
             nextContributorStatus(vars.action),
@@ -157,18 +178,7 @@ export function ContributorDetailDrawer({
     },
   ]
 
-  const eventsData = eventsQuery.data as
-    | {
-        events: Array<{
-          id: string
-          severity: string | null
-          action: string
-          githubRef: string | null
-          description: string | null
-          createdAt: Date | string
-        }>
-      }
-    | undefined
+  const eventsData = eventsQuery.data
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

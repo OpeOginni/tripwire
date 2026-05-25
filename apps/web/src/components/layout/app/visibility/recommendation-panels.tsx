@@ -8,12 +8,10 @@ import { formatRelativeTime } from "#/lib/format"
 import { toastFromError } from "#/lib/toast-error"
 import { toastManager } from "@tripwire/ui/toast"
 import { useWorkspace } from "#/providers/workspace-context"
-import { useLiveGitHubQuery } from "#/lib/github/use-live-query"
-import { useRepoSignalKeys } from "#/lib/github/use-repo-signal-targets"
-import {
-  patchOptimistic,
-  removeContributorRows,
-} from "#/lib/use-optimistic-mutation"
+import { useGitHubSignalStream } from "#/lib/github/use-signal-stream"
+import { useRepoSignalTargets } from "#/lib/github/use-repo-signal-targets"
+import { patchOptimistic } from "#/lib/use-optimistic-mutation"
+import { removeContributorRows } from "#/components/layout/app/visibility/contributor-cache"
 
 interface PanelProps {
   repoId: string
@@ -47,19 +45,13 @@ export function SuggestedWhitelistPanel({ repoId, onSelect }: PanelProps) {
     repoId,
     limit: 6,
   })
-  const query = useLiveGitHubQuery(queryOpts, useRepoSignalKeys(repo?.fullName))
-  const data = query.data as
-    | ReadonlyArray<{
-        githubUsername: string
-        githubUserId: number | null
-        score: number
-        totalAllows: number
-        lastSeenAt: Date | string
-      }>
-    | undefined
+  const query = useQuery({ ...queryOpts, meta: { persist: true } })
+  useGitHubSignalStream(
+    useRepoSignalTargets(repo?.fullName, [queryOpts.queryKey]),
+  )
   const rows = useMemo(
-    () => (data ?? []).filter((c) => !isSelf(c, selfGithubId)),
-    [data, selfGithubId],
+    () => (query.data ?? []).filter((c) => !isSelf(c, selfGithubId)),
+    [query.data, selfGithubId],
   )
   const mutation = useMutation(
     trpc.visibility.bulkAction.mutationOptions({
@@ -127,19 +119,13 @@ export function RiskAlertsPanel({ repoId, onSelect }: PanelProps) {
     repoId,
     limit: 6,
   })
-  const query = useLiveGitHubQuery(queryOpts, useRepoSignalKeys(repo?.fullName))
-  const data = query.data as
-    | ReadonlyArray<{
-        githubUsername: string
-        githubUserId: number | null
-        score: number
-        totalBlocks: number
-        lastSeenAt: Date | string
-      }>
-    | undefined
+  const query = useQuery({ ...queryOpts, meta: { persist: true } })
+  useGitHubSignalStream(
+    useRepoSignalTargets(repo?.fullName, [queryOpts.queryKey]),
+  )
   const rows = useMemo(
-    () => (data ?? []).filter((c) => !isSelf(c, selfGithubId)),
-    [data, selfGithubId],
+    () => (query.data ?? []).filter((c) => !isSelf(c, selfGithubId)),
+    [query.data, selfGithubId],
   )
   const mutation = useMutation(
     trpc.visibility.bulkAction.mutationOptions({

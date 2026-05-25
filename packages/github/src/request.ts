@@ -191,7 +191,7 @@ export async function fetchGitHubResponse<TData = unknown>(
 import {
   createGitHubResponseMetadata,
   type GitHubFetchResult,
-} from "./cache"
+} from "./response-metadata"
 
 /**
  * Cache-engine-shaped wrapper around `fetchGitHubResponse`. Translates
