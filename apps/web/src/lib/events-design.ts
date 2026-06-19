@@ -1,4 +1,4 @@
-export type EventDesignSeverity = "info" | "warning" | "success" | "error"
+import { SEVERITY_DOT_COLORS } from "#/lib/severity-design"
 
 export type EventFeedCategory = "all" | "security" | "activity"
 
@@ -28,29 +28,10 @@ export const EVENT_FEED_CATEGORIES = [
   { label: "Activity", value: "activity" },
 ] as const satisfies readonly { label: string; value: EventFeedCategory }[]
 
-export const EVENT_SEVERITY_DOT_COLORS = {
-  success: "bg-tw-success",
-  error: "bg-tw-error",
-  warning: "bg-tw-warning",
-  info: "bg-tw-accent",
-} as const satisfies Record<EventDesignSeverity, string>
-
 export const EVENT_SUMMARY_ITEMS = [
-  { key: "success", label: "Allowed", dot: EVENT_SEVERITY_DOT_COLORS.success },
-  { key: "error", label: "Blocked", dot: EVENT_SEVERITY_DOT_COLORS.error },
-  { key: "warning", label: "Near Misses", dot: EVENT_SEVERITY_DOT_COLORS.warning },
+  { key: "success", label: "Allowed", dot: SEVERITY_DOT_COLORS.success },
+  { key: "error", label: "Blocked", dot: SEVERITY_DOT_COLORS.error },
+  { key: "warning", label: "Near Misses", dot: SEVERITY_DOT_COLORS.warning },
   { key: "workflow", label: "Workflows", dot: "bg-tw-accent" },
-  { key: "info", label: "Other", dot: EVENT_SEVERITY_DOT_COLORS.info },
+  { key: "info", label: "Other", dot: SEVERITY_DOT_COLORS.info },
 ] as const
-
-export function eventSeverityDotColor(
-  severity: string | null | undefined
-): string {
-  if (!severity) return EVENT_SEVERITY_DOT_COLORS.info
-  return Object.prototype.hasOwnProperty.call(
-    EVENT_SEVERITY_DOT_COLORS,
-    severity
-  )
-    ? EVENT_SEVERITY_DOT_COLORS[severity as EventDesignSeverity]
-    : EVENT_SEVERITY_DOT_COLORS.info
-}

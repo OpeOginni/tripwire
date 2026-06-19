@@ -7,13 +7,11 @@ import { RULE_META } from "@tripwire/db/schema/rule-meta"
 import { EmptyState } from "#/components/shared/empty-state"
 import { markEventsViewed } from "#/hooks/use-events-unread"
 import { isCustomRuleName, stripCustomRulePrefix } from "#/lib/custom-rules"
-import {
-  EVENT_SUMMARY_ITEMS,
-  eventSeverityDotColor,
-} from "#/lib/events-design"
+import { EVENT_SUMMARY_ITEMS } from "#/lib/events-design"
 import { useGitHubSignalStream } from "#/lib/github/use-signal-stream"
 import { useRepoSignalTargets } from "#/lib/github/use-repo-signal-targets"
 import { routes } from "#/lib/routes"
+import { severityDotColor } from "#/lib/severity-design"
 import { useTRPC } from "#/integrations/trpc/react"
 import { useWorkspace } from "#/providers/workspace-context"
 
@@ -98,7 +96,7 @@ const NON_CLICKABLE_ACTIONS = new Set([
 ])
 
 function EventRow({ event }: { event: Event }) {
-  const dotColor = eventSeverityDotColor(event.severity)
+  const dotColor = severityDotColor(event.severity)
   const actionLabel = getActionLabel(event.action)
   const isClickable = !NON_CLICKABLE_ACTIONS.has(event.action)
 

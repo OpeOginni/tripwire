@@ -6,8 +6,8 @@ import { ScrollArea } from "@tripwire/ui/scroll-area"
 import { useTRPC } from "#/integrations/trpc/react"
 import { ScoreBadge } from "./score-badge"
 import { ContributorAvatar } from "./contributor-avatar"
-import { eventSeverityDotColor } from "#/lib/events-design"
 import { formatCompact, formatRelativeTime } from "#/lib/format"
+import { severityDotColor } from "#/lib/severity-design"
 import { toastFromError } from "#/lib/toast-error"
 import { toastManager } from "@tripwire/ui/toast"
 import { githubRevalidationSignalKeys } from "#/lib/github/revalidation"
@@ -238,7 +238,7 @@ export function ContributorDetailDrawer({
                   className="flex items-start gap-2.5 rounded-lg bg-tw-inner/50 px-3 py-2"
                 >
                   <span
-                    className={`mt-1 size-1.5 shrink-0 rounded-full ${eventSeverityDotColor(e.severity)}`}
+                    className={`mt-1 size-1.5 shrink-0 rounded-full ${severityDotColor(e.severity)}`}
                   />
                   <div className="flex min-w-0 flex-1 flex-col">
                     <span className="text-[12px] text-tw-text-primary">

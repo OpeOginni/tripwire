@@ -1,14 +1,14 @@
 import { Link } from "@tanstack/react-router"
 import { ChevronRightIndicatorIcon12 } from "@tripwire/ui/icons/app-chrome-icons"
-import { eventSeverityDotColor } from "#/lib/events-design"
 import type { FeedEvent } from "#/lib/github/repo-events"
 import { formatRelativeTime } from "#/lib/format"
+import { severityDotColor } from "#/lib/severity-design"
 
 function RowBody({ event }: { event: FeedEvent }) {
   return (
     <>
       <span
-        className={`size-2 shrink-0 rounded-full ${eventSeverityDotColor(event.severity)}`}
+        className={`size-2 shrink-0 rounded-full ${severityDotColor(event.severity)}`}
       />
 
       <div className="flex min-w-0 flex-1 items-baseline gap-1.5">
