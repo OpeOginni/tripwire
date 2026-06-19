@@ -46,8 +46,11 @@ export const EVENT_SUMMARY_ITEMS = [
 export function eventSeverityDotColor(
   severity: string | null | undefined
 ): string {
-  return (
-    EVENT_SEVERITY_DOT_COLORS[severity as EventDesignSeverity] ??
-    EVENT_SEVERITY_DOT_COLORS.info
+  if (!severity) return EVENT_SEVERITY_DOT_COLORS.info
+  return Object.prototype.hasOwnProperty.call(
+    EVENT_SEVERITY_DOT_COLORS,
+    severity
   )
+    ? EVENT_SEVERITY_DOT_COLORS[severity as EventDesignSeverity]
+    : EVENT_SEVERITY_DOT_COLORS.info
 }
