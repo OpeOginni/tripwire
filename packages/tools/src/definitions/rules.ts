@@ -339,6 +339,7 @@ const copyRules = defineTool({
     "Copy rule configuration between two repos you own. Pass a ruleId to copy a single rule (preserves the destination's other rules). Omit ruleId to replace the destination's entire rule config with the source's.",
   surfaces: ["mcp"],
   needsRepo: false,
+  destructive: true,
   inputSchema: z.object({
     fromRepoId: z.string().uuid(),
     toRepoId: z.string().uuid(),

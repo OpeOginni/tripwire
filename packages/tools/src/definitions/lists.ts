@@ -573,6 +573,7 @@ const resetContributorScoreTool = defineTool({
   description:
     "Forgive a GitHub user's accumulated Tripwire history for this repo. Zeros their reputation totals (blocks/allows/near-misses) and stamps a reset timestamp so future score_breakdown / lookup_user calls ignore older events. The audit events themselves are preserved.",
   needsApproval: true,
+  destructive: true,
   inputSchema: z.object({
     username: z.string().min(1),
     reason: z.string().optional(),

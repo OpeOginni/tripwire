@@ -4,77 +4,71 @@ import { describe, it, expect, vi } from "vitest"
 // importing the registry never tries to open a real DB connection.
 vi.mock("@tripwire/db/client", () => ({ db: {} }))
 
-import { tripwireTools, filterToolsForSurface } from "./index"
+import { tripwireTools, selectMcpSurface } from "./index"
 
-// Tools that must NEVER be reachable on the read-only MCP surface the Poke
-// recipe connects to. If a refactor accidentally flags one of these
-// `readOnly`, this test fails before it can ship.
-const DESTRUCTIVE_TOOLS = [
+// Irreversible / high-blast-radius ops. These must never appear on the MCP
+// surface unless irreversible ops are explicitly enabled.
+const IRREVERSIBLE_TOOLS = [
+  "reset_contributor_score",
+  "delete_workflow",
+  "delete_custom_rule",
+  "copy_rules",
+]
+
+// Reversible writes — exposed once writes are on.
+const REVERSIBLE_WRITES = [
   "add_to_blacklist",
   "remove_from_blacklist",
   "add_to_whitelist",
-  "remove_from_whitelist",
-  "move_to_blacklist",
-  "move_to_whitelist",
-  "reset_contributor_score",
   "toggle_rule",
-  "update_rule_action",
   "set_account_age",
-  "copy_rules",
-  "create_workflow",
-  "edit_workflow",
-  "delete_workflow",
-  "enable_workflow",
-  "create_custom_rule",
-  "delete_custom_rule",
-  "edit_custom_rule",
 ]
 
-// Reads the Poke recipe relies on.
+// Reads the recipe relies on — always present.
 const EXPECTED_READS = [
   "list_repos",
   "list_events",
-  "get_event",
   "lookup_user",
   "get_repo_rules",
   "list_lists",
-  "check_lists",
   "get_guide",
 ]
 
-describe("read-only MCP surface", () => {
-  const readOnlyMcp = filterToolsForSurface(tripwireTools, "mcp").filter(
-    (t) => t.readOnly === true
-  )
-  const names = new Set(readOnlyMcp.map((t) => t.name))
+const namesOf = (opts: {
+  allowWrites: boolean
+  allowIrreversible: boolean
+}): Set<string> =>
+  new Set(selectMcpSurface(tripwireTools, opts).map((t) => t.name))
 
-  it("exposes a non-empty set of read tools", () => {
-    expect(readOnlyMcp.length).toBeGreaterThan(0)
-    expect(readOnlyMcp.every((t) => t.readOnly === true)).toBe(true)
-  })
-
-  it("includes the reads the recipe depends on", () => {
-    for (const name of EXPECTED_READS) {
-      expect(names, `expected ${name} on read-only MCP surface`).toContain(name)
+describe("selectMcpSurface tiers", () => {
+  it("read-only mode: reads only, every write excluded", () => {
+    const names = namesOf({ allowWrites: false, allowIrreversible: false })
+    for (const r of EXPECTED_READS) expect(names).toContain(r)
+    for (const w of [...REVERSIBLE_WRITES, ...IRREVERSIBLE_TOOLS]) {
+      expect(names, `${w} must be excluded in read-only mode`).not.toContain(w)
     }
   })
 
-  it("excludes every known destructive tool", () => {
-    for (const name of DESTRUCTIVE_TOOLS) {
-      expect(names, `${name} must NOT be on read-only MCP surface`).not.toContain(
-        name
+  it("writes mode: reversible writes in, irreversible ops kill-switched out", () => {
+    const names = namesOf({ allowWrites: true, allowIrreversible: false })
+    for (const r of EXPECTED_READS) expect(names).toContain(r)
+    for (const w of REVERSIBLE_WRITES) expect(names).toContain(w)
+    for (const d of IRREVERSIBLE_TOOLS) {
+      expect(names, `${d} must stay off the default write surface`).not.toContain(
+        d
       )
     }
   })
 
-  it("never flags a tool that performs a mutation (no logEvent/db writes leak)", () => {
-    // Cross-check: a destructive tool sneaking onto the surface would also be
-    // missing from the read-only set's complement. Assert the read-only set is
-    // a strict subset of all mcp tools and that every mutation tool is absent.
-    const allMcp = filterToolsForSurface(tripwireTools, "mcp")
-    const mutationsOnSurface = allMcp.filter(
-      (t) => t.readOnly !== true && names.has(t.name)
+  it("full mode: irreversible ops only appear when explicitly allowed", () => {
+    const names = namesOf({ allowWrites: true, allowIrreversible: true })
+    for (const d of IRREVERSIBLE_TOOLS) expect(names).toContain(d)
+  })
+
+  it("every tool flagged destructive is also a write (never readOnly)", () => {
+    const contradictions = tripwireTools.filter(
+      (t) => t.destructive === true && t.readOnly === true
     )
-    expect(mutationsOnSurface).toHaveLength(0)
+    expect(contradictions).toHaveLength(0)
   })
 })

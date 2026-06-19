@@ -269,6 +269,7 @@ const deleteWorkflow = defineTool({
   name: "delete_workflow",
   description: "Delete a workflow by ID.",
   needsApproval: true,
+  destructive: true,
   inputSchema: z.object({
     workflowId: z.string().uuid().describe("Workflow ID to delete"),
   }),

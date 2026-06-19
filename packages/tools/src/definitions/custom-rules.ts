@@ -311,6 +311,7 @@ const updateCustomRuleAction = defineTool({
 const deleteCustomRule = defineTool({
   name: "delete_custom_rule",
   description: "Permanently delete a custom rule by ID.",
+  destructive: true,
   inputSchema: z.object({
     ruleId: z.string().uuid(),
   }),
