@@ -1,24 +1,13 @@
 import { Link } from "@tanstack/react-router"
 import { ChevronRightIndicatorIcon12 } from "@tripwire/ui/icons/app-chrome-icons"
 import type { FeedEvent } from "#/lib/github/repo-events"
+import { formatRelativeTime } from "#/lib/format"
 
 const SEVERITY_DOT: Record<FeedEvent["severity"], string> = {
   success: "bg-tw-success",
   error: "bg-tw-error",
   warning: "bg-tw-warning",
   info: "bg-tw-accent",
-}
-
-function timeAgo(iso: string): string {
-  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-  if (seconds < 60) return "just now"
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  })
 }
 
 function RowBody({ event }: { event: FeedEvent }) {
@@ -69,7 +58,7 @@ function RowBody({ event }: { event: FeedEvent }) {
       )}
 
       <span className="w-14 shrink-0 text-right text-[12px] text-[#FFFFFF59] tabular-nums">
-        {timeAgo(event.timestamp)}
+        {formatRelativeTime(event.timestamp)}
       </span>
     </>
   )
