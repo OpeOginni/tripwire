@@ -472,11 +472,6 @@ export const visibilityRouter = {
       return { runId: created.id, alreadyRunning: false }
     }),
 
-  /**
-   * Tripwire's own events for the active repo (security outcomes, list +
-   * config changes). Fast DB read — renders immediately while the slower
-   * GitHub activity (see `githubActivity`) streams in separately.
-   */
   feed: authedProcedure
     .input(
       z.object({
