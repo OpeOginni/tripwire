@@ -80,6 +80,15 @@ export interface ToolDefinition<
   /** Chat: tool requires explicit user approval before execution. */
   needsApproval?: boolean
 
+  /**
+   * Marks the tool as read-only (no DB writes / no GitHub mutations).
+   * Used to build a reduced, safe surface — e.g. the MCP server can be
+   * gated to read-only tools for an external client like Poke. Default
+   * is falsy, i.e. treated as a mutation; opt in explicitly so a newly
+   * added tool is excluded from read-only surfaces until vetted.
+   */
+  readOnly?: boolean
+
   /** Chat: tool is rendered lazily. */
   lazy?: boolean
 

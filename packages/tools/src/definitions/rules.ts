@@ -9,7 +9,7 @@ import {
   repositories,
   ruleConfigs,
 } from "@tripwire/db"
-import { assertRepoOwner } from "@tripwire/core"
+import { assertRepoMember } from "@tripwire/core"
 import { ruleConfigSchema } from "@tripwire/core"
 import { logEvent } from "@tripwire/core"
 import { type AnyToolDefinition, defineTool, makeSpec } from "../registry"
@@ -28,10 +28,11 @@ const getRepoRules = defineTool({
   description:
     "Get the full moderation rule configuration for the current repo — every rule with its enabled flag, action, type-specific fields, and any scopeOverride.",
   directInvokable: true,
+  readOnly: true,
   inputSchema: z.object({}),
   handler: async (_args, ctx) => {
     const repoId = requireRepoId(ctx)
-    await assertRepoOwner(ctx.userId, repoId)
+    await assertRepoMember(ctx.userId, repoId)
     return loadRuleConfig(repoId)
   },
   chatRender: (config) => {
@@ -351,8 +352,8 @@ const copyRules = defineTool({
       }
     }
     await Promise.all([
-      assertRepoOwner(ctx.userId, fromRepoId),
-      assertRepoOwner(ctx.userId, toRepoId),
+      assertRepoMember(ctx.userId, fromRepoId),
+      assertRepoMember(ctx.userId, toRepoId),
     ])
     const [fromRepo] = await db
       .select({ fullName: repositories.fullName })

@@ -5,8 +5,9 @@ closes / warns / logs PRs, issues, and comments from low-signal accounts.
 
 The Tripwire MCP server gives you tools to inspect a maintainer's repos,
 investigate flagged users, and manage moderation state on their behalf.
-Every mutation goes through the same ownership checks the web app uses
-and emits an event visible in the events feed.
+Every mutation goes through the same access checks the web app uses — the
+caller must own the repo's GitHub App installation OR be a member of the
+workspace it's linked to — and emits an event visible in the events feed.
 
 ## First contact
 
