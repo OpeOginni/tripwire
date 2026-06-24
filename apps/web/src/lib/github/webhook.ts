@@ -194,9 +194,7 @@ export async function handleInstallationRepositories(
 
   const removed = payload.repositories_removed ?? []
   for (const repo of removed) {
-    await db
-      .delete(repositories)
-      .where(eq(repositories.githubRepoId, repo.id))
+    await db.delete(repositories).where(eq(repositories.githubRepoId, repo.id))
     console.log(`[RepoChange] ✓ Removed repo ${repo.id}`)
   }
 }

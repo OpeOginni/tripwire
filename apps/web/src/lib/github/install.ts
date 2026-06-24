@@ -116,9 +116,7 @@ async function applyRepoSync(
 
   for (const repo of existingRepos) {
     if (!currentRepoIds.has(repo.githubRepoId)) {
-      await db
-        .delete(repositories)
-        .where(eq(repositories.id, repo.id))
+      await db.delete(repositories).where(eq(repositories.id, repo.id))
       console.log(`[Callback] Removed repo ${repo.fullName}`)
     }
   }
