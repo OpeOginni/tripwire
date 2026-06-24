@@ -1,4 +1,4 @@
-import { useQueryClient, useQuery } from "@tanstack/react-query"
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query"
 import { useCallback, useMemo, useState } from "react"
 import { Button } from "@tripwire/ui/button"
 import {
@@ -52,6 +52,16 @@ export function IntegrationsPage() {
   const installations = installationsQuery.data ?? []
   const isConnected = installations.length > 0
 
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const disconnect = useMutation(
+    trpc.orgs.disconnectInstallation.mutationOptions({
+      onSettled: async () => {
+        setConfirmingId(null)
+        await queryClient.invalidateQueries()
+      },
+    })
+  )
+
   const [query, setQuery] = useState("")
   const [page, setPage] = useState(1)
 
@@ -87,7 +97,7 @@ export function IntegrationsPage() {
         workspace and choose the repository you're working in.
       </p>
 
-      <div className="mb-2 text-[11px] font-medium tracking-wider text-tw-text-muted uppercase">
+      <div className="mb-2 text-[13px] font-medium text-tw-text-secondary">
         GitHub account
       </div>
 
@@ -147,20 +157,54 @@ export function IntegrationsPage() {
                   </span>
                 </div>
               </div>
-              <Button
-                size="xs"
-                variant="outline"
-                className="shrink-0"
-                render={
-                  <a
-                    href={installHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
+              {confirmingId === install.id ? (
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="text-[12px] text-tw-text-secondary">
+                    Remove from Tripwire?
+                  </span>
+                  <Button
+                    size="xs"
+                    variant="destructive"
+                    disabled={disconnect.isPending}
+                    onClick={() =>
+                      disconnect.mutate({ installationId: install.id })
+                    }
                   >
-                    Manage
-                  </a>
-                }
-              />
+                    Uninstall
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    onClick={() => setConfirmingId(null)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    render={
+                      <a
+                        href={installHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Manage
+                      </a>
+                    }
+                  />
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    className="text-tw-text-muted hover:text-tw-error"
+                    onClick={() => setConfirmingId(install.id)}
+                  >
+                    Uninstall
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
           <a
@@ -177,10 +221,10 @@ export function IntegrationsPage() {
       {isConnected && (
         <>
           <div className="mb-2 flex items-baseline justify-between">
-            <span className="text-[11px] font-medium tracking-wider text-tw-text-muted uppercase">
+            <span className="text-[13px] font-medium text-tw-text-secondary">
               Active repository
             </span>
-            <span className="text-[11px] text-tw-text-muted">
+            <span className="text-[12px] text-tw-text-muted">
               {repos.length} connected
             </span>
           </div>

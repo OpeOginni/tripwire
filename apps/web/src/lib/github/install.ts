@@ -9,6 +9,35 @@ interface InstallationMeta {
   accountLogin: string
 }
 
+/**
+ * Uninstall the GitHub App installation on GitHub's side. Best-effort: returns
+ * true on success or if it's already gone (404). Callers should remove the
+ * local org row regardless, so a stale connection can always be cleared from
+ * Tripwire even when the install was already removed on GitHub.
+ */
+export async function uninstallGitHubApp(
+  installationId: number
+): Promise<boolean> {
+  try {
+    const jwt = await createAppJwt()
+    const res = await fetch(
+      `https://api.github.com/app/installations/${installationId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+          Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      }
+    )
+    return res.ok || res.status === 404
+  } catch (err) {
+    console.error("[Uninstall] Failed to delete installation:", err)
+    return false
+  }
+}
+
 async function fetchInstallationMeta(
   installationId: number
 ): Promise<InstallationMeta | null> {

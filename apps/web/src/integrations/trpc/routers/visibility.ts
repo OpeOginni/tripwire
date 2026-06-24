@@ -19,6 +19,7 @@ import { inngest } from "#/inngest/client"
 import { isValidGithubLogin } from "#/lib/github/login-validation"
 import {
   blacklistJoinClause,
+  excludeBots,
   excludeMaintainerSelf,
   excludeRepoOwner,
   lowerInArray,
@@ -324,7 +325,8 @@ export const visibilityRouter = {
             gte(githubReputation.score, input.scoreThreshold),
             gte(githubReputation.totalAllows, 1),
             excludeRepoOwner,
-            excludeMaintainerSelf(myGithubUserId)
+            excludeMaintainerSelf(myGithubUserId),
+            excludeBots
           )
         )
         .orderBy(desc(githubReputation.score))
@@ -382,7 +384,8 @@ export const visibilityRouter = {
             sql`${blacklistEntries.id} is null`,
             eq(githubReputation.totalAllows, 0),
             excludeRepoOwner,
-            excludeMaintainerSelf(myGithubUserId)
+            excludeMaintainerSelf(myGithubUserId),
+            excludeBots
           )
         )
         .orderBy(desc(githubReputation.lastSeenAt))

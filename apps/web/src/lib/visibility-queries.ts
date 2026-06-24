@@ -38,6 +38,17 @@ export const excludeRepoOwner: SQL = sql`
   and lower(${githubReputation.githubUsername}) <> lower(split_part(${repositories.fullName}, '/', 1))
 `
 
+/**
+ * Excludes bot and ghost accounts — mirrors core `isBotOrGhost`: GitHub App
+ * accounts (`name[bot]`), conventional bot suffixes (`-bot` / `_bot`), and the
+ * deleted-user `ghost`. Keeps bots out of "act on this contributor" surfaces
+ * like risk alerts and whitelist suggestions.
+ */
+export const excludeBots: SQL = sql`
+  lower(${githubReputation.githubUsername}) <> 'ghost'
+  and ${githubReputation.githubUsername} !~* ${"(\\[bot\\]|[-_]bot)$"}
+`
+
 export function excludeMaintainerSelf(
   githubUserId: number | null
 ): SQL | undefined {
