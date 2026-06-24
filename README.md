@@ -1,26 +1,12 @@
-## tripwire
+<p align="center">
+  <img alt="image" src="https://www.tripwire.sh/og.jpg" width="1000" />
+</p>
+
+<a href="https://github.com/bountydotnew/bounty.new/graphs/contributors"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/github/bountydotnew/bounty.new/contributors.svg" /><img alt="contributors" src="https://shieldcn.dev/github/bountydotnew/bounty.new/contributors.svg?mode=light" /></picture></a>
 
 Open source moderation for GitHub.
 
 Tripwire watches your repos for low-signal activity (spammy issues, drive-by PRs, suspicious accounts, etc.) and lets you flag, filter, or block it with a configurable rules system. You install it as a GitHub App, point it at your repos, and enable rules.
-
-## What it tracks
-
-**Rules** (block, warn, log, or threshold; scoped to PRs, issues, comments): AI slop, language, min merged PRs, account age, max PRs per day, max files changed, repo activity, profile README, crypto addresses, vouched-only, AI honeypot.
-
-**Lists:** whitelist (bypass) and blacklist (auto-block) per repo.
-
-**Events:** every webhook, rule decision, list change, and config change is logged.
-
-**Contributor score (0–100):**
-
-- Global reputation (40): age, followers, merged PRs, merge ratio, repos, gists
-- Community signals (30): GitHub achievements, Sponsors, badges, profile completeness
-- Repo history (20): allowed, blocked, near-miss events on your repo
-- Red flags (-10): high block ratio, suspicious patterns
-- Floor: longevity boosts and overflow bonus for capped categories
-
-**MCP server:** manage rules, lists, events, and users from Claude or any MCP client.
 
 ## Setup
 
@@ -97,3 +83,7 @@ MIT.
   <img src="https://github.com/user-attachments/assets/5bbfd2ad-78fa-4e2e-b9ae-fc0954a5da4b" alt="CodeRabbit" width="200" />
 </a>
 -->
+
+<p align="center">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/chart/github/stars/bountydotnew/tripwire.svg?bg=transparent&amp;title=Tripwire" /><img alt="chart" src="https://shieldcn.dev/chart/github/stars/bountydotnew/tripwire.svg?mode=light&amp;bg=transparent&amp;title=Tripwire" /></picture>
+</p>
