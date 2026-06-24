@@ -117,7 +117,7 @@ describe("processContributor", () => {
     expect(ev2?.reason).toContain("5d old")
   })
 
-  it("per-PR ruleEvaluations include crypto/language/aiHoneypot with the real Tripwire detail strings", async () => {
+  it("per-PR ruleEvaluations include crypto/language with the real Tripwire detail strings", async () => {
     mockFetchSignals.mockResolvedValueOnce(baseSignals)
     mockFetchPRs.mockResolvedValueOnce({
       items: [
@@ -154,7 +154,7 @@ describe("processContributor", () => {
     expect(result.prs).toHaveLength(1)
     const pr = result.prs[0]
     const rules = pr.ruleEvaluations.map((e) => e.rule)
-    expect(rules).toEqual(["crypto", "language", "aiHoneypot"])
+    expect(rules).toEqual(["crypto", "language"])
     expect(pr.ruleEvaluations.find((e) => e.rule === "crypto")?.passed).toBe(
       true
     )

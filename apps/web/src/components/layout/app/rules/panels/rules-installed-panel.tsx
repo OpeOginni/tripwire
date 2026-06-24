@@ -11,7 +11,6 @@ import {
   VouchedUsersViz,
 } from "#/components/layout/app/rules/rule-card-grid"
 import { useRulesWorkspace } from "#/providers/rules-workspace-context"
-import { Button } from "@tripwire/ui/button"
 
 export function RulesInstalledPanel() {
   const {
@@ -23,7 +22,6 @@ export function RulesInstalledPanel() {
     allRules,
     matchesSearch,
     installedRuleKeys,
-    navigateToRulesTab,
   } = useRulesWorkspace()
 
   return installedRuleKeys.filter(matchesSearch).length === 0 ? (
@@ -199,38 +197,6 @@ export function RulesInstalledPanel() {
           }
           visualization={<VouchedUsersViz />}
           {...ruleConfigureProps("vouchedUsersOnly")}
-        />
-      )}
-      {activeConfig.aiHoneypot.enabled && matchesSearch(allRules[9]) && (
-        <RuleCardGrid
-          title="AI honeypot"
-          modalTitle="AI honeypot"
-          description="Flag PRs that mention the hidden phrase injected into your PR template (Files tab)"
-          enabled={true}
-          action={activeConfig.aiHoneypot.action}
-          onToggle={(v) => toggleRule("aiHoneypot", v)}
-          onActionChange={(a) => updateRuleValue("aiHoneypot", { action: a })}
-          visualization={<CryptoViz />}
-          configureHint={({ close }) => (
-            <>
-              Honeypot phrases and the hidden line injected into your PR
-              template live in the{" "}
-              <Button
-                variant="ghost"
-                type="button"
-                onClick={() => {
-                  navigateToRulesTab("files")
-                  close()
-                }}
-                className="cursor-pointer text-tw-accent underline-offset-2 hover:underline"
-              >
-                Files tab
-              </Button>
-              . This dialog only changes how Tripwire reacts when the phrase is
-              detected.
-            </>
-          )}
-          {...ruleConfigureProps("aiHoneypot")}
         />
       )}
     </div>

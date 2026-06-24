@@ -62,6 +62,20 @@ export function getEventActionLabel(action: string): string {
   return EVENT_ACTION_LABELS[action as EventAction] ?? action
 }
 
+/** Human label for the GitHub object an event concerns (PR / issue / comment). */
+const CONTENT_TYPE_LABELS: Record<string, string> = {
+  pull_request: "Pull request",
+  issue: "Issue",
+  comment: "Comment",
+}
+
+export function getContentTypeLabel(
+  contentType: string | null | undefined
+): string {
+  if (!contentType) return "Activity"
+  return CONTENT_TYPE_LABELS[contentType] ?? contentType
+}
+
 /**
  * Headline for an event card or detail view: the action label adjusted for
  * severity — errors read as a block, generic warnings as suspected spam.

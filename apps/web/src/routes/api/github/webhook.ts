@@ -1,12 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { verifyWebhookSignature } from "@tripwire/github"
-import {
-  handlePullRequest,
-  handleIssue,
-  handleComment,
-  checkFakeBountyReference,
-  handleFakeBountyCatch,
-} from "@tripwire/core"
+import { handlePullRequest, handleIssue, handleComment } from "@tripwire/core"
 // Side-effect import: registers the reputation-update → rescore hook so
 // `updateReputation` calls from any webhook in this process fan out to the
 // background scorer.
@@ -302,26 +296,6 @@ async function handleRepoEvent(
       ) {
         break
       }
-      const prContent = `${pr.title}\n${pr.body ?? ""}`
-
-      if (repoRow) {
-        const bountyHit = await checkFakeBountyReference(repoRow.id, prContent)
-        if (bountyHit) {
-          await handleFakeBountyCatch({
-            repoId: repoRow.id,
-            bountyId: bountyHit.bountyId,
-            githubUsername: ctx.senderLogin,
-            githubUserId: ctx.senderId,
-            githubRef: `#${pr.number}`,
-            refType: "pr",
-            prNumber: pr.number,
-            installationId: ctx.installationId,
-            repoFullName: ctx.repoFullName,
-          })
-          break
-        }
-      }
-
       await handlePullRequest(ctx, pr.number, pr.title, pr.body ?? undefined)
       break
     }

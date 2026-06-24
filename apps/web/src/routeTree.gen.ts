@@ -22,7 +22,6 @@ import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AppVisibilityRouteImport } from './routes/_app/visibility'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
-import { Route as AppSearchRouteImport } from './routes/_app/search'
 import { Route as AppRulesRouteImport } from './routes/_app/rules'
 import { Route as AppIntegrationsRouteImport } from './routes/_app/integrations'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
@@ -72,7 +71,6 @@ import { Route as AppOrgHandleRulesRequestsRouteImport } from './routes/_app/$or
 import { Route as AppOrgHandleRulesPeopleRouteImport } from './routes/_app/$orgHandle/rules/people'
 import { Route as AppOrgHandleRulesMarketplaceRouteImport } from './routes/_app/$orgHandle/rules/marketplace'
 import { Route as AppOrgHandleRulesInstalledRouteImport } from './routes/_app/$orgHandle/rules/installed'
-import { Route as AppOrgHandleRulesFilesRouteImport } from './routes/_app/$orgHandle/rules/files'
 import { Route as AppOrgHandleRules0RouteImport } from './routes/_app/$orgHandle/rules/0'
 import { Route as AppOrgHandleEventsEventIdRouteImport } from './routes/_app/$orgHandle/events/$eventId'
 import { Route as AppOrgHandleAutomationsPreviewRouteImport } from './routes/_app/$orgHandle/automations/preview'
@@ -143,11 +141,6 @@ const AppVisibilityRoute = AppVisibilityRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSearchRoute = AppSearchRouteImport.update({
-  id: '/search',
-  path: '/search',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRulesRoute = AppRulesRouteImport.update({
@@ -405,11 +398,6 @@ const AppOrgHandleRulesInstalledRoute =
     path: '/installed',
     getParentRoute: () => AppOrgHandleRulesRouteRoute,
   } as any)
-const AppOrgHandleRulesFilesRoute = AppOrgHandleRulesFilesRouteImport.update({
-  id: '/files',
-  path: '/files',
-  getParentRoute: () => AppOrgHandleRulesRouteRoute,
-} as any)
 const AppOrgHandleRules0Route = AppOrgHandleRules0RouteImport.update({
   id: '/0',
   path: '/0',
@@ -469,7 +457,6 @@ export interface FileRoutesByFullPath {
   '/insights': typeof AppInsightsRoute
   '/integrations': typeof AppIntegrationsRoute
   '/rules': typeof AppRulesRoute
-  '/search': typeof AppSearchRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/visibility': typeof AppVisibilityRoute
   '/api/chat': typeof ApiChatRoute
@@ -514,7 +501,6 @@ export interface FileRoutesByFullPath {
   '/$orgHandle/automations/preview': typeof AppOrgHandleAutomationsPreviewRoute
   '/$orgHandle/events/$eventId': typeof AppOrgHandleEventsEventIdRoute
   '/$orgHandle/rules/0': typeof AppOrgHandleRules0Route
-  '/$orgHandle/rules/files': typeof AppOrgHandleRulesFilesRoute
   '/$orgHandle/rules/installed': typeof AppOrgHandleRulesInstalledRoute
   '/$orgHandle/rules/marketplace': typeof AppOrgHandleRulesMarketplaceRoute
   '/$orgHandle/rules/people': typeof AppOrgHandleRulesPeopleRoute
@@ -541,7 +527,6 @@ export interface FileRoutesByTo {
   '/insights': typeof AppInsightsRoute
   '/integrations': typeof AppIntegrationsRoute
   '/rules': typeof AppRulesRoute
-  '/search': typeof AppSearchRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/visibility': typeof AppVisibilityRoute
   '/api/chat': typeof ApiChatRoute
@@ -585,7 +570,6 @@ export interface FileRoutesByTo {
   '/$orgHandle/automations/preview': typeof AppOrgHandleAutomationsPreviewRoute
   '/$orgHandle/events/$eventId': typeof AppOrgHandleEventsEventIdRoute
   '/$orgHandle/rules/0': typeof AppOrgHandleRules0Route
-  '/$orgHandle/rules/files': typeof AppOrgHandleRulesFilesRoute
   '/$orgHandle/rules/installed': typeof AppOrgHandleRulesInstalledRoute
   '/$orgHandle/rules/marketplace': typeof AppOrgHandleRulesMarketplaceRoute
   '/$orgHandle/rules/people': typeof AppOrgHandleRulesPeopleRoute
@@ -615,7 +599,6 @@ export interface FileRoutesById {
   '/_app/insights': typeof AppInsightsRoute
   '/_app/integrations': typeof AppIntegrationsRoute
   '/_app/rules': typeof AppRulesRoute
-  '/_app/search': typeof AppSearchRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/visibility': typeof AppVisibilityRoute
   '/api/chat': typeof ApiChatRoute
@@ -660,7 +643,6 @@ export interface FileRoutesById {
   '/_app/$orgHandle/automations/preview': typeof AppOrgHandleAutomationsPreviewRoute
   '/_app/$orgHandle/events/$eventId': typeof AppOrgHandleEventsEventIdRoute
   '/_app/$orgHandle/rules/0': typeof AppOrgHandleRules0Route
-  '/_app/$orgHandle/rules/files': typeof AppOrgHandleRulesFilesRoute
   '/_app/$orgHandle/rules/installed': typeof AppOrgHandleRulesInstalledRoute
   '/_app/$orgHandle/rules/marketplace': typeof AppOrgHandleRulesMarketplaceRoute
   '/_app/$orgHandle/rules/people': typeof AppOrgHandleRulesPeopleRoute
@@ -689,7 +671,6 @@ export interface FileRouteTypes {
     | '/insights'
     | '/integrations'
     | '/rules'
-    | '/search'
     | '/settings'
     | '/visibility'
     | '/api/chat'
@@ -734,7 +715,6 @@ export interface FileRouteTypes {
     | '/$orgHandle/automations/preview'
     | '/$orgHandle/events/$eventId'
     | '/$orgHandle/rules/0'
-    | '/$orgHandle/rules/files'
     | '/$orgHandle/rules/installed'
     | '/$orgHandle/rules/marketplace'
     | '/$orgHandle/rules/people'
@@ -761,7 +741,6 @@ export interface FileRouteTypes {
     | '/insights'
     | '/integrations'
     | '/rules'
-    | '/search'
     | '/settings'
     | '/visibility'
     | '/api/chat'
@@ -805,7 +784,6 @@ export interface FileRouteTypes {
     | '/$orgHandle/automations/preview'
     | '/$orgHandle/events/$eventId'
     | '/$orgHandle/rules/0'
-    | '/$orgHandle/rules/files'
     | '/$orgHandle/rules/installed'
     | '/$orgHandle/rules/marketplace'
     | '/$orgHandle/rules/people'
@@ -834,7 +812,6 @@ export interface FileRouteTypes {
     | '/_app/insights'
     | '/_app/integrations'
     | '/_app/rules'
-    | '/_app/search'
     | '/_app/settings'
     | '/_app/visibility'
     | '/api/chat'
@@ -879,7 +856,6 @@ export interface FileRouteTypes {
     | '/_app/$orgHandle/automations/preview'
     | '/_app/$orgHandle/events/$eventId'
     | '/_app/$orgHandle/rules/0'
-    | '/_app/$orgHandle/rules/files'
     | '/_app/$orgHandle/rules/installed'
     | '/_app/$orgHandle/rules/marketplace'
     | '/_app/$orgHandle/rules/people'
@@ -1011,13 +987,6 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/search': {
-      id: '/_app/search'
-      path: '/search'
-      fullPath: '/search'
-      preLoaderRoute: typeof AppSearchRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/rules': {
@@ -1363,13 +1332,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrgHandleRulesInstalledRouteImport
       parentRoute: typeof AppOrgHandleRulesRouteRoute
     }
-    '/_app/$orgHandle/rules/files': {
-      id: '/_app/$orgHandle/rules/files'
-      path: '/files'
-      fullPath: '/$orgHandle/rules/files'
-      preLoaderRoute: typeof AppOrgHandleRulesFilesRouteImport
-      parentRoute: typeof AppOrgHandleRulesRouteRoute
-    }
     '/_app/$orgHandle/rules/0': {
       id: '/_app/$orgHandle/rules/0'
       path: '/0'
@@ -1467,7 +1429,6 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface AppOrgHandleRulesRouteRouteChildren {
   AppOrgHandleRules0Route: typeof AppOrgHandleRules0Route
-  AppOrgHandleRulesFilesRoute: typeof AppOrgHandleRulesFilesRoute
   AppOrgHandleRulesInstalledRoute: typeof AppOrgHandleRulesInstalledRoute
   AppOrgHandleRulesMarketplaceRoute: typeof AppOrgHandleRulesMarketplaceRoute
   AppOrgHandleRulesPeopleRoute: typeof AppOrgHandleRulesPeopleRoute
@@ -1481,7 +1442,6 @@ interface AppOrgHandleRulesRouteRouteChildren {
 const AppOrgHandleRulesRouteRouteChildren: AppOrgHandleRulesRouteRouteChildren =
   {
     AppOrgHandleRules0Route: AppOrgHandleRules0Route,
-    AppOrgHandleRulesFilesRoute: AppOrgHandleRulesFilesRoute,
     AppOrgHandleRulesInstalledRoute: AppOrgHandleRulesInstalledRoute,
     AppOrgHandleRulesMarketplaceRoute: AppOrgHandleRulesMarketplaceRoute,
     AppOrgHandleRulesPeopleRoute: AppOrgHandleRulesPeopleRoute,
@@ -1555,7 +1515,6 @@ interface AppRouteChildren {
   AppInsightsRoute: typeof AppInsightsRoute
   AppIntegrationsRoute: typeof AppIntegrationsRoute
   AppRulesRoute: typeof AppRulesRoute
-  AppSearchRoute: typeof AppSearchRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppVisibilityRoute: typeof AppVisibilityRoute
   AppChatChatIdRoute: typeof AppChatChatIdRoute
@@ -1571,7 +1530,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppInsightsRoute: AppInsightsRoute,
   AppIntegrationsRoute: AppIntegrationsRoute,
   AppRulesRoute: AppRulesRoute,
-  AppSearchRoute: AppSearchRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppVisibilityRoute: AppVisibilityRoute,
   AppChatChatIdRoute: AppChatChatIdRoute,

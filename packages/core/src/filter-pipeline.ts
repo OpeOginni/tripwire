@@ -587,32 +587,12 @@ export async function runFilterPipeline(
       ...DEFAULT_RULE_CONFIG.vouchedUsersOnly,
       ...rawConfig?.vouchedUsersOnly,
     },
-    aiHoneypot: { ...DEFAULT_RULE_CONFIG.aiHoneypot, ...rawConfig?.aiHoneypot },
     autoWhitelistGlobalVouches: {
       ...DEFAULT_RULE_CONFIG.autoWhitelistGlobalVouches,
       ...rawConfig?.autoWhitelistGlobalVouches,
     },
     contentScope: scope,
-    repoFiles: {
-      rulesMd: {
-        ...DEFAULT_RULE_CONFIG.repoFiles.rulesMd,
-        ...rawConfig?.repoFiles?.rulesMd,
-      },
-      prTemplate: {
-        ...DEFAULT_RULE_CONFIG.repoFiles.prTemplate,
-        ...rawConfig?.repoFiles?.prTemplate,
-      },
-      agentsMd: {
-        ...DEFAULT_RULE_CONFIG.repoFiles.agentsMd,
-        ...rawConfig?.repoFiles?.agentsMd,
-      },
-    },
   }
-  // Combine honeypot phrases from both PR template and AGENTS.md
-  const honeypotPhrases = [
-    ...config.repoFiles.prTemplate.honeypotPhrases,
-    ...config.repoFiles.agentsMd.honeypotPhrases,
-  ]
 
   // ─── autoWhitelistGlobalVouches ───────────────────────────
   if (config.autoWhitelistGlobalVouches.enabled) {
@@ -1051,41 +1031,6 @@ export async function runFilterPipeline(
         "requireProfileReadme",
         config.requireProfileReadme.action,
         err
-      )
-    }
-  }
-
-  // ─── aiHoneypot ────────────────────────────────────────────
-  // Detect content containing any of the per-repo honeypot phrases
-  // injected into the PR template. Real humans won't write them; AI
-  // agents reading the template often will.
-  if (
-    ruleApplies(config.aiHoneypot, contentType, scope) &&
-    contentText &&
-    honeypotPhrases.length > 0
-  ) {
-    rulesChecked++
-    const haystack = contentText.toLowerCase()
-    const hit = honeypotPhrases.find((p) =>
-      haystack.includes(p.phrase.toLowerCase())
-    )
-    const tripped = !!hit
-    const eval_: RuleEvaluation = {
-      rule: "aiHoneypot",
-      passed: !tripped,
-      nearMiss: false,
-      action: config.aiHoneypot.action,
-      reason: tripped
-        ? `Content from @${ctx.senderLogin} contains the honeypot phrase (likely AI-generated).`
-        : undefined,
-    }
-    evaluations.push(eval_)
-    if (tripped) {
-      await recordViolation(
-        eval_.rule,
-        eval_.reason!,
-        config.aiHoneypot.action,
-        config.aiHoneypot.thresholdCount
       )
     }
   }

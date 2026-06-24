@@ -19,6 +19,7 @@
     "./skeleton": "./src/skeleton.tsx",
     "./spinner": "./src/spinner.tsx",
     "./toast": "./src/toast.tsx",
+    "./tooltip": "./src/tooltip.tsx",
     "./unicode-spinner": "./src/unicode-spinner.tsx",
     "./utils": "./src/utils.ts",
     "./icons/*": "./src/icons/*.tsx"

@@ -10,10 +10,6 @@ export const CONTRIBUTOR_RULE_SUBTYPES = [
 
 export type ContributorRuleSubtype = (typeof CONTRIBUTOR_RULE_SUBTYPES)[number]
 
-export const CONTENT_RULE_SUBTYPES = [
-  "crypto",
-  "language",
-  "aiHoneypot",
-] as const
+export const CONTENT_RULE_SUBTYPES = ["crypto", "language"] as const
 
 export type ContentRuleSubtype = (typeof CONTENT_RULE_SUBTYPES)[number]

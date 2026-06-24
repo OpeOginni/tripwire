@@ -31,25 +31,6 @@ export type ContentScope = {
   comments: boolean
 }
 
-export type HoneypotPhraseKind = "codeword" | "marker" | "natural" | "tag"
-export type HoneypotPhrase = { kind: HoneypotPhraseKind; phrase: string }
-
-export type RepoFilesConfig = {
-  rulesMd: { autoSync: boolean; customContent: string }
-  prTemplate: {
-    autoSync: boolean
-    honeypotEnabled: boolean
-    honeypotPhrases: HoneypotPhrase[]
-    customContent: string
-  }
-  agentsMd: {
-    autoSync: boolean
-    honeypotEnabled: boolean
-    honeypotPhrases: HoneypotPhrase[]
-    customContent: string
-  }
-}
-
 export type RuleConfig = {
   languageRequirement: RuleBase & { language: string }
   minMergedPrs: RuleBase & { count: number }
@@ -63,11 +44,9 @@ export type RuleConfig = {
     /** "repo" = only repo whitelist, "global" = only global vouches, "both" = either */
     vouchScope: "repo" | "global" | "both"
   }
-  aiHoneypot: RuleBase
   /** Auto-whitelist users who have global vouch records (from any Tripwire maintainer). */
   autoWhitelistGlobalVouches: { enabled: boolean; minVouches: number }
   contentScope: ContentScope
-  repoFiles: RepoFilesConfig
 }
 
 /** Keys of RuleConfig that represent actual rules (i.e. have RuleBase shape). */
@@ -81,7 +60,6 @@ export const RULE_KEYS = [
   "requireProfileReadme",
   "cryptoAddressDetection",
   "vouchedUsersOnly",
-  "aiHoneypot",
 ] as const
 export type RuleKey = (typeof RULE_KEYS)[number]
 
@@ -95,24 +73,8 @@ export const DEFAULT_RULE_CONFIG: RuleConfig = {
   requireProfileReadme: { enabled: false, action: "block" },
   cryptoAddressDetection: { enabled: false, action: "block" },
   vouchedUsersOnly: { enabled: false, action: "block", vouchScope: "repo" },
-  aiHoneypot: { enabled: false, action: "block" },
   autoWhitelistGlobalVouches: { enabled: false, minVouches: 1 },
   contentScope: { pullRequests: true, issues: true, comments: true },
-  repoFiles: {
-    rulesMd: { autoSync: false, customContent: "" },
-    prTemplate: {
-      autoSync: false,
-      honeypotEnabled: false,
-      honeypotPhrases: [],
-      customContent: "",
-    },
-    agentsMd: {
-      autoSync: false,
-      honeypotEnabled: false,
-      honeypotPhrases: [],
-      customContent: "",
-    },
-  },
 }
 
 /**

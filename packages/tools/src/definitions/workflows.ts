@@ -155,7 +155,7 @@ Node data schemas (pass in the "data" field of add_node):
   maxPrsPerDay params: { limit: number }
   maxFilesChanged params: { limit: number }
   language params: { language: "en"|"es"|"fr"|...|"custom", languageCode?: string }
-  crypto/requireProfileReadme/aiHoneypot: no params needed
+  crypto/requireProfileReadme: no params needed
   vouchedUsersOnly params: { vouchScope: "repo"|"global"|"both" }
 - condition: { field: "score"|"accountAgeDays"|"publicRepos"|..., operator: ">"|">="|"<"|"<="|"=="|"!="|"matches", value: "50" }
 - logic: { gate: "AND"|"OR"|"NOT" }

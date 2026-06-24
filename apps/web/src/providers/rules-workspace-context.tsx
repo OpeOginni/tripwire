@@ -13,12 +13,7 @@ import {
   useRouterState,
 } from "@tanstack/react-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  parseAsBoolean,
-  parseAsString,
-  useQueryState,
-  useQueryStates,
-} from "nuqs"
+import { parseAsBoolean, parseAsString, useQueryStates } from "nuqs"
 import { toastFromError } from "#/lib/toast-error"
 import { toastManager } from "@tripwire/ui/toast"
 import {
@@ -38,14 +33,6 @@ import {
   normalizeRuleConfig,
   revertRuleConfigChange,
 } from "@tripwire/core/rules/config-draft"
-// Pull from the narrow subpath — main entry pulls server-only crypto helpers
-// (Buffer, node:fs via dotenv) that would break the client bundle.
-import {
-  generateHoneypotPhraseOfKind,
-  generatePrTemplate,
-  generateRulesMd,
-  generateAgentsMd,
-} from "@tripwire/github/repo-files"
 import { useWorkspace } from "#/providers/workspace-context"
 
 const rulesRouteApi = getRouteApi("/_app/$orgHandle/rules")
@@ -138,41 +125,6 @@ function useRulesWorkspaceValue() {
         ...baseConfig,
         [key]: { ...baseConfig[key], ...patch },
       })
-    })
-  }
-
-  const updateRepoFileContent = (
-    kind: "rules-md" | "pr-template" | "agents-md",
-    content: string
-  ) => {
-    if (updateConfig.isPending) return
-    setDraftConfig((currentDraft) => {
-      const baseConfig = currentDraft ?? serverConfig
-      const repoFiles =
-        kind === "rules-md"
-          ? {
-              ...baseConfig.repoFiles,
-              rulesMd: {
-                ...baseConfig.repoFiles.rulesMd,
-                customContent: content,
-              },
-            }
-          : kind === "agents-md"
-            ? {
-                ...baseConfig.repoFiles,
-                agentsMd: {
-                  ...baseConfig.repoFiles.agentsMd,
-                  customContent: content,
-                },
-              }
-            : {
-                ...baseConfig.repoFiles,
-                prTemplate: {
-                  ...baseConfig.repoFiles.prTemplate,
-                  customContent: content,
-                },
-              }
-      return normalizeRuleConfig({ ...baseConfig, repoFiles })
     })
   }
 
@@ -304,15 +256,6 @@ function useRulesWorkspaceValue() {
 
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Clear the file param when navigating away from the files tab (avoid calling nuqs
-  // setters when already cleared — that can churn the router indefinitely).
-  const [fileParam, setFileParam] = useQueryState("file")
-  useEffect(() => {
-    if (activeTab === "files") return
-    if (fileParam == null || fileParam === "") return
-    void setFileParam(null)
-  }, [activeTab, fileParam, setFileParam])
-
   const [
     { rule: configureRule, configure: configureFlag },
     setConfigureParams,
@@ -385,97 +328,6 @@ function useRulesWorkspaceValue() {
     })
   )
 
-  const addHoneypotPhrase = (
-    target: "prTemplate" | "agentsMd",
-    kind: "codeword" | "marker" | "natural" | "tag"
-  ) => {
-    if (updateConfig.isPending) return
-    const newPhrase = generateHoneypotPhraseOfKind(kind)
-    setDraftConfig((currentDraft) => {
-      const baseConfig = currentDraft ?? serverConfig
-      return normalizeRuleConfig({
-        ...baseConfig,
-        repoFiles: {
-          ...baseConfig.repoFiles,
-          [target]: {
-            ...baseConfig.repoFiles[target],
-            honeypotPhrases: [
-              ...baseConfig.repoFiles[target].honeypotPhrases,
-              newPhrase,
-            ],
-            customContent: "",
-          },
-        },
-      })
-    })
-  }
-
-  const removeHoneypotPhrase = (
-    target: "prTemplate" | "agentsMd",
-    index: number
-  ) => {
-    if (updateConfig.isPending) return
-    setDraftConfig((currentDraft) => {
-      const baseConfig = currentDraft ?? serverConfig
-      return normalizeRuleConfig({
-        ...baseConfig,
-        repoFiles: {
-          ...baseConfig.repoFiles,
-          [target]: {
-            ...baseConfig.repoFiles[target],
-            honeypotPhrases: baseConfig.repoFiles[
-              target
-            ].honeypotPhrases.filter((_, i) => i !== index),
-          },
-        },
-      })
-    })
-  }
-
-  const toggleRepoFile = (path: string, value: boolean) => {
-    if (updateConfig.isPending) return
-    setDraftConfig((currentDraft) => {
-      const baseConfig = currentDraft ?? serverConfig
-      const repoFiles = baseConfig.repoFiles
-      let nextRepoFiles
-      switch (path) {
-        case "rulesMd.autoSync":
-          nextRepoFiles = {
-            ...repoFiles,
-            rulesMd: { ...repoFiles.rulesMd, autoSync: value },
-          }
-          break
-        case "prTemplate.autoSync":
-          nextRepoFiles = {
-            ...repoFiles,
-            prTemplate: { ...repoFiles.prTemplate, autoSync: value },
-          }
-          break
-        case "prTemplate.honeypotEnabled":
-          nextRepoFiles = {
-            ...repoFiles,
-            prTemplate: { ...repoFiles.prTemplate, honeypotEnabled: value },
-          }
-          break
-        case "agentsMd.autoSync":
-          nextRepoFiles = {
-            ...repoFiles,
-            agentsMd: { ...repoFiles.agentsMd, autoSync: value },
-          }
-          break
-        case "agentsMd.honeypotEnabled":
-          nextRepoFiles = {
-            ...repoFiles,
-            agentsMd: { ...repoFiles.agentsMd, honeypotEnabled: value },
-          }
-          break
-        default:
-          nextRepoFiles = repoFiles
-      }
-      return normalizeRuleConfig({ ...baseConfig, repoFiles: nextRepoFiles })
-    })
-  }
-
   const decideRequest = useMutation(
     trpc.requests.decide.mutationOptions({
       onSuccess: (_, vars) => {
@@ -511,7 +363,6 @@ function useRulesWorkspaceValue() {
     activeConfig.requireProfileReadme.enabled,
     activeConfig.cryptoAddressDetection.enabled,
     activeConfig.vouchedUsersOnly.enabled,
-    activeConfig.aiHoneypot.enabled,
   ].filter(Boolean).length
 
   const showEmptyInstall = !isLoading && repos.length === 0
@@ -569,11 +420,6 @@ function useRulesWorkspaceValue() {
       title: "Vouched users only",
       searchable: "vouched users whitelist allowlist trusted contributors",
     },
-    {
-      key: "aiHoneypot" as const,
-      title: "AI honeypot",
-      searchable: "ai honeypot agent llm detection bot",
-    },
   ]
 
   const q = searchQuery.toLowerCase()
@@ -623,13 +469,6 @@ function useRulesWorkspaceValue() {
     vouchRequestsQuery,
     decideRequest,
     decideVouchRequest,
-    updateRepoFileContent,
-    toggleRepoFile,
-    addHoneypotPhrase,
-    removeHoneypotPhrase,
-    generateRulesMd,
-    generatePrTemplate,
-    generateAgentsMd,
     updateConfig,
     dirty,
     changes,

@@ -19,7 +19,6 @@ export function RulesMarketplacePanel() {
     toggleRule,
     updateRuleValue,
     ruleConfigureProps,
-    navigateToRulesTab,
   } = useRulesWorkspace()
 
   return (
@@ -205,36 +204,6 @@ export function RulesMarketplacePanel() {
           </div>
         )}
         {...ruleConfigureProps("vouchedUsersOnly")}
-      />
-      <RuleCardGrid
-        title="AI honeypot"
-        modalTitle="AI honeypot"
-        description="Flag PRs that mention the hidden phrase injected into your PR template (Files tab)"
-        enabled={activeConfig.aiHoneypot.enabled}
-        action={activeConfig.aiHoneypot.action}
-        onToggle={(value) => toggleRule("aiHoneypot", value)}
-        onActionChange={(action) => updateRuleValue("aiHoneypot", { action })}
-        visualization={<CryptoViz />}
-        configureHint={({ close }) => (
-          <>
-            Honeypot phrases and the hidden line injected into your PR template
-            live in the{" "}
-            <Button
-              variant="ghost"
-              type="button"
-              onClick={() => {
-                navigateToRulesTab("files")
-                close()
-              }}
-              className="cursor-pointer text-tw-accent underline-offset-2 hover:underline"
-            >
-              Files tab
-            </Button>
-            . This dialog only changes how Tripwire reacts when the phrase is
-            detected.
-          </>
-        )}
-        {...ruleConfigureProps("aiHoneypot")}
       />
     </div>
   )

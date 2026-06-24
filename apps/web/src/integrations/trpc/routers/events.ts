@@ -156,6 +156,13 @@ export const eventsRouter = {
         ruleName: z.string().optional(),
         /** Only events since this date */
         since: z.string().datetime().optional(),
+        /**
+         * Bot activity handling. "only" returns just bot-account events;
+         * "exclude" hides them so the main feed isn't cluttered. A bot is any
+         * actor whose GitHub login ends in `[bot]` or `bot` (same convention
+         * as `activeUsers`).
+         */
+        botActivity: z.enum(["only", "exclude"]).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -181,6 +188,15 @@ export const eventsRouter = {
       }
       if (input.since) {
         conditions.push(gte(events.createdAt, new Date(input.since)))
+      }
+      if (input.botActivity === "only") {
+        conditions.push(
+          sql`(${events.targetGithubUsername} ILIKE '%[bot]' OR ${events.targetGithubUsername} ILIKE '%bot')`
+        )
+      } else if (input.botActivity === "exclude") {
+        conditions.push(
+          sql`(${events.targetGithubUsername} IS NULL OR (${events.targetGithubUsername} NOT ILIKE '%[bot]' AND ${events.targetGithubUsername} NOT ILIKE '%bot'))`
+        )
       }
 
       const whereClause = and(...conditions)
@@ -380,16 +396,30 @@ export const eventsRouter = {
       const since = new Date()
       since.setDate(since.getDate() - input.days)
 
-      const rows = await db
-        .select({
-          action: events.action,
-          count: sql<number>`count(*)::int`,
-        })
-        .from(events)
-        .where(
-          and(eq(events.repoId, input.repoId), gte(events.createdAt, since))
-        )
-        .groupBy(events.action)
+      const botPattern = sql`(${events.targetGithubUsername} ILIKE '%[bot]' OR ${events.targetGithubUsername} ILIKE '%bot')`
+
+      const [rows, botRows] = await Promise.all([
+        db
+          .select({
+            action: events.action,
+            count: sql<number>`count(*)::int`,
+          })
+          .from(events)
+          .where(
+            and(eq(events.repoId, input.repoId), gte(events.createdAt, since))
+          )
+          .groupBy(events.action),
+        db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(events)
+          .where(
+            and(
+              eq(events.repoId, input.repoId),
+              gte(events.createdAt, since),
+              botPattern
+            )
+          ),
+      ])
 
       const counts: Record<string, number> = {}
       let total = 0
@@ -398,8 +428,11 @@ export const eventsRouter = {
         total += row.count
       }
 
+      const botActivity = botRows[0]?.count ?? 0
+
       return {
         total,
+        bot_activity: botActivity,
         pipeline_blocked: counts["pipeline_blocked"] ?? 0,
         pipeline_allowed: counts["pipeline_allowed"] ?? 0,
         rule_near_miss: counts["rule_near_miss"] ?? 0,
