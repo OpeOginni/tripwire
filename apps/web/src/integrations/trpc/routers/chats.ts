@@ -121,7 +121,8 @@ export const chatsRouter = {
         .where(
           and(
             eq(conversations.id, input.chatId),
-            eq(conversations.userId, ctx.user.id)
+            eq(conversations.userId, ctx.user.id),
+            eq(conversations.organizationId, ctx.activeOrgId)
           )
         )
         .limit(1)
@@ -370,7 +371,10 @@ export const chatsRouter = {
       })
     )
     .query(async ({ input, ctx }) => {
-      const conditions = [eq(conversations.userId, ctx.user.id)]
+      const conditions = [
+        eq(conversations.userId, ctx.user.id),
+        eq(conversations.organizationId, ctx.activeOrgId),
+      ]
       if (input.repoId) {
         conditions.push(eq(conversations.repoId, input.repoId))
       }
@@ -459,12 +463,20 @@ export const chatsRouter = {
         .where(
           and(
             eq(conversations.id, input.chatId),
-            eq(conversations.userId, ctx.user.id)
+            eq(conversations.userId, ctx.user.id),
+            eq(conversations.organizationId, ctx.activeOrgId)
           )
         )
     }),
 
   deleteAll: orgProcedure.mutation(async ({ ctx }) => {
-    await db.delete(conversations).where(eq(conversations.userId, ctx.user.id))
+    await db
+      .delete(conversations)
+      .where(
+        and(
+          eq(conversations.userId, ctx.user.id),
+          eq(conversations.organizationId, ctx.activeOrgId)
+        )
+      )
   }),
 } satisfies TRPCRouterRecord
