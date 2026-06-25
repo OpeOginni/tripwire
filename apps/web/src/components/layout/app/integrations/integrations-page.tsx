@@ -61,6 +61,7 @@ export function IntegrationsPage() {
   const installations = installationsQuery.data ?? []
   const isConnected = installations.length > 0
 
+  const [manageDialogOpen, setManageDialogOpen] = useState(false)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const disconnect = useMutation(
     trpc.orgs.disconnectInstallation.mutationOptions({
@@ -169,16 +170,11 @@ export function IntegrationsPage() {
                 <Button
                   size="xs"
                   variant="outline"
-                  render={
-                    <a
-                      href={installHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Manage
-                    </a>
-                  }
-                />
+                  type="button"
+                  onClick={() => setManageDialogOpen(true)}
+                >
+                  Manage
+                </Button>
                 <Button
                   size="xs"
                   variant="ghost"
@@ -200,6 +196,42 @@ export function IntegrationsPage() {
           </a>
         </div>
       )}
+
+      <Dialog open={manageDialogOpen} onOpenChange={setManageDialogOpen}>
+        <DialogPopup
+          showCloseButton={false}
+          bottomStickOnMobile={false}
+          className="fixed top-1/2 left-1/2 row-auto w-[min(460px,calc(100vw-2rem))] max-w-none -translate-x-1/2 -translate-y-1/2"
+        >
+          <DialogHeader className="px-6 pt-6 pb-5">
+            <DialogTitle>Manage GitHub repos</DialogTitle>
+            <DialogDescription className="text-[14px]">
+              Removing a repo from Tripwire's GitHub App installation will also
+              delete its related Tripwire data, including rules, workflows,
+              events, lists, requests, and reputation records.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter variant="bare" className="px-6 pt-3 pb-6">
+            <DialogClose className="flex h-8 items-center rounded-lg border border-[#27272A] px-3 text-[13px] font-medium text-tw-text-secondary transition-colors hover:bg-tw-hover">
+              Cancel
+            </DialogClose>
+            <Button
+              size="xs"
+              className="bg-white text-black hover:bg-white/90"
+              render={
+                <a
+                  href={installHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setManageDialogOpen(false)}
+                >
+                  Continue to GitHub
+                </a>
+              }
+            />
+          </DialogFooter>
+        </DialogPopup>
+      </Dialog>
 
       <Dialog
         open={confirmingId !== null}
