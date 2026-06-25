@@ -32,6 +32,13 @@ import { GitHubMarkWhiteIcon20 } from "@tripwire/ui/icons/github-mark-icon"
 import { TripwireLogo } from "@tripwire/ui/icons/tripwire-logo"
 import { formatRelativeTime } from "#/lib/format"
 import { toastFromError } from "#/lib/toast-error"
+import { severityDotColor } from "#/lib/severity-design"
+import {
+  evaluationSeverity,
+  extractEvaluations,
+  summarizeWorkflowResult,
+  type RuleEvaluationView,
+} from "#/lib/events/checks"
 
 const routeApi = getRouteApi("/_app/$orgHandle/events/$eventId")
 
@@ -223,35 +230,97 @@ export function EventDetailPage() {
           score={scoreQuery.data?.score ?? null}
         />
 
-        <DetailsBlock label="Timeline">
-          <div className="flex flex-col gap-[3px]">
-            <TimelineRow
-              time={formatRelativeTime(event.createdAt)}
-              label={`${getContentTypeLabel(event.contentType)} received`}
-              detail={`From @${username}`}
-            />
-            <TimelineRow
-              time={formatRelativeTime(event.createdAt)}
-              label="Tripwire pipeline started"
-              detail="Rules evaluated"
-            />
-            {event.ruleName && (
-              <TimelineRow
-                time={formatRelativeTime(event.createdAt)}
-                label={`${formatRuleName(event.ruleName)} → ${
-                  event.severity === "error" ? "blocked" : "flagged"
-                }`}
-                detail={event.description || "Rule triggered"}
-              />
-            )}
-          </div>
-        </DetailsBlock>
+        <ChecksTimeline event={event} username={username} />
       </div>
     </div>
   )
 }
 
 type EventDoc = NonNullable<RouterOutputs["events"]["get"]>
+
+/**
+ * The full map of checks that ran for this PR/issue: every rule (pass / near-
+ * miss / fail with its reason) from the pipeline run, then any workflow runs.
+ */
+function ChecksTimeline({
+  event,
+  username,
+}: {
+  event: EventDoc
+  username: string
+}) {
+  // The outcome event in this pipeline run carries the full evaluations; fall
+  // back to the opened event itself if it's the one with them.
+  const outcome = [event, ...(event.pipelineEvents ?? [])].find(
+    (e) => extractEvaluations(e.metadata).length > 0
+  )
+  const evaluations = outcome ? extractEvaluations(outcome.metadata) : []
+  const runs = event.workflowRuns ?? []
+  const time = formatRelativeTime(event.createdAt)
+
+  return (
+    <DetailsBlock label="Checks">
+      <div className="flex flex-col gap-[3px]">
+        <TimelineRow
+          time={time}
+          label={`${getContentTypeLabel(event.contentType)} received`}
+          detail={`From @${username}`}
+        />
+        <TimelineRow
+          time={time}
+          label="Tripwire pipeline ran"
+          detail={
+            evaluations.length > 0
+              ? `${evaluations.length} rule${evaluations.length === 1 ? "" : "s"} evaluated`
+              : "Rules evaluated"
+          }
+        />
+        {evaluations.map((evaluation) => (
+          <CheckRow key={evaluation.rule} evaluation={evaluation} />
+        ))}
+        {runs.map((run) => (
+          <TimelineRow
+            key={run.id}
+            time={formatRelativeTime(run.createdAt)}
+            label={`Workflow: ${run.workflowName ?? "run"}`}
+            detail={summarizeWorkflowResult(run.result) || run.status}
+          />
+        ))}
+      </div>
+    </DetailsBlock>
+  )
+}
+
+function CheckRow({ evaluation }: { evaluation: RuleEvaluationView }) {
+  const detail =
+    evaluation.reason ??
+    (evaluation.actual !== undefined && evaluation.threshold !== undefined
+      ? `${evaluation.actual} vs ${evaluation.threshold}`
+      : "")
+  const status = evaluation.passed
+    ? "pass"
+    : evaluation.nearMiss
+      ? "near-miss"
+      : "fail"
+  return (
+    <div className="flex items-start gap-2.5 rounded-[10px] bg-tw-inner p-2.5">
+      <span
+        className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${severityDotColor(evaluationSeverity(evaluation))}`}
+      />
+      <div className="min-w-0 flex-1">
+        <div className="text-[13px] leading-5 text-tw-text-primary">
+          {formatRuleName(evaluation.rule)}
+        </div>
+        {detail && (
+          <div className="text-[11px] text-tw-text-tertiary">{detail}</div>
+        )}
+      </div>
+      <span className="shrink-0 text-[11px] text-tw-text-tertiary">
+        {status}
+      </span>
+    </div>
+  )
+}
 
 function EventHero({
   event,

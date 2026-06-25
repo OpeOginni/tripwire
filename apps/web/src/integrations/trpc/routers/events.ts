@@ -3,7 +3,7 @@ import { eq, desc, sql, and, gte, inArray, isNotNull } from "drizzle-orm"
 import { orgProcedure } from "../init"
 import { assertEventBelongsToOrg, assertRepoBelongsToOrg } from "@tripwire/core"
 import { db } from "@tripwire/db/client"
-import { events } from "@tripwire/db"
+import { events, workflowRuns, workflows } from "@tripwire/db"
 
 import type { TRPCRouterRecord } from "@trpc/server"
 
@@ -54,6 +54,44 @@ export const eventsRouter = {
     .query(async ({ ctx, input }) => {
       const { event, repo } = await assertEventBelongsToOrg(input.eventId, ctx.activeOrgId)
 
+      // Every event from the same pipeline run → the full checks timeline
+      // (the outcome event carries metadata.evaluations; near-misses are
+      // separate rows).
+      const pipelineEvents = event.pipelineId
+        ? await db
+            .select()
+            .from(events)
+            .where(eq(events.pipelineId, event.pipelineId))
+            .orderBy(events.createdAt)
+        : []
+
+      // Workflow runs for this PR/issue (number parsed from the "#42" ref).
+      const number = event.githubRef
+        ? Number.parseInt(event.githubRef.replace(/^#/, ""), 10)
+        : Number.NaN
+      const runs = Number.isNaN(number)
+        ? []
+        : await db
+            .select({
+              id: workflowRuns.id,
+              workflowId: workflowRuns.workflowId,
+              workflowName: workflows.name,
+              status: workflowRuns.status,
+              triggerKind: workflowRuns.triggerKind,
+              result: workflowRuns.result,
+              createdAt: workflowRuns.createdAt,
+            })
+            .from(workflowRuns)
+            .leftJoin(workflows, eq(workflows.id, workflowRuns.workflowId))
+            .where(
+              and(
+                eq(workflowRuns.repoId, repo.id),
+                eq(workflowRuns.pullNumber, number)
+              )
+            )
+            .orderBy(desc(workflowRuns.createdAt))
+            .limit(10)
+
       return {
         ...event,
         repo: {
@@ -61,6 +99,8 @@ export const eventsRouter = {
           name: repo.name,
           fullName: repo.fullName,
         },
+        pipelineEvents,
+        workflowRuns: runs,
       }
     }),
 

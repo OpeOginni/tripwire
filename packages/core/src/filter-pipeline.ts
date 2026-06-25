@@ -31,6 +31,7 @@ import {
 } from "@tripwire/github"
 import { env } from "@tripwire/env/server"
 import { logEvent, logEvents } from "./events"
+import { serializeEvaluations } from "./rules/serialize-evaluations"
 import { evaluateCustomRule } from "./rules/custom-rule-evaluator"
 import { resolveSignals } from "./rules/signal-resolver"
 import { isBotSender } from "./contributor-identity"
@@ -1168,12 +1169,7 @@ async function logPipelineEvents(
         metadata: {
           ...extraMetadata,
           rulesChecked: result.rulesChecked,
-          evaluations: result.evaluations.map((e) => ({
-            rule: e.rule,
-            passed: e.passed,
-            actual: e.actual,
-            threshold: e.threshold,
-          })),
+          evaluations: serializeEvaluations(result.evaluations),
         },
       })
       break
@@ -1189,12 +1185,7 @@ async function logPipelineEvents(
           ...extraMetadata,
           rulesChecked: result.rulesChecked,
           blockingRule: result.blockingRule,
-          evaluations: result.evaluations.map((e) => ({
-            rule: e.rule,
-            passed: e.passed,
-            actual: e.actual,
-            threshold: e.threshold,
-          })),
+          evaluations: serializeEvaluations(result.evaluations),
         },
       })
       break
