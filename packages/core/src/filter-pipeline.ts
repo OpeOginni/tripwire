@@ -16,6 +16,7 @@ import {
 } from "@tripwire/db"
 import {
   getInstallationToken,
+  createCheckRun,
   closePullRequest,
   closeIssue,
   deleteComment,
@@ -1343,11 +1344,71 @@ async function hasPriorEnforcement(
   return !!row
 }
 
+/** Map a pipeline outcome to a Check Run verdict + markdown checks table. */
+function buildChecksSummary(result: PipelineResult): {
+  conclusion: "success" | "failure" | "neutral"
+  title: string
+  summary: string
+} {
+  const conclusion =
+    result.outcome === "blocked" || result.outcome === "blacklist_blocked"
+      ? "failure"
+      : result.outcome === "allowed" ||
+          result.outcome === "whitelist_bypass" ||
+          result.outcome === "bot_bypass"
+        ? "success"
+        : "neutral"
+
+  const title =
+    conclusion === "failure"
+      ? `Blocked${result.blockingRule ? ` by ${result.blockingRule}` : ""}`
+      : conclusion === "neutral"
+        ? result.blockingRule
+          ? `Flagged by ${result.blockingRule}`
+          : "Flagged for review"
+        : `Passed ${result.rulesChecked} check${result.rulesChecked === 1 ? "" : "s"}`
+
+  const rows = result.evaluations.map((e) => {
+    const status = e.passed ? "✅" : e.nearMiss ? "⚠️" : "❌"
+    const detail =
+      e.reason ??
+      (e.actual !== undefined && e.threshold !== undefined
+        ? `${e.actual} vs ${e.threshold}`
+        : "")
+    return `| \`${e.rule}\` | ${status} | ${detail} |`
+  })
+  const summary =
+    rows.length > 0
+      ? `| Check | Result | Detail |\n| --- | --- | --- |\n${rows.join("\n")}`
+      : result.blockReason || "No rule checks ran."
+
+  return { conclusion, title, summary }
+}
+
+/** Post Tripwire's verdict as a Check Run on the PR head commit. Best-effort. */
+async function postPipelineCheckRun(
+  ctx: WebhookContext,
+  result: PipelineResult,
+  headSha: string
+): Promise<void> {
+  const [owner, repo] = ctx.repoFullName.split("/")
+  const token = await getInstallationToken(ctx.installationId)
+  const { conclusion, title, summary } = buildChecksSummary(result)
+  await createCheckRun(token, owner, repo, {
+    name: "Tripwire",
+    headSha,
+    conclusion,
+    title,
+    summary,
+  })
+}
+
 export async function handlePullRequest(
   ctx: WebhookContext,
   prNumber: number,
   prTitle: string,
-  prBody?: string
+  prBody?: string,
+  prHeadSha?: string
 ) {
   const prCtx = { ...ctx, prNumber }
   const result = await runFilterPipeline(
@@ -1361,17 +1422,25 @@ export async function handlePullRequest(
 
   await logPipelineEvents(result, ctx, "pull_request", githubRef, extraMeta)
 
-  if (result.outcome === "allowed" || !result.blockReason) return
-
-  const action = result.resolvedAction ?? "block"
-  const [owner, repo] = ctx.repoFullName.split("/")
   const prefs = await loadPrefsForInstallation(ctx.installationId)
   // routeMode "silent" runs the pipeline + logs events but doesn't touch GitHub.
-  if (prefs?.routeMode === "silent") return
+  const silent = prefs?.routeMode === "silent"
+
+  // Surface the verdict as a Check Run on the PR head commit (every outcome).
+  if (prHeadSha && !silent && result.repoId) {
+    await postPipelineCheckRun(ctx, result, prHeadSha).catch((err) =>
+      console.error("[Pipeline] Failed to post check run:", err)
+    )
+  }
+
+  if (result.outcome === "allowed" || !result.blockReason) return
+  if (silent) return
   // Re-evaluations (synchronize/edit) already refreshed the events above; don't
   // re-close or re-comment if we've already acted on this PR.
   if (result.repoId && (await hasPriorEnforcement(result.repoId, githubRef)))
     return
+  const action = result.resolvedAction ?? "block"
+  const [owner, repo] = ctx.repoFullName.split("/")
   const token = await getInstallationToken(ctx.installationId)
 
   if (result.outcome === "blocked" || result.outcome === "blacklist_blocked") {

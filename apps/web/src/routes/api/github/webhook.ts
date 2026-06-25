@@ -291,7 +291,13 @@ async function handleRepoEvent(
       if (!pr || !PR_EVAL_ACTIONS.has(payload.action ?? "")) {
         break
       }
-      await handlePullRequest(ctx, pr.number, pr.title, pr.body ?? undefined)
+      await handlePullRequest(
+        ctx,
+        pr.number,
+        pr.title,
+        pr.body ?? undefined,
+        pr.head?.sha
+      )
       break
     }
 
