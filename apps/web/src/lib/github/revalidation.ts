@@ -1,13 +1,10 @@
-/**
- * Signal-key taxonomy for cache invalidation. Each cached read declares
- * which signals it depends on; webhook deliveries bump matching signals;
- * the cache engine then treats any entry with `fetched_at < signal.updated_at`
- * as stale on next read.
- *
- * Tripwire's reads are mostly user-scoped (one GitHub username's profile/PRs/repos)
- * and repo-scoped, so the taxonomy is much smaller than diffkit's. Add new keys
- * here when a new cached read needs invalidation.
- */
+import {
+  issueAuthorSchema,
+  prAuthorSchema,
+  repoIdentitySchema,
+  senderLoginSchema,
+} from "./webhook-schemas"
+
 export const githubRevalidationSignalKeys = {
   user: (input: { username: string }) => `user:${input.username.toLowerCase()}`,
   repo: (input: { owner: string; repo: string }) =>
@@ -15,42 +12,28 @@ export const githubRevalidationSignalKeys = {
   installationAccess: "installationAccess",
 } as const
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object"
-}
-
 function getRepositoryIdentity(payload: unknown) {
-  if (!isRecord(payload)) return null
-  const repository = payload.repository
-  if (!isRecord(repository)) return null
-
-  const repo = repository.name
-  const owner = isRecord(repository.owner) ? repository.owner.login : null
-  if (typeof owner !== "string" || typeof repo !== "string") return null
-
-  return { owner, repo }
+  const parsed = repoIdentitySchema.safeParse(payload)
+  if (!parsed.success) return null
+  return {
+    owner: parsed.data.repository.owner.login,
+    repo: parsed.data.repository.name,
+  }
 }
 
 function getSenderLogin(payload: unknown) {
-  if (!isRecord(payload) || !isRecord(payload.sender)) return null
-  const login = payload.sender.login
-  return typeof login === "string" ? login : null
+  const parsed = senderLoginSchema.safeParse(payload)
+  return parsed.success ? parsed.data.sender.login : null
 }
 
 function getPullRequestAuthorLogin(payload: unknown) {
-  if (!isRecord(payload) || !isRecord(payload.pull_request)) return null
-  const user = payload.pull_request.user
-  if (!isRecord(user)) return null
-  const login = user.login
-  return typeof login === "string" ? login : null
+  const parsed = prAuthorSchema.safeParse(payload)
+  return parsed.success ? parsed.data.pull_request.user.login : null
 }
 
 function getIssueAuthorLogin(payload: unknown) {
-  if (!isRecord(payload) || !isRecord(payload.issue)) return null
-  const user = payload.issue.user
-  if (!isRecord(user)) return null
-  const login = user.login
-  return typeof login === "string" ? login : null
+  const parsed = issueAuthorSchema.safeParse(payload)
+  return parsed.success ? parsed.data.issue.user.login : null
 }
 
 /**

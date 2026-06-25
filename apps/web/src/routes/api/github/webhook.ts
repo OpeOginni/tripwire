@@ -21,6 +21,10 @@ import {
   recordGitHubWebhookEvent,
 } from "@tripwire/github/webhook-event"
 import { getGitHubWebhookRevalidationSignalKeys } from "#/lib/github/revalidation"
+import {
+  installationPayloadSchema,
+  installationReposPayloadSchema,
+} from "#/lib/github/webhook-schemas"
 import { broadcastSignalKeys } from "@tripwire/github/signal-broker"
 import { createLogger } from "@tripwire/logger"
 
@@ -121,28 +125,13 @@ type GitHubWebhookPayload = {
 function isInstallationPayload(
   p: GitHubWebhookPayload
 ): p is GitHubWebhookPayload & InstallationPayload {
-  const inst = p.installation
-  const sender = p.sender
-  const account = inst?.account
-  return (
-    typeof p.action === "string" &&
-    typeof inst?.id === "number" &&
-    typeof account?.id === "number" &&
-    typeof account.login === "string" &&
-    typeof account.type === "string" &&
-    typeof account.avatar_url === "string" &&
-    typeof sender?.id === "number" &&
-    typeof sender.login === "string"
-  )
+  return installationPayloadSchema.safeParse(p).success
 }
 
 function isInstallationReposPayload(
   p: GitHubWebhookPayload
 ): p is GitHubWebhookPayload & InstallationReposPayload {
-  return (
-    (p.action === "added" || p.action === "removed") &&
-    typeof p.installation?.id === "number"
-  )
+  return installationReposPayloadSchema.safeParse(p).success
 }
 
 /**
