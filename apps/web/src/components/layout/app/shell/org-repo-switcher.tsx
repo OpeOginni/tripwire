@@ -8,7 +8,7 @@ import {
   MenuSeparator,
 } from "@tripwire/ui/menu"
 import { useAuth } from "@tripwire/auth/components"
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import {
   MenuChevronDownIcon10,
   PlusStrokeIcon11,
@@ -129,11 +129,10 @@ export function RepoSwitcher() {
   }
 
   const showFilter = repos.length > 8
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return repos
-    return repos.filter((r) => r.fullName.toLowerCase().includes(q))
-  }, [repos, query])
+  const trimmedQuery = query.trim().toLowerCase()
+  const filtered = trimmedQuery
+    ? repos.filter((r) => r.fullName.toLowerCase().includes(trimmedQuery))
+    : repos
 
   if (repos.length === 0) {
     if (isLoading) {
@@ -170,6 +169,7 @@ export function RepoSwitcher() {
           <div className="relative border-b border-tw-border p-1.5">
             <SearchLoupeOutlineIcon14 className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-tw-text-muted" />
             <input
+              aria-label="Filter repositories"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.stopPropagation()}

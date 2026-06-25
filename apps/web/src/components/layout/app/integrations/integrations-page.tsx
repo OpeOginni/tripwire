@@ -1,5 +1,5 @@
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useState } from "react"
 import { Button } from "@tripwire/ui/button"
 import {
   Pagination,
@@ -65,11 +65,10 @@ export function IntegrationsPage() {
   const [query, setQuery] = useState("")
   const [page, setPage] = useState(1)
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return repos
-    return repos.filter((r) => r.fullName.toLowerCase().includes(q))
-  }, [repos, query])
+  const trimmedQuery = query.trim().toLowerCase()
+  const filtered = trimmedQuery
+    ? repos.filter((r) => r.fullName.toLowerCase().includes(trimmedQuery))
+    : repos
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / REPOS_PER_PAGE))
   const safePage = Math.min(page, totalPages)
@@ -233,6 +232,7 @@ export function IntegrationsPage() {
             <div className="relative mb-2">
               <SearchLoupeOutlineIcon14 className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-tw-text-muted" />
               <input
+                aria-label="Filter repositories"
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value)
