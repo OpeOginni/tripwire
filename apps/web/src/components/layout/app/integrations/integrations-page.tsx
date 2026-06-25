@@ -273,8 +273,8 @@ export function IntegrationsPage() {
               </div>
             ) : repos.length === 0 ? (
               <div className="px-4 py-5 text-[13px] text-tw-text-muted">
-                This account has no repositories with the Tripwire App
-                installed yet. Use Manage to grant repository access.
+                This account has no repositories with the Tripwire App installed
+                yet. Use Manage to grant repository access.
               </div>
             ) : filtered.length === 0 ? (
               <div className="px-4 py-5 text-[13px] text-tw-text-muted">
