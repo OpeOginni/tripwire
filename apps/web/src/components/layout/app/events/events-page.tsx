@@ -101,8 +101,6 @@ function EventRow({
 
   const content = (
     <>
-      {/* Title — leads with the source glyph (GitHub vs Tripwire) so the
-          origin of each event is obvious at a glance. */}
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span className="flex shrink-0 items-center gap-1 text-[12px] leading-4 font-medium text-[#FFFFFF73]">
           {isGitHubActivity ? (

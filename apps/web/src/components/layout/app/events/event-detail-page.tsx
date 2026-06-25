@@ -17,7 +17,11 @@ import { useTRPC } from "#/integrations/trpc/react"
 import { useWorkspace, useWorkspacePath } from "#/providers/workspace-context"
 import { invalidateListCaches } from "#/lib/cache"
 import { isCustomRuleName, stripCustomRulePrefix } from "#/lib/custom-rules"
-import { getContentTypeLabel, getEventTitle } from "#/lib/event-labels"
+import {
+  getContentTypeLabel,
+  getEventTitle,
+  githubRefUrl,
+} from "#/lib/event-labels"
 import {
   ContributorScoreBadge,
   ContributorScoreBar,
@@ -131,6 +135,10 @@ export function EventDetailPage() {
   const username = event.targetGithubUsername || "unknown"
   const user = githubUser.data
   const canAct = !!repoId && username !== "unknown"
+  const sourceUrl = event.repo?.fullName
+    ? githubRefUrl(event.repo.fullName, event.contentType, event.githubRef)
+    : null
+  const contentLabel = getContentTypeLabel(event.contentType)
 
   return (
     <div className="relative min-h-full pb-16">
@@ -173,16 +181,24 @@ export function EventDetailPage() {
                 className="h-5 w-5 shrink-0 rounded-full"
                 alt=""
               />
-              <span className="text-[13px] text-tw-text-primary">
+              <span className="shrink-0 text-[13px] text-tw-text-primary">
                 @{username}
               </span>
-              <span className="truncate text-[12px] text-tw-text-tertiary">
+              <span className="min-w-0 flex-1 truncate text-[12px] text-tw-text-tertiary">
                 opened this{" "}
-                {event.contentType
-                  ? getContentTypeLabel(event.contentType).toLowerCase()
-                  : "item"}{" "}
-                · {formatRelativeTime(event.createdAt)}
+                {event.contentType ? contentLabel.toLowerCase() : "item"} ·{" "}
+                {formatRelativeTime(event.createdAt)}
               </span>
+              {sourceUrl && (
+                <a
+                  href={sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 text-[12px] text-tw-text-tertiary transition-colors hover:text-tw-text-primary"
+                >
+                  View {contentLabel.toLowerCase()} ↗
+                </a>
+              )}
             </div>
             <pre className="m-0 px-3 py-2.5 font-mono text-[12.5px] leading-[20px] whitespace-pre-wrap text-tw-text-secondary">
               {event.description || "No content preview available."}
