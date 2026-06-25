@@ -128,8 +128,6 @@ body {
 @theme inline {
   --color-destructive-foreground: var(--destructive-foreground);
   --animate-skeleton: skeleton 2s linear infinite;
-  --animate-breathe: breathe 3s ease-in-out infinite;
-  --animate-breathe-soft: breatheSoft 4s ease-in-out infinite;
 }
 
 @keyframes skeleton {
@@ -138,26 +136,6 @@ body {
   }
   to {
     background-position: -200% 0;
-  }
-}
-
-@keyframes breathe {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-@keyframes breatheSoft {
-  0%,
-  100% {
-    opacity: 0.78;
-  }
-  50% {
-    opacity: 1;
   }
 }
 

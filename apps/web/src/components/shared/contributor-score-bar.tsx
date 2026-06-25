@@ -14,22 +14,41 @@ export type ContributorScore = {
   redFlags: number
 }
 
+type Rgb = [number, number, number]
+
 type Segment = {
   key: "globalReputation" | "communitySignals" | "repoHistory"
   label: string
-  color: string
+  rgb: Rgb
 }
 
 const SCORE_SEGMENTS: readonly Segment[] = [
-  { key: "globalReputation", label: "Global reputation", color: "#34A6FF" },
-  { key: "communitySignals", label: "Community signals", color: "#A78BFA" },
-  { key: "repoHistory", label: "Repo history", color: "#67E19F" },
+  { key: "globalReputation", label: "Global reputation", rgb: [0.2, 0.65, 1] },
+  { key: "communitySignals", label: "Community signals", rgb: [0.65, 0.55, 0.98] },
+  { key: "repoHistory", label: "Repo history", rgb: [0.4, 0.88, 0.62] },
 ]
+
+const RED_FLAG_RGB: Rgb = [0.96, 0.43, 0.36]
 
 function scoreColor(total: number): string {
   if (total >= 70) return "#67E19F"
   if (total >= 40) return "#D1BC00"
   return "#F56D5D"
+}
+
+/** Tinted dither fill for one bar segment. */
+function BarDither({ rgb }: { rgb: Rgb }) {
+  return (
+    <Dither
+      waveColor={rgb}
+      waveSpeed={0.03}
+      waveFrequency={3}
+      waveAmplitude={0.3}
+      colorNum={4}
+      pixelSize={2}
+      enableMouseInteraction={false}
+    />
+  )
 }
 
 export function ContributorScoreBadge({ total }: { total: number }) {
@@ -44,23 +63,11 @@ export function ContributorScoreBadge({ total }: { total: number }) {
   )
 }
 
-/**
- * Breathing dither placeholder shown while the contributor score loads — a
- * single WebGL canvas masked to the bar shape (one GL context, unlike a
- * per-segment dither which would blow the context budget).
- */
+/** Dither placeholder shown while the contributor score loads. */
 export function ContributorScoreBarLoading() {
   return (
-    <div className="relative h-1.5 animate-breathe overflow-hidden rounded-full bg-tw-surface">
-      <Dither
-        waveColor={[0.36, 0.56, 0.85]}
-        waveSpeed={0.03}
-        waveFrequency={3}
-        waveAmplitude={0.3}
-        colorNum={4}
-        pixelSize={2}
-        enableMouseInteraction={false}
-      />
+    <div className="relative h-1.5 overflow-hidden rounded-full bg-tw-surface">
+      <BarDither rgb={[0.36, 0.56, 0.85]} />
     </div>
   )
 }
@@ -68,7 +75,7 @@ export function ContributorScoreBarLoading() {
 export function ContributorScoreBar({ score }: { score: ContributorScore }) {
   return (
     <TooltipProvider delay={120}>
-      <div className="flex h-1.5 animate-breathe-soft gap-[1px] overflow-hidden rounded-full bg-tw-surface">
+      <div className="flex h-1.5 gap-[1px] overflow-hidden rounded-full bg-tw-surface">
         {SCORE_SEGMENTS.map((segment) => {
           const value = score[segment.key]
           if (value <= 0) return null
@@ -77,13 +84,11 @@ export function ContributorScoreBar({ score }: { score: ContributorScore }) {
               <TooltipTrigger
                 render={
                   <div
-                    className="h-full cursor-help rounded-full transition-all"
-                    style={{
-                      width: `${value}%`,
-                      minWidth: "2px",
-                      backgroundColor: segment.color,
-                    }}
-                  />
+                    className="relative h-full cursor-help overflow-hidden rounded-full"
+                    style={{ width: `${value}%`, minWidth: "2px" }}
+                  >
+                    <BarDither rgb={segment.rgb} />
+                  </div>
                 }
               />
               <TooltipContent>{segment.label}</TooltipContent>
@@ -95,13 +100,14 @@ export function ContributorScoreBar({ score }: { score: ContributorScore }) {
             <TooltipTrigger
               render={
                 <div
-                  className="h-full cursor-help rounded-full"
+                  className="relative h-full cursor-help overflow-hidden rounded-full"
                   style={{
                     width: `${Math.abs(score.redFlags)}%`,
                     minWidth: "2px",
-                    backgroundColor: "#F56D5D",
                   }}
-                />
+                >
+                  <BarDither rgb={RED_FLAG_RGB} />
+                </div>
               }
             />
             <TooltipContent>Red flags</TooltipContent>
