@@ -1,6 +1,7 @@
-import { and, eq, sql, asc } from "drizzle-orm"
+import { and, eq, sql, asc, inArray } from "drizzle-orm"
 import { db } from "@tripwire/db/client"
 import {
+  events,
   repositories,
   ruleConfigs,
   ruleThresholdCounters,
