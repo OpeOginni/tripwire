@@ -2,7 +2,6 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { Button } from "@tripwire/ui/button"
-import { RepoFilesTree } from "#/components/layout/app/rules/repo-files-tree"
 import { PeopleTab } from "#/components/layout/app/rules/people/people-tab"
 import { useRulesWorkspace } from "#/providers/rules-workspace-context"
 import { useTRPC } from "#/integrations/trpc/react"
@@ -266,36 +265,6 @@ function RequestsTab({
         </div>
       )}
     </div>
-  )
-}
-
-export function RulesFilesPanel() {
-  const {
-    activeConfig,
-    repo,
-    updateConfig,
-    generateRulesMd,
-    generatePrTemplate,
-    generateAgentsMd,
-    updateRepoFileContent,
-    toggleRepoFile,
-    addHoneypotPhrase,
-    removeHoneypotPhrase,
-  } = useRulesWorkspace()
-
-  return (
-    <RepoFilesTree
-      config={activeConfig}
-      repoFullName={repo?.fullName ?? "owner/repo"}
-      isPending={updateConfig.isPending}
-      generateRulesMd={generateRulesMd}
-      generatePrTemplate={generatePrTemplate}
-      generateAgentsMd={generateAgentsMd}
-      onUpdateContent={updateRepoFileContent}
-      onToggle={toggleRepoFile}
-      onAddHoneypotPhrase={addHoneypotPhrase}
-      onRemoveHoneypotPhrase={removeHoneypotPhrase}
-    />
   )
 }
 

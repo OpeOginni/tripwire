@@ -62,8 +62,4 @@ export const RULE_META: Record<RuleKey, RuleMeta> = {
     name: "Vouched Users Only",
     description: "Only allow contributions from vouched or whitelisted users",
   },
-  aiHoneypot: {
-    name: "AI Honeypot",
-    description: "Flag PRs that mention a hidden phrase from your PR template",
-  },
 }

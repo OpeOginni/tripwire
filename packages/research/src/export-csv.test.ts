@@ -133,7 +133,7 @@ describe("contributors CSV", () => {
 })
 
 describe("PRs CSV", () => {
-  it("header lists meta cols + crypto/language/aiHoneypot passed+detail", () => {
+  it("header lists meta cols + crypto/language passed+detail", () => {
     const cols = prsCsvHeader().split(",")
     expect(cols).toContain("username")
     expect(cols).toContain("prNumber")
@@ -141,7 +141,6 @@ describe("PRs CSV", () => {
     expect(cols).toContain("crypto_passed")
     expect(cols).toContain("crypto_detail")
     expect(cols).toContain("language_passed")
-    expect(cols).toContain("aiHoneypot_passed")
   })
 
   it("emits rule evaluation cells per PR", () => {

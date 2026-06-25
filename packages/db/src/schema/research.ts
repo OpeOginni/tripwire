@@ -116,7 +116,7 @@ export const researchPrs = pgTable(
       .notNull()
       .default([]),
     cohort: text("cohort").$type<PrCohort>().notNull(),
-    /** Per-PR rule evaluations from running content blocks (crypto, language, aiHoneypot) against the PR body. */
+    /** Per-PR rule evaluations from running content blocks (crypto, language) against the PR body. */
     ruleEvaluations: jsonb("rule_evaluations")
       .$type<ResearchRuleEvaluation[]>()
       .notNull()

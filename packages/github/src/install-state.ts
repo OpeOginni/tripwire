@@ -21,6 +21,9 @@ export const INSTALL_STATE_COOKIE_MAX_AGE = STATE_TTL_SECONDS
 
 interface StatePayload {
   userId: string
+  /** Better Auth org id the install should attach to (the org the user
+   * was viewing when they clicked Install). Optional for older states. */
+  orgId?: string
   nonce: string
   exp: number
 }
@@ -61,13 +64,17 @@ function sign(payload: string): string {
  * AND the cookie Max-Age the caller should use when setting the
  * `__tripwire_install_state` cookie.
  */
-export function signInstallState(userId: string): {
+export function signInstallState(
+  userId: string,
+  orgId?: string
+): {
   value: string
   cookieMaxAge: number
 } {
   const exp = Math.floor(Date.now() / 1000) + STATE_TTL_SECONDS
   const nonce = randomBytes(16).toString("hex")
-  const payload: StatePayload = { userId, nonce, exp }
+  const payload: StatePayload = { userId, exp, nonce }
+  if (orgId) payload.orgId = orgId
   const encoded = b64urlEncode(JSON.stringify(payload))
   const signature = sign(encoded)
   return {
@@ -121,4 +128,43 @@ export function verifyInstallState(
   if (payload.exp < Math.floor(Date.now() / 1000)) return false
 
   return true
+}
+
+/**
+ * Read the `orgId` embedded in a signed install state, but only after
+ * re-verifying the signature so a tampered state can't redirect the
+ * installation to an arbitrary org. Returns null when the signature is
+ * invalid or no org was bound. Callers must still confirm the user is a
+ * member of the returned org before trusting it.
+ */
+export function readInstallStateOrgId(
+  value: string | null | undefined
+): string | null {
+  if (!value || typeof value !== "string") return null
+
+  const idx = value.lastIndexOf(".")
+  if (idx <= 0 || idx >= value.length - 1) return null
+
+  const encoded = value.slice(0, idx)
+  const providedSig = value.slice(idx + 1)
+
+  let expectedSig: string
+  try {
+    expectedSig = sign(encoded)
+  } catch {
+    return null
+  }
+
+  const a = Buffer.from(providedSig)
+  const b = Buffer.from(expectedSig)
+  if (a.length !== b.length) return null
+  if (!timingSafeEqual(a, b)) return null
+
+  try {
+    const json = b64urlDecode(encoded).toString("utf8")
+    const payload = JSON.parse(json) as StatePayload
+    return typeof payload.orgId === "string" ? payload.orgId : null
+  } catch {
+    return null
+  }
 }

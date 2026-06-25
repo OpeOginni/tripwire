@@ -1,5 +1,11 @@
 import type { UIMessage } from "ai"
 import type { ToolSet } from "ai"
+import {
+  isAiSdkToolPart,
+  isLegacyToolCall,
+  isLegacyToolResult,
+  isRecord,
+} from "./message-schemas"
 
 export type ChatHistoryMessage = UIMessage | Record<string, unknown>
 
@@ -374,43 +380,6 @@ function stripIncompleteAssistantToolsBeforeUserTurn(
 
 function cloneMessage(message: ChatHistoryMessage): ChatHistoryMessage {
   return JSON.parse(JSON.stringify(message)) as ChatHistoryMessage
-}
-
-function isRecord(value: unknown): value is LooseMsg {
-  return typeof value === "object" && value !== null
-}
-
-function isLegacyToolCall(part: unknown): part is LooseMsg & {
-  type: "tool-call"
-  name?: string
-  toolCallId?: string
-  id?: string
-  state?: string
-  approval?: unknown
-  arguments?: string
-  input?: Record<string, unknown>
-} {
-  return isRecord(part) && part.type === "tool-call"
-}
-
-function isLegacyToolResult(part: unknown): part is LooseMsg & {
-  type: "tool-result"
-  toolCallId?: string
-  id?: string
-  state?: string
-  content?: string
-  output?: unknown
-} {
-  return isRecord(part) && part.type === "tool-result"
-}
-
-function isAiSdkToolPart(part: unknown): boolean {
-  if (!isRecord(part)) return false
-  const t = part.type
-  return (
-    t === "dynamic-tool" ||
-    (typeof t === "string" && t.startsWith("tool-") && t !== "tool-call")
-  )
 }
 
 function getPartToolName(part: LooseMsg): string | undefined {

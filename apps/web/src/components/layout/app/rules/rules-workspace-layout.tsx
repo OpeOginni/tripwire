@@ -25,7 +25,6 @@ import {
   RulesNavInstalledCheckIcon14,
   RulesNavPeopleIcon14,
   RulesNavRequestsIcon14,
-  RulesNavFilesIcon14,
   RulesNavWorkflowsZapIcon14,
   RulesSearchLoupeMutedIcon14,
 } from "@tripwire/ui/icons/rules-workspace-nav-icons"
@@ -166,13 +165,6 @@ function RulesWorkspaceLayoutInner() {
                   {v.pendingRequestCount + v.pendingVouchCount}
                 </span>
               )}
-            </Link>
-            <Link
-              to={tabLink("files")}
-              className={navClass(v.activeTab === "files")}
-            >
-              <RulesNavFilesIcon14 />
-              Files
             </Link>
             <Link
               to={tabLink("workflows")}

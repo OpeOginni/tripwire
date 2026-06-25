@@ -14,6 +14,7 @@ import {
   isReservedOrgSlug,
   ORG_SLUG_PATTERN,
 } from "#/constants/reserved-org-slugs"
+import { uninstallGitHubApp } from "#/lib/github/install"
 
 import type { TRPCRouterRecord } from "@trpc/server"
 
@@ -147,6 +148,26 @@ export const orgsRouter = {
         .where(eq(organizations.id, input.installationId))
 
       return { ok: true }
+    }),
+
+  /**
+   * Remove a GitHub App installation from Tripwire (owner only). Tells GitHub
+   * to uninstall the app, then deletes the local org row (repos cascade). Works
+   * even if the install was already removed on GitHub — clears stale
+   * connections that never got the `installation.deleted` webhook (e.g. local
+   * dev where GitHub can't reach the callback).
+   */
+  disconnectInstallation: authedProcedure
+    .input(z.object({ installationId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const org = await assertOrgOwner(ctx.user.id, input.installationId)
+      if (org.githubInstallationId) {
+        await uninstallGitHubApp(org.githubInstallationId)
+      }
+      await db
+        .delete(organizations)
+        .where(eq(organizations.id, input.installationId))
+      return { ok: true as const }
     }),
 
   checkSlugAvailable: authedProcedure

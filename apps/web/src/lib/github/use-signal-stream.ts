@@ -1,5 +1,6 @@
 import { type QueryKey, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useMemo, useRef } from "react"
+import { z } from "zod"
 import { useGitHubSignalPoll } from "./use-signal-poll"
 
 export type GitHubSignalStreamTarget = {
@@ -22,19 +23,14 @@ type SignalAwareQueryClient = {
   }): Promise<void>
 }
 
-type ServerMessage = {
-  type: "signals"
-  keys: string[]
-}
+const serverMessageSchema = z.object({
+  type: z.literal("signals"),
+  keys: z.array(z.string()),
+})
+type ServerMessage = z.infer<typeof serverMessageSchema>
 
 function isServerMessage(value: unknown): value is ServerMessage {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    (value as { type?: unknown }).type === "signals" &&
-    Array.isArray((value as { keys?: unknown }).keys) &&
-    (value as { keys: unknown[] }).keys.every((k) => typeof k === "string")
-  )
+  return serverMessageSchema.safeParse(value).success
 }
 
 const RECONNECT_BASE_DELAY_MS = 2_000

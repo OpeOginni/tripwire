@@ -22,6 +22,7 @@ import { autumn } from "@tripwire/auth/autumn"
 import { db } from "@tripwire/db/client"
 import {
   conversations,
+  member,
   organizations,
   repositories,
   type ConversationStoredMessage,
@@ -127,6 +128,19 @@ export const Route = createFileRoute("/api/chat")({
         const ctx = await createContext({ headers: request.headers })
         if (!ctx.user) return jsonError(401, { error: "Unauthorized" })
         const user = ctx.user
+        // Fall back to first membership when the session's active org hasn't
+        // propagated yet — same as orgMiddleware, so chat and tRPC agree.
+        let activeOrgId = ctx.activeOrgId
+        if (!activeOrgId) {
+          const [firstMembership] = await db
+            .select({ organizationId: member.organizationId })
+            .from(member)
+            .where(eq(member.userId, user.id))
+            .limit(1)
+          activeOrgId = firstMembership?.organizationId ?? null
+        }
+        if (!activeOrgId)
+          return jsonError(400, { error: "No active organization" })
 
         try {
           let quota: AutumnQuotaCheck
@@ -403,6 +417,7 @@ export const Route = createFileRoute("/api/chat")({
                 .values({
                   id: conversationId,
                   userId: user.id,
+                  organizationId: activeOrgId,
                   repoId: resolvedRepoId,
                   messages: asConversationStoredMessages(finishedMessages),
                   title: "New chat",

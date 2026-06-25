@@ -3,6 +3,8 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import { Button } from "@tripwire/ui/button"
 import { ChevronRightIndicatorIcon12 } from "@tripwire/ui/icons/app-chrome-icons"
+import { GitHubMarkWhiteIcon20 } from "@tripwire/ui/icons/github-mark-icon"
+import { TripwireLogo } from "@tripwire/ui/icons/tripwire-logo"
 import { RULE_META } from "@tripwire/db/schema/rule-meta"
 import { EmptyState } from "#/components/shared/empty-state"
 import { markEventsViewed } from "#/hooks/use-events-unread"
@@ -15,7 +17,6 @@ import {
 import { useGitHubSignalStream } from "#/lib/github/use-signal-stream"
 import { useRepoSignalTargets } from "#/lib/github/use-repo-signal-targets"
 import { routes } from "#/lib/routes"
-import { severityDotColor } from "#/lib/severity-design"
 import { useTRPC } from "#/integrations/trpc/react"
 import { useWorkspace } from "#/providers/workspace-context"
 
@@ -38,6 +39,9 @@ type Event = {
 type FilterState = {
   action: EventFilterAction | null
   username: string
+  /** When true, show ONLY bot-account activity (its own tab). Otherwise bot
+   * activity is excluded from every tab so the feed stays uncluttered. */
+  bots: boolean
 }
 
 const RULE_NAMES: Record<string, string> = {
@@ -73,19 +77,43 @@ const NON_CLICKABLE_ACTIONS = new Set([
   "blacklist_removed",
 ])
 
-function EventRow({ event }: { event: Event }) {
-  const dotColor = severityDotColor(event.severity)
+type RowPosition = "single" | "first" | "middle" | "last"
+
+const ROW_ROUNDING: Record<RowPosition, string> = {
+  single: "rounded-[10px]",
+  first: "rounded-t-[10px]",
+  middle: "",
+  last: "rounded-b-[10px]",
+}
+
+function EventRow({
+  event,
+  position = "single",
+}: {
+  event: Event
+  position?: RowPosition
+}) {
   const actionLabel = eventActionLabel(event.action)
   const isClickable = !NON_CLICKABLE_ACTIONS.has(event.action)
+  // GitHub-sourced activity (pr/issue/comment) vs Tripwire's own actions.
+  const isGitHubActivity = event.action.startsWith("github_")
+  const shellClass = `flex w-full items-center gap-3 bg-tw-inner px-3 py-2.5 transition-colors ${ROW_ROUNDING[position]}`
 
   const content = (
     <>
-      {/* Severity dot */}
-      <span className={`size-2 shrink-0 rounded-full ${dotColor}`} />
-
-      {/* Description */}
-      <span className="min-w-0 flex-1 truncate text-[13px] leading-4 font-medium tracking-[-0.2px] text-white">
-        {event.description || actionLabel}
+      <span className="flex min-w-0 flex-1 items-center gap-2">
+        <span className="flex shrink-0 items-center gap-1 text-[12px] leading-4 font-medium text-[#FFFFFF73]">
+          {isGitHubActivity ? (
+            <GitHubMarkWhiteIcon20 className="h-3.5 w-3.5 opacity-80" />
+          ) : (
+            <TripwireLogo size={13} className="text-[#FFFFFF73]" />
+          )}
+          {event.contentType &&
+            (CONTENT_TYPE_LABELS[event.contentType] ?? event.contentType)}
+        </span>
+        <span className="truncate text-[13px] leading-4 font-medium tracking-[-0.2px] text-white">
+          {event.description || actionLabel}
+        </span>
       </span>
 
       {/* Tags */}
@@ -103,16 +131,6 @@ function EventRow({ event }: { event: Event }) {
         {event.ruleName && !isCustomRuleName(event.ruleName) && (
           <span className="rounded bg-white/5 px-1.5 py-0.5 text-[11px] leading-none font-medium text-[#FFFFFF73]">
             {RULE_NAMES[event.ruleName] ?? event.ruleName}
-          </span>
-        )}
-        {event.contentType && (
-          <span className="rounded bg-white/5 px-1.5 py-0.5 text-[11px] leading-none font-medium text-[#FFFFFF73]">
-            {CONTENT_TYPE_LABELS[event.contentType] ?? event.contentType}
-          </span>
-        )}
-        {event.githubRef && (
-          <span className="font-mono text-[11px] leading-none text-[#FFFFFF73]">
-            {event.githubRef}
           </span>
         )}
       </div>
@@ -144,22 +162,47 @@ function EventRow({ event }: { event: Event }) {
   )
 
   if (!isClickable) {
-    return (
-      <div className="flex w-full items-center gap-3 px-4 py-2.5">
-        {content}
-      </div>
-    )
+    return <div className={shellClass}>{content}</div>
   }
 
   return (
     <Link
       to="/events/$eventId"
       params={{ eventId: event.id }}
-      className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 no-underline transition-colors hover:bg-white/[0.02]"
+      className={`${shellClass} cursor-pointer no-underline hover:bg-white/8`}
     >
       {content}
     </Link>
   )
+}
+
+/** Base PR/issue ref (e.g. "#64" from "#64/comment/12") used to group a thread. */
+function threadKey(event: Event): string | null {
+  if (!event.githubRef) return null
+  const match = event.githubRef.match(/^#(\d+)/)
+  return match ? `#${match[1]}` : null
+}
+
+/** Group consecutive events that act on the same PR/issue thread. */
+function groupByThread(events: Event[]): Event[][] {
+  const groups: Event[][] = []
+  for (const event of events) {
+    const key = threadKey(event)
+    const last = groups[groups.length - 1]
+    if (last && key !== null && threadKey(last[0]) === key) {
+      last.push(event)
+    } else {
+      groups.push([event])
+    }
+  }
+  return groups
+}
+
+function rowPosition(index: number, length: number): RowPosition {
+  if (length === 1) return "single"
+  if (index === 0) return "first"
+  if (index === length - 1) return "last"
+  return "middle"
 }
 
 function FilterTab({
@@ -196,7 +239,7 @@ function FilterTab({
 
 function EventListSkeleton() {
   return (
-    <div className="divide-y divide-white/[0.03]">
+    <div className="divide-y divide-white/3">
       {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className="flex items-center gap-3 px-4 py-2.5">
           <div className="size-2 rounded-full bg-white/5" />
@@ -257,6 +300,7 @@ export function EventsPage() {
   const [filters, setFilters] = useState<FilterState>({
     action: null,
     username: "",
+    bots: false,
   })
 
   const [page, setPage] = useState(0)
@@ -266,8 +310,9 @@ export function EventsPage() {
     repoId: repoId!,
     limit,
     offset: page * limit,
-    actions: filters.action ? [filters.action] : undefined,
+    actions: filters.action && !filters.bots ? [filters.action] : undefined,
     targetUsername: filters.username || undefined,
+    botActivity: (filters.bots ? "only" : "exclude") as "only" | "exclude",
   }
 
   const eventsQueryOpts = trpc.events.list.queryOptions(queryInput)
@@ -322,7 +367,11 @@ export function EventsPage() {
     isLoading || (!eventsQuery.data && eventsQuery.isLoading)
   const isFilterFetching = eventsQuery.isFetching && !isInitialLoad
 
-  const hasFilters = filters.action || filters.username
+  const hasFilters = filters.action || filters.username || filters.bots
+  const allCount =
+    actionCounts !== undefined
+      ? actionCounts.total - actionCounts.bot_activity
+      : undefined
 
   // Show empty state if no repos
   if (!isLoading && repos.length === 0) {
@@ -384,68 +433,91 @@ export function EventsPage() {
       <div className="flex flex-wrap items-center gap-1">
         <FilterTab
           label="All"
-          active={!filters.action}
-          count={actionCounts?.total}
-          onClick={() => setFilters((f) => ({ ...f, action: null }))}
+          active={!filters.action && !filters.bots}
+          count={allCount}
+          onClick={() =>
+            setFilters((f) => ({ ...f, action: null, bots: false }))
+          }
         />
         <FilterTab
           label="Blocked"
-          active={filters.action === "pipeline_blocked"}
+          active={filters.action === "pipeline_blocked" && !filters.bots}
           count={actionCounts?.pipeline_blocked}
           onClick={() =>
             setFilters((f) => ({
               ...f,
+              bots: false,
               action:
-                f.action === "pipeline_blocked" ? null : "pipeline_blocked",
+                f.action === "pipeline_blocked" && !f.bots
+                  ? null
+                  : "pipeline_blocked",
             }))
           }
         />
         <FilterTab
           label="Allowed"
-          active={filters.action === "pipeline_allowed"}
+          active={filters.action === "pipeline_allowed" && !filters.bots}
           count={actionCounts?.pipeline_allowed}
           onClick={() =>
             setFilters((f) => ({
               ...f,
+              bots: false,
               action:
-                f.action === "pipeline_allowed" ? null : "pipeline_allowed",
+                f.action === "pipeline_allowed" && !f.bots
+                  ? null
+                  : "pipeline_allowed",
             }))
           }
         />
         <FilterTab
           label="Near Misses"
-          active={filters.action === "rule_near_miss"}
+          active={filters.action === "rule_near_miss" && !filters.bots}
           count={actionCounts?.rule_near_miss}
           onClick={() =>
             setFilters((f) => ({
               ...f,
-              action: f.action === "rule_near_miss" ? null : "rule_near_miss",
+              bots: false,
+              action:
+                f.action === "rule_near_miss" && !f.bots
+                  ? null
+                  : "rule_near_miss",
             }))
           }
         />
         <FilterTab
           label="Workflows"
-          active={filters.action === "workflow_run"}
+          active={filters.action === "workflow_run" && !filters.bots}
           count={actionCounts?.workflow_run}
           onClick={() =>
             setFilters((f) => ({
               ...f,
-              action: f.action === "workflow_run" ? null : "workflow_run",
+              bots: false,
+              action:
+                f.action === "workflow_run" && !f.bots ? null : "workflow_run",
             }))
           }
         />
         <FilterTab
           label="Config"
-          active={filters.action === "rule_config_updated"}
+          active={filters.action === "rule_config_updated" && !filters.bots}
           count={actionCounts?.rule_config_updated}
           onClick={() =>
             setFilters((f) => ({
               ...f,
+              bots: false,
               action:
-                f.action === "rule_config_updated"
+                f.action === "rule_config_updated" && !f.bots
                   ? null
                   : "rule_config_updated",
             }))
+          }
+        />
+        <FilterTab
+          label="Bots"
+          active={filters.bots}
+          count={actionCounts?.bot_activity}
+          onClick={() =>
+            setFilters((f) => ({ ...f, action: null, bots: !f.bots }))
           }
         />
 
@@ -469,7 +541,7 @@ export function EventsPage() {
             variant="ghost"
             type="button"
             onClick={() => {
-              setFilters({ action: null, username: "" })
+              setFilters({ action: null, username: "", bots: false })
               setPage(0)
             }}
             className="cursor-pointer border-none bg-transparent px-2 py-1 text-[13px] text-[#FFFFFF59] transition-colors hover:text-white"
@@ -479,9 +551,10 @@ export function EventsPage() {
         )}
       </div>
 
-      {/* Event list */}
+      {/* Event list — events on the same PR/issue thread are grouped into one
+          connected block (rounded outer corners, flat inner edges). */}
       <div
-        className={`overflow-hidden rounded-xl border border-tw-border bg-tw-card transition-opacity ${isFilterFetching ? "opacity-60" : ""}`}
+        className={`rounded-2xl bg-tw-card p-1.5 transition-opacity ${isFilterFetching ? "opacity-60" : ""}`}
       >
         {events.length === 0 ? (
           <div className="py-16 text-center">
@@ -492,9 +565,17 @@ export function EventsPage() {
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-white/[0.03]">
-            {events.map((event) => (
-              <EventRow key={event.id} event={event} />
+          <div className="flex flex-col gap-2">
+            {groupByThread(events).map((group) => (
+              <div key={group[0].id} className="flex flex-col gap-[2px]">
+                {group.map((event, i) => (
+                  <EventRow
+                    key={event.id}
+                    event={event}
+                    position={rowPosition(i, group.length)}
+                  />
+                ))}
+              </div>
             ))}
           </div>
         )}

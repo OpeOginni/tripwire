@@ -1,6 +1,7 @@
 import type { inferRouterOutputs } from "@trpc/server"
 import { createTRPCRouter } from "./init"
 import { orgsRouter } from "./routers/orgs"
+import { orgPrefsRouter } from "./routers/orgPrefs"
 import { rulesRouter } from "./routers/rules"
 import { whitelistRouter, blacklistRouter } from "./routers/lists"
 import { eventsRouter } from "./routers/events"
@@ -9,7 +10,6 @@ import { chatsRouter } from "./routers/chats"
 import { requestsRouter } from "./routers/requests"
 import { reputationRouter } from "./routers/reputation"
 import { vouchesRouter } from "./routers/vouches"
-import { fakeBountiesRouter } from "./routers/fake-bounties"
 import { apiKeysRouter } from "./routers/api-keys"
 import { preferencesRouter } from "./routers/preferences"
 import { workflowsRouter } from "./routers/workflows"
@@ -18,12 +18,14 @@ import { researchRouter } from "./routers/research"
 import { adminReputationRouter } from "./routers/admin-reputation"
 import { adminOverviewRouter } from "./routers/admin-overview"
 import { visibilityRouter } from "./routers/visibility"
+import { moderationRouter } from "./routers/moderation"
 import { onboardingRouter } from "./routers/onboarding"
 import { authRouter } from "./routers/auth"
 import { githubSignalsRouter } from "./routers/github-signals"
 
 export const trpcRouter = createTRPCRouter({
   orgs: orgsRouter,
+  orgPrefs: orgPrefsRouter,
   rules: rulesRouter,
   whitelist: whitelistRouter,
   blacklist: blacklistRouter,
@@ -33,7 +35,6 @@ export const trpcRouter = createTRPCRouter({
   requests: requestsRouter,
   reputation: reputationRouter,
   vouches: vouchesRouter,
-  fakeBounties: fakeBountiesRouter,
   apiKeys: apiKeysRouter,
   preferences: preferencesRouter,
   workflows: workflowsRouter,
@@ -42,6 +43,7 @@ export const trpcRouter = createTRPCRouter({
   adminReputation: adminReputationRouter,
   adminOverview: adminOverviewRouter,
   visibility: visibilityRouter,
+  moderation: moderationRouter,
   onboarding: onboardingRouter,
   auth: authRouter,
   githubSignals: githubSignalsRouter,

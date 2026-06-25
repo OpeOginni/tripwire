@@ -1,6 +1,7 @@
-import { and, eq, sql, asc } from "drizzle-orm"
+import { and, eq, sql, asc, inArray, isNull } from "drizzle-orm"
 import { db } from "@tripwire/db/client"
 import {
+  events,
   repositories,
   ruleConfigs,
   ruleThresholdCounters,
@@ -15,6 +16,7 @@ import {
 } from "@tripwire/db"
 import {
   getInstallationToken,
+  createCheckRun,
   closePullRequest,
   closeIssue,
   deleteComment,
@@ -29,41 +31,14 @@ import {
 } from "@tripwire/github"
 import { env } from "@tripwire/env/server"
 import { logEvent, logEvents } from "./events"
+import { serializeEvaluations } from "./rules/serialize-evaluations"
 import { evaluateCustomRule } from "./rules/custom-rule-evaluator"
 import { resolveSignals } from "./rules/signal-resolver"
 import { isBotSender } from "./contributor-identity"
+import { renderBlockedComment, renderWarnedComment } from "./pr-comment"
+import { loadPrefsForInstallation } from "./pr-comment-loader"
 
 const APP_BASE_URL = env.BETTER_AUTH_URL ?? ""
-
-function buildRequestUrl(
-  repoFullName: string,
-  opts: { kind?: "unblock" | "access"; username?: string } = {}
-): string {
-  const base = APP_BASE_URL.replace(/\/$/, "")
-  const params = new URLSearchParams()
-  if (opts.kind) params.set("kind", opts.kind)
-  if (opts.username) params.set("u", opts.username)
-  const qs = params.toString()
-  const path = `/request/${repoFullName}${qs ? `?${qs}` : ""}`
-  return base ? `${base}${path}` : path
-}
-
-function appealFooter(
-  repoFullName: string,
-  outcome: PipelineResult["outcome"],
-  username: string
-): string {
-  const url = buildRequestUrl(repoFullName, { kind: "unblock", username })
-  if (outcome === "blacklist_blocked") {
-    return `> **Blacklisted from this repository.** [Appeal this block as @${username}](${url}) if you think it was a mistake.`
-  }
-  return `> Think this was a mistake? [Request a review as @${username}](${url}).`
-}
-
-function warnFooter(repoFullName: string, username: string): string {
-  const url = buildRequestUrl(repoFullName, { kind: "access", username })
-  return `> Want to skip these checks in the future? [Request vouched access as @${username}](${url}).`
-}
 
 // ─── Scope helper ──────────────────────────────────────────────
 
@@ -587,32 +562,12 @@ export async function runFilterPipeline(
       ...DEFAULT_RULE_CONFIG.vouchedUsersOnly,
       ...rawConfig?.vouchedUsersOnly,
     },
-    aiHoneypot: { ...DEFAULT_RULE_CONFIG.aiHoneypot, ...rawConfig?.aiHoneypot },
     autoWhitelistGlobalVouches: {
       ...DEFAULT_RULE_CONFIG.autoWhitelistGlobalVouches,
       ...rawConfig?.autoWhitelistGlobalVouches,
     },
     contentScope: scope,
-    repoFiles: {
-      rulesMd: {
-        ...DEFAULT_RULE_CONFIG.repoFiles.rulesMd,
-        ...rawConfig?.repoFiles?.rulesMd,
-      },
-      prTemplate: {
-        ...DEFAULT_RULE_CONFIG.repoFiles.prTemplate,
-        ...rawConfig?.repoFiles?.prTemplate,
-      },
-      agentsMd: {
-        ...DEFAULT_RULE_CONFIG.repoFiles.agentsMd,
-        ...rawConfig?.repoFiles?.agentsMd,
-      },
-    },
   }
-  // Combine honeypot phrases from both PR template and AGENTS.md
-  const honeypotPhrases = [
-    ...config.repoFiles.prTemplate.honeypotPhrases,
-    ...config.repoFiles.agentsMd.honeypotPhrases,
-  ]
 
   // ─── autoWhitelistGlobalVouches ───────────────────────────
   if (config.autoWhitelistGlobalVouches.enabled) {
@@ -1055,41 +1010,6 @@ export async function runFilterPipeline(
     }
   }
 
-  // ─── aiHoneypot ────────────────────────────────────────────
-  // Detect content containing any of the per-repo honeypot phrases
-  // injected into the PR template. Real humans won't write them; AI
-  // agents reading the template often will.
-  if (
-    ruleApplies(config.aiHoneypot, contentType, scope) &&
-    contentText &&
-    honeypotPhrases.length > 0
-  ) {
-    rulesChecked++
-    const haystack = contentText.toLowerCase()
-    const hit = honeypotPhrases.find((p) =>
-      haystack.includes(p.phrase.toLowerCase())
-    )
-    const tripped = !!hit
-    const eval_: RuleEvaluation = {
-      rule: "aiHoneypot",
-      passed: !tripped,
-      nearMiss: false,
-      action: config.aiHoneypot.action,
-      reason: tripped
-        ? `Content from @${ctx.senderLogin} contains the honeypot phrase (likely AI-generated).`
-        : undefined,
-    }
-    evaluations.push(eval_)
-    if (tripped) {
-      await recordViolation(
-        eval_.rule,
-        eval_.reason!,
-        config.aiHoneypot.action,
-        config.aiHoneypot.thresholdCount
-      )
-    }
-  }
-
   // ─── cryptoAddressDetection ────────────────────────────────
   if (
     ruleApplies(config.cryptoAddressDetection, contentType, scope) &&
@@ -1249,12 +1169,7 @@ async function logPipelineEvents(
         metadata: {
           ...extraMetadata,
           rulesChecked: result.rulesChecked,
-          evaluations: result.evaluations.map((e) => ({
-            rule: e.rule,
-            passed: e.passed,
-            actual: e.actual,
-            threshold: e.threshold,
-          })),
+          evaluations: serializeEvaluations(result.evaluations),
         },
       })
       break
@@ -1270,12 +1185,7 @@ async function logPipelineEvents(
           ...extraMetadata,
           rulesChecked: result.rulesChecked,
           blockingRule: result.blockingRule,
-          evaluations: result.evaluations.map((e) => ({
-            rule: e.rule,
-            passed: e.passed,
-            actual: e.actual,
-            threshold: e.threshold,
-          })),
+          evaluations: serializeEvaluations(result.evaluations),
         },
       })
       break
@@ -1394,11 +1304,102 @@ async function logPipelineEvents(
  * - "threshold" → treated as "block" (threshold counting is TODO)
  */
 
+/**
+ * True if we already took a GitHub enforcement action (close / delete / warn
+ * comment) on this exact content. Handler-logged action events carry no
+ * `pipelineId` (unlike the per-run `logPipelineEvents` outcome events), so this
+ * cleanly detects a real prior side effect — letting re-evaluations (PR
+ * synchronize / edit) refresh the events + Check Run without re-acting.
+ */
+async function hasPriorEnforcement(
+  repoId: string,
+  githubRef: string
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: events.id })
+    .from(events)
+    .where(
+      and(
+        eq(events.repoId, repoId),
+        eq(events.githubRef, githubRef),
+        isNull(events.pipelineId),
+        inArray(events.action, [
+          "pr_closed",
+          "issue_closed",
+          "comment_deleted",
+          "pipeline_warned",
+        ])
+      )
+    )
+    .limit(1)
+  return !!row
+}
+
+/** Map a pipeline outcome to a Check Run verdict + markdown checks table. */
+function buildChecksSummary(result: PipelineResult): {
+  conclusion: "success" | "failure" | "neutral"
+  title: string
+  summary: string
+} {
+  const conclusion =
+    result.outcome === "blocked" || result.outcome === "blacklist_blocked"
+      ? "failure"
+      : result.outcome === "allowed" ||
+          result.outcome === "whitelist_bypass" ||
+          result.outcome === "bot_bypass"
+        ? "success"
+        : "neutral"
+
+  const title =
+    conclusion === "failure"
+      ? `Blocked${result.blockingRule ? ` by ${result.blockingRule}` : ""}`
+      : conclusion === "neutral"
+        ? result.blockingRule
+          ? `Flagged by ${result.blockingRule}`
+          : "Flagged for review"
+        : `Passed ${result.rulesChecked} check${result.rulesChecked === 1 ? "" : "s"}`
+
+  const rows = result.evaluations.map((e) => {
+    const status = e.passed ? "✅" : e.nearMiss ? "⚠️" : "❌"
+    const detail =
+      e.reason ??
+      (e.actual !== undefined && e.threshold !== undefined
+        ? `${e.actual} vs ${e.threshold}`
+        : "")
+    return `| \`${e.rule}\` | ${status} | ${detail} |`
+  })
+  const summary =
+    rows.length > 0
+      ? `| Check | Result | Detail |\n| --- | --- | --- |\n${rows.join("\n")}`
+      : result.blockReason || "No rule checks ran."
+
+  return { conclusion, title, summary }
+}
+
+/** Post Tripwire's verdict as a Check Run on the PR head commit. Best-effort. */
+async function postPipelineCheckRun(
+  ctx: WebhookContext,
+  result: PipelineResult,
+  headSha: string
+): Promise<void> {
+  const [owner, repo] = ctx.repoFullName.split("/")
+  const token = await getInstallationToken(ctx.installationId)
+  const { conclusion, title, summary } = buildChecksSummary(result)
+  await createCheckRun(token, owner, repo, {
+    name: "Tripwire",
+    headSha,
+    conclusion,
+    title,
+    summary,
+  })
+}
+
 export async function handlePullRequest(
   ctx: WebhookContext,
   prNumber: number,
   prTitle: string,
-  prBody?: string
+  prBody?: string,
+  prHeadSha?: string
 ) {
   const prCtx = { ...ctx, prNumber }
   const result = await runFilterPipeline(
@@ -1412,14 +1413,38 @@ export async function handlePullRequest(
 
   await logPipelineEvents(result, ctx, "pull_request", githubRef, extraMeta)
 
-  if (result.outcome === "allowed" || !result.blockReason) return
+  const prefs = await loadPrefsForInstallation(ctx.installationId)
+  // routeMode "silent" runs the pipeline + logs events but doesn't touch GitHub.
+  const silent = prefs?.routeMode === "silent"
 
+  // Surface the verdict as a Check Run on the PR head commit (every outcome).
+  if (prHeadSha && !silent && result.repoId) {
+    await postPipelineCheckRun(ctx, result, prHeadSha).catch((err) =>
+      console.error("[Pipeline] Failed to post check run:", err)
+    )
+  }
+
+  if (result.outcome === "allowed" || !result.blockReason) return
+  if (silent) return
+  // Re-evaluations (synchronize/edit) already refreshed the events above; don't
+  // re-close or re-comment if we've already acted on this PR.
+  if (result.repoId && (await hasPriorEnforcement(result.repoId, githubRef)))
+    return
   const action = result.resolvedAction ?? "block"
   const [owner, repo] = ctx.repoFullName.split("/")
   const token = await getInstallationToken(ctx.installationId)
 
-  if (result.outcome === "blocked") {
-    const comment = `> **Tripwire** — This PR was automatically closed.\n>\n> Reason: ${result.blockReason}\n>\n${appealFooter(ctx.repoFullName, result.outcome, ctx.senderLogin)}`
+  if (result.outcome === "blocked" || result.outcome === "blacklist_blocked") {
+    const comment = renderBlockedComment({
+      prefs,
+      blockReason: result.blockReason,
+      ruleName: result.blockingRule,
+      repoFullName: ctx.repoFullName,
+      username: ctx.senderLogin,
+      outcome: result.outcome,
+      kind: "pull_request",
+      appBaseUrl: APP_BASE_URL,
+    })
     await closePullRequest(token, owner, repo, prNumber, comment)
 
     if (result.repoId) {
@@ -1444,7 +1469,16 @@ export async function handlePullRequest(
     result.outcome === "warned" ||
     result.outcome === "unable_to_verify"
   ) {
-    const comment = `> **Tripwire** — Warning\n>\n> ${result.blockReason}\n>\n> _This is a warning — no action was taken._\n>\n${warnFooter(ctx.repoFullName, ctx.senderLogin)}`
+    const comment = renderWarnedComment({
+      prefs,
+      blockReason: result.blockReason,
+      ruleName: result.blockingRule,
+      repoFullName: ctx.repoFullName,
+      username: ctx.senderLogin,
+      outcome: result.outcome,
+      kind: "pull_request",
+      appBaseUrl: APP_BASE_URL,
+    })
     await addComment(token, owner, repo, prNumber, comment)
 
     if (result.repoId) {
@@ -1486,10 +1520,25 @@ export async function handleIssue(
 
   const action = result.resolvedAction ?? "block"
   const [owner, repo] = ctx.repoFullName.split("/")
+  const prefs = await loadPrefsForInstallation(ctx.installationId)
+  // routeMode "silent" runs the pipeline + logs events but doesn't touch GitHub.
+  if (prefs?.routeMode === "silent") return
+  // Re-evaluations (issue edit) refreshed events above; don't re-close/comment.
+  if (result.repoId && (await hasPriorEnforcement(result.repoId, githubRef)))
+    return
   const token = await getInstallationToken(ctx.installationId)
 
-  if (result.outcome === "blocked") {
-    const comment = `> **Tripwire** — This issue was automatically closed.\n>\n> Reason: ${result.blockReason}\n>\n${appealFooter(ctx.repoFullName, result.outcome, ctx.senderLogin)}`
+  if (result.outcome === "blocked" || result.outcome === "blacklist_blocked") {
+    const comment = renderBlockedComment({
+      prefs,
+      blockReason: result.blockReason,
+      ruleName: result.blockingRule,
+      repoFullName: ctx.repoFullName,
+      username: ctx.senderLogin,
+      outcome: result.outcome,
+      kind: "issue",
+      appBaseUrl: APP_BASE_URL,
+    })
     await closeIssue(token, owner, repo, issueNumber, comment)
 
     if (result.repoId) {
@@ -1514,7 +1563,16 @@ export async function handleIssue(
     result.outcome === "warned" ||
     result.outcome === "unable_to_verify"
   ) {
-    const comment = `> **Tripwire** — Warning\n>\n> ${result.blockReason}\n>\n> _This is a warning — no action was taken._\n>\n${warnFooter(ctx.repoFullName, ctx.senderLogin)}`
+    const comment = renderWarnedComment({
+      prefs,
+      blockReason: result.blockReason,
+      ruleName: result.blockingRule,
+      repoFullName: ctx.repoFullName,
+      username: ctx.senderLogin,
+      outcome: result.outcome,
+      kind: "issue",
+      appBaseUrl: APP_BASE_URL,
+    })
     await addComment(token, owner, repo, issueNumber, comment)
 
     if (result.repoId) {
@@ -1554,6 +1612,9 @@ export async function handleComment(
 
   const action = result.resolvedAction ?? "block"
   const [owner, repo] = ctx.repoFullName.split("/")
+  const prefs = await loadPrefsForInstallation(ctx.installationId)
+  // routeMode "silent" runs the pipeline + logs events but doesn't touch GitHub.
+  if (prefs?.routeMode === "silent") return
   const token = await getInstallationToken(ctx.installationId)
 
   if (result.outcome === "blocked") {
@@ -1577,7 +1638,16 @@ export async function handleComment(
     result.outcome === "warned" ||
     result.outcome === "unable_to_verify"
   ) {
-    const comment = `> **Tripwire** — Warning\n>\n> ${result.blockReason}\n>\n> _This is a warning — no action was taken._\n>\n${warnFooter(ctx.repoFullName, ctx.senderLogin)}`
+    const comment = renderWarnedComment({
+      prefs,
+      blockReason: result.blockReason,
+      ruleName: result.blockingRule,
+      repoFullName: ctx.repoFullName,
+      username: ctx.senderLogin,
+      outcome: result.outcome,
+      kind: "comment",
+      appBaseUrl: APP_BASE_URL,
+    })
     await addComment(token, owner, repo, issueNumber, comment)
 
     if (result.repoId) {

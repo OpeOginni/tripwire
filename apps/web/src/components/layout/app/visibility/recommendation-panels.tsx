@@ -249,7 +249,7 @@ function PanelRow({
       <Button
         variant="ghost"
         onClick={onSelect}
-        className="-mx-2 flex h-auto flex-1 items-center justify-start gap-2.5 px-2 py-0 text-left"
+        className="-mx-2 flex h-auto flex-1 items-center justify-start gap-2.5 px-2 py-0 text-left hover:bg-transparent"
       >
         <ContributorAvatar
           username={username}

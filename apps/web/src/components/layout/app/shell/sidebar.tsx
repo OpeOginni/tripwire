@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from "react"
 import { ChevronDown } from "@tripwire/ui/icons/chevron-down"
 import { CloseIcon } from "@tripwire/ui/icons/close-icon"
 import { HomeIcon } from "@tripwire/ui/icons/home-icon"
-import { SearchIcon } from "@tripwire/ui/icons/search-icon"
 import { RulesIcon } from "@tripwire/ui/icons/rules-icon"
 import { InsightsIcon } from "@tripwire/ui/icons/insights-icon"
 import { AutomationsIcon } from "@tripwire/ui/icons/automations-icon"
@@ -13,10 +12,7 @@ import { useWorkspace } from "#/providers/workspace-context"
 import { useSidebar } from "#/providers/sidebar-context"
 import { Button } from "@tripwire/ui/button"
 
-const topNav = [
-  { label: "Home", icon: HomeIcon, to: "/home" },
-  { label: "Search", icon: SearchIcon, to: "/search" },
-] as const
+const topNav = [{ label: "Home", icon: HomeIcon, to: "/home" }] as const
 
 const workspaceNav = [
   { label: "Rules", icon: RulesIcon, to: "/rules" },

@@ -1,8 +1,28 @@
 <p align="center">
+  <picture>
+    <source 
+      media="(prefers-color-scheme: dark)" 
+      srcset="https://shieldcn.dev/sponsors/ripgrim.svg?preset=transparent&amp;mode=dark&amp;border=false" />
+    <img 
+      alt="sponsors" 
+      src="https://shieldcn.dev/sponsors/ripgrim.svg?preset=transparent&amp;mode=light&amp;border=false" width="1200" />
+  </picture>
+</p>
+
+<p align="center">
   <img alt="image" src="https://www.tripwire.sh/og.jpg" width="1000" />
 </p>
 
-<a href="https://github.com/bountydotnew/bounty.new/graphs/contributors"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/github/bountydotnew/bounty.new/contributors.svg" /><img alt="contributors" src="https://shieldcn.dev/github/bountydotnew/bounty.new/contributors.svg?mode=light" /></picture></a>
+---
+
+<a href="https://github.com/bountydotnew/bounty.new/graphs/contributors">
+  <picture>
+    <source 
+      media="(prefers-color-scheme: dark)" 
+      srcset="https://shieldcn.dev/github/bountydotnew/bounty.new/contributors.svg" />
+    <img alt="contributors" src="https://shieldcn.dev/github/bountydotnew/bounty.new/contributors.svg?mode=light" />
+  </picture>
+</a>
 
 Open source moderation for GitHub.
 
@@ -85,5 +105,5 @@ MIT.
 -->
 
 <p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/chart/github/stars/bountydotnew/tripwire.svg?bg=transparent&amp;title=Tripwire" /><img alt="chart" src="https://shieldcn.dev/chart/github/stars/bountydotnew/tripwire.svg?mode=light&amp;bg=transparent&amp;title=Tripwire" /></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/chart/github/stars/bountydotnew/tripwire.svg?bg=transparent&amp;title=Tripwire" /><img alt="chart" src="https://shieldcn.dev/chart/github/stars/bountydotnew/tripwire.svg?mode=light&amp;bg=transparent&amp;title=Tripwire" width="1000" /></picture>
 </p>

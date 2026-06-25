@@ -12,6 +12,7 @@ import { useState } from "react"
 import {
   MenuChevronDownIcon10,
   PlusStrokeIcon11,
+  SearchLoupeOutlineIcon14,
   SmallCheckStrokeIcon12,
 } from "@tripwire/ui/icons/app-chrome-icons"
 import { CreateOrgDialog } from "#/components/layout/app/orgs/create-org-dialog"
@@ -120,10 +121,18 @@ export function OrgSwitcher() {
 export function RepoSwitcher() {
   const { repo, repos, setRepo, isLoading } = useWorkspace()
   const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState("")
 
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen)
+    if (!nextOpen) setQuery("")
   }
+
+  const showFilter = repos.length > 8
+  const trimmedQuery = query.trim().toLowerCase()
+  const filtered = trimmedQuery
+    ? repos.filter((r) => r.fullName.toLowerCase().includes(trimmedQuery))
+    : repos
 
   if (repos.length === 0) {
     if (isLoading) {
@@ -154,27 +163,61 @@ export function RepoSwitcher() {
       </MenuTrigger>
       <MenuPopup
         align="end"
-        className="w-[360px] max-w-[calc(100vw-1rem)] border-tw-border bg-tw-card"
+        className="w-[320px] max-w-[calc(100vw-1rem)] border-tw-border bg-tw-card p-0"
       >
-        {repos.map((r) => (
-          <MenuItem
-            key={r.id}
-            onClick={() => {
-              setRepo(r)
-            }}
-            className="flex items-center justify-between gap-3"
-            title={r.fullName}
-          >
-            <span className="flex min-w-0 items-center gap-2">
-              <span className="min-w-0 truncate text-[12px] text-tw-text-primary">
-                {r.fullName}
-              </span>
-            </span>
-            {repo?.id === r.id && (
-              <SmallCheckStrokeIcon12 className="shrink-0 text-tw-accent" />
-            )}
-          </MenuItem>
-        ))}
+        {showFilter && (
+          <div className="relative border-b border-tw-border p-1.5">
+            <SearchLoupeOutlineIcon14 className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-tw-text-muted" />
+            <input
+              aria-label="Filter repositories"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+              placeholder="Filter repositories…"
+              className="h-8 w-full rounded-md bg-tw-inner pr-2.5 pl-8 text-[12px] text-tw-text-primary placeholder:text-tw-text-muted focus:outline-none"
+            />
+          </div>
+        )}
+        <div className="max-h-[300px] overflow-y-auto p-1">
+          {filtered.length === 0 ? (
+            <div className="px-2.5 py-3 text-center text-[12px] text-tw-text-muted">
+              No matches
+            </div>
+          ) : (
+            filtered.map((r) => {
+              const [owner, ...rest] = r.fullName.split("/")
+              const name = rest.join("/") || owner
+              const isSelected = repo?.id === r.id
+              return (
+                <MenuItem
+                  key={r.id}
+                  onClick={() => {
+                    setRepo(r)
+                  }}
+                  className="flex items-center gap-2.5"
+                  title={r.fullName}
+                >
+                  <GithubIcon
+                    className={`size-4 shrink-0 ${isSelected ? "text-tw-text-primary" : "text-tw-text-tertiary"}`}
+                  />
+                  <span className="flex min-w-0 flex-col leading-tight">
+                    <span className="truncate text-[12px] font-medium text-tw-text-primary">
+                      {name}
+                    </span>
+                    {rest.length > 0 && (
+                      <span className="truncate text-[10px] text-tw-text-muted">
+                        {owner}
+                      </span>
+                    )}
+                  </span>
+                  {isSelected && (
+                    <SmallCheckStrokeIcon12 className="ml-auto shrink-0 text-tw-accent" />
+                  )}
+                </MenuItem>
+              )
+            })
+          )}
+        </div>
       </MenuPopup>
     </Menu>
   )

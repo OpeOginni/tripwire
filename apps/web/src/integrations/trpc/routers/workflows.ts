@@ -224,6 +224,7 @@ export const workflowsRouter = {
         description: z.string().max(500).nullish(),
         definition: workflowDefinitionSchema.optional(),
         enabled: z.boolean().optional(),
+        enforce: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -250,6 +251,7 @@ export const workflowsRouter = {
             definition: input.definition,
           }),
           ...(input.enabled !== undefined && { enabled: input.enabled }),
+          ...(input.enforce !== undefined && { enforce: input.enforce }),
           updatedAt: new Date(),
         })
         .where(eq(workflows.id, input.id))

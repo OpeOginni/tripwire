@@ -129,9 +129,6 @@ Built-in rules and the typed setter that adjusts each one:
   No threshold field.
 - **vouchedUsersOnly** — only allow whitelisted users + repo collaborators.
   No threshold field.
-- **aiHoneypot** — embed honeypot phrases in PR templates; flag any PR
-  body containing them (because only an LLM would copy them in).
-  No threshold field.
 
 Recommended thresholds:
 - minMergedPrs.count: 3 for active repos, 1 for new ones.

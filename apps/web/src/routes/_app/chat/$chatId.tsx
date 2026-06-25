@@ -164,13 +164,25 @@ function ChatPage() {
           variant="ghost"
           type="button"
           onClick={() => navigate({ to: homePath })}
-          className="flex size-7 items-center justify-center rounded-lg transition-colors hover:bg-tw-hover"
+          className="flex size-7 items-center justify-center rounded-lg transition-colors hover:bg-tw-hover p-0"
         >
           <ChevronLeftStrokeIcon14 className="text-[#9F9FA9]" />
         </Button>
         <span className="truncate text-[13px] font-medium text-tw-text-secondary">
           {title}
         </span>
+        {convQuery.data?.authorName && (
+          <span className="ml-auto flex shrink-0 items-center gap-1.5 text-[12px] text-tw-text-muted">
+            {convQuery.data.authorImage ? (
+              <img
+                src={convQuery.data.authorImage}
+                alt={convQuery.data.authorName}
+                className="size-4 rounded-full object-cover"
+              />
+            ) : null}
+            {convQuery.data.authorName}
+          </span>
+        )}
       </div>
 
       <div className="min-h-0 w-full max-w-[560px] flex-1 overflow-auto px-3">

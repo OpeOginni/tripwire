@@ -1,13 +1,5 @@
 import type { UIMessage } from "ai"
-
-function isTextLikePart(part: unknown): boolean {
-  return (
-    typeof part === "object" &&
-    part !== null &&
-    "type" in part &&
-    (part as { type: unknown }).type === "text"
-  )
-}
+import { isTextPart } from "./message-schemas"
 
 function textFromPart(part: unknown): string {
   if (typeof part !== "object" || part === null) return ""
@@ -21,7 +13,7 @@ function textFromPart(part: unknown): string {
 export function extractFirstUserMessageText(messages: UIMessage[]): string {
   const firstUser = messages.find((m) => m.role === "user")
   if (!firstUser?.parts) return ""
-  return firstUser.parts.filter(isTextLikePart).map(textFromPart).join("")
+  return firstUser.parts.filter(isTextPart).map(textFromPart).join("")
 }
 
 /** Short title from first user message (persisted chat sidebar / metadata). */

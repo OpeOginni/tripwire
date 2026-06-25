@@ -14,7 +14,7 @@ import { repositories } from "./installations"
 import { workflows } from "./workflows"
 
 export type WorkflowRunStatus = "queued" | "running" | "completed" | "failed"
-export type WorkflowRunTrigger = "manual" | "schedule"
+export type WorkflowRunTrigger = "manual" | "schedule" | "webhook"
 
 /**
  * One execution of a workflow. In-flight dedupe is server-enforced with a

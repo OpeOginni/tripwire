@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import * as githubApi from "@tripwire/github"
+import { DEFAULT_RULE_CONFIG } from "@tripwire/db"
 
 // Mock the GitHub API module while preserving non-mocked exports.
 vi.mock("@tripwire/github", async () => {
@@ -223,9 +224,7 @@ describe("filter-pipeline rule checks", () => {
 })
 
 describe("rule config defaults", () => {
-  it("should have correct default values for new rules", async () => {
-    const { DEFAULT_RULE_CONFIG } = await import("@tripwire/db")
-
+  it("should have correct default values for new rules", () => {
     expect(DEFAULT_RULE_CONFIG.maxPrsPerDay).toEqual({
       enabled: false,
       action: "block",

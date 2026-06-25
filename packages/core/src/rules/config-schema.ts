@@ -20,11 +20,6 @@ const ruleBaseSchema = z.object({
   scopeOverride: ruleScopeOverrideSchema,
 })
 
-const honeypotPhraseSchema = z.object({
-  kind: z.enum(["codeword", "marker", "natural", "tag"]),
-  phrase: z.string().min(1),
-})
-
 export const ruleConfigSchema = z.object({
   languageRequirement: ruleBaseSchema.extend({
     language: z.string(),
@@ -41,7 +36,6 @@ export const ruleConfigSchema = z.object({
   vouchedUsersOnly: ruleBaseSchema.extend({
     vouchScope: z.enum(["repo", "global", "both"]).default("repo"),
   }),
-  aiHoneypot: ruleBaseSchema,
   autoWhitelistGlobalVouches: z.object({
     enabled: z.boolean(),
     minVouches: z.number().int().min(1).default(1),
@@ -50,23 +44,5 @@ export const ruleConfigSchema = z.object({
     pullRequests: z.boolean(),
     issues: z.boolean(),
     comments: z.boolean(),
-  }),
-  repoFiles: z.object({
-    rulesMd: z.object({
-      autoSync: z.boolean(),
-      customContent: z.string(),
-    }),
-    prTemplate: z.object({
-      autoSync: z.boolean(),
-      honeypotEnabled: z.boolean(),
-      honeypotPhrases: z.array(honeypotPhraseSchema),
-      customContent: z.string(),
-    }),
-    agentsMd: z.object({
-      autoSync: z.boolean(),
-      honeypotEnabled: z.boolean(),
-      honeypotPhrases: z.array(honeypotPhraseSchema),
-      customContent: z.string(),
-    }),
   }),
 })
