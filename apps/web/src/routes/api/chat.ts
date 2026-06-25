@@ -128,11 +128,8 @@ export const Route = createFileRoute("/api/chat")({
         const ctx = await createContext({ headers: request.headers })
         if (!ctx.user) return jsonError(401, { error: "Unauthorized" })
         const user = ctx.user
-        // Mirror orgMiddleware's fallback: the session's activeOrganizationId
-        // is null until Better Auth's setActive propagates (new sessions, or
-        // before the client's reconciliation lands), so fall back to the
-        // user's first membership. Both paths must agree or chat 400s while
-        // tRPC succeeds for the same user-state.
+        // Fall back to first membership when the session's active org hasn't
+        // propagated yet — same as orgMiddleware, so chat and tRPC agree.
         let activeOrgId = ctx.activeOrgId
         if (!activeOrgId) {
           const [firstMembership] = await db
