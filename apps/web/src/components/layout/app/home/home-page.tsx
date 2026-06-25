@@ -279,6 +279,7 @@ export function HomePageSkeleton() {
 function HomeFloatingBar() {
   const navigate = useNavigate()
   const { repo } = useWorkspace()
+  const { user } = useAuth()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const createChat = useMutation(trpc.chats.create.mutationOptions())
@@ -299,6 +300,9 @@ function HomeFloatingBar() {
               repoId: string | null
               createdAt: Date
               updatedAt: Date
+              authorId: string
+              authorName: string | null
+              authorImage: string | null
             }>
           | undefined
       ) => [
@@ -308,6 +312,9 @@ function HomeFloatingBar() {
           repoId: repo?.id ?? null,
           createdAt: new Date(),
           updatedAt: new Date(),
+          authorId: user.id,
+          authorName: user.name ?? null,
+          authorImage: user.image ?? null,
         },
         ...(old ?? []).slice(0, 4),
       ]
@@ -362,13 +369,6 @@ function HomeFloatingBar() {
             }
           },
         }}
-        contextActionAdornment={
-          <span className="ml-0.5 flex items-center pr-2">
-            <IntegrationChip fill="#533AFD" kind="figma" />
-            <IntegrationChip fill="#5E6AD2" kind="linear" />
-            <IntegrationChip fill="#000000" kind="github" />
-          </span>
-        }
       />
     </div>
   )
@@ -538,7 +538,7 @@ function RecentChats() {
                           e.stopPropagation()
                           setConfirmDeleteId(chat.id)
                         }}
-                        className="flex size-5 items-center justify-center rounded-md opacity-0 transition-all group-hover:opacity-100 hover:bg-[#FAFAFA10]"
+                        className="-ml-1 flex h-5 w-0 shrink-0 items-center justify-center overflow-hidden rounded-md opacity-0 transition-all duration-200 ease-out group-hover:ml-0 group-hover:w-5 group-hover:opacity-100 hover:bg-[#FAFAFA10]"
                       >
                         <StrokeXIcon10Muted />
                       </button>
@@ -564,29 +564,4 @@ function getEventAction(action: string): EventAction | null {
     issue_closed: { label: "Close issue", kind: "close" },
   }
   return actions[action] || null
-}
-
-interface IntegrationChipProps {
-  fill: string
-  kind: "figma" | "linear" | "github"
-}
-
-function IntegrationChip({ fill, kind }: IntegrationChipProps) {
-  const label = kind === "figma" ? "F" : kind === "linear" ? "L" : "G"
-  return (
-    <span
-      className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-[4px]"
-      style={{
-        width: 16,
-        height: 16,
-        marginRight: -8,
-        boxShadow: "#313131 0px 0px 0px 2px",
-        background: fill,
-      }}
-    >
-      <span className="text-[9px] leading-none font-bold text-white">
-        {label}
-      </span>
-    </span>
-  )
 }

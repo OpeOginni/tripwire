@@ -3,7 +3,6 @@ export const RULES_WORKSPACE_TAB_SEGMENTS = [
   "installed",
   "people",
   "requests",
-  "files",
   "workflows",
 ] as const
 

@@ -62,6 +62,45 @@ export function getEventActionLabel(action: string): string {
   return EVENT_ACTION_LABELS[action as EventAction] ?? action
 }
 
+/** Human label for the GitHub object an event concerns (PR / issue / comment). */
+const CONTENT_TYPE_LABELS: Record<string, string> = {
+  pull_request: "Pull request",
+  issue: "Issue",
+  comment: "Comment",
+}
+
+export function getContentTypeLabel(
+  contentType: string | null | undefined
+): string {
+  if (!contentType) return "Activity"
+  return CONTENT_TYPE_LABELS[contentType] ?? contentType
+}
+
+/**
+ * Build a github.com URL to the PR / issue / comment that triggered an event,
+ * from its `githubRef` (`#42` or `#42/comment/123`) and repo full name.
+ * Returns null when the event carries no actionable reference.
+ */
+export function githubRefUrl(
+  fullName: string,
+  contentType: string | null | undefined,
+  githubRef: string | null | undefined
+): string | null {
+  if (!githubRef) return null
+  const base = `https://github.com/${fullName}`
+  const number = githubRef.match(/#(\d+)/)?.[1]
+  if (!number) return null
+
+  if (contentType === "comment") {
+    const commentId = githubRef.match(/comment\/(\d+)/)?.[1]
+    return commentId
+      ? `${base}/issues/${number}#issuecomment-${commentId}`
+      : `${base}/issues/${number}`
+  }
+  if (contentType === "pull_request") return `${base}/pull/${number}`
+  return `${base}/issues/${number}`
+}
+
 /**
  * Headline for an event card or detail view: the action label adjusted for
  * severity — errors read as a block, generic warnings as suspected spam.

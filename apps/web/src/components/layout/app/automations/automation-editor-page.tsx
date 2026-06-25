@@ -120,6 +120,24 @@ export function AutomationEditorPage() {
     wfQuery.refetch()
   }
 
+  const toggleEnforce = () => {
+    updateWf.mutate(
+      { id: automationId, enforce: !wf.enforce },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({
+            queryKey: trpc.workflows.get.queryKey({ id: automationId }),
+          })
+          if (repo?.id) {
+            queryClient.invalidateQueries({
+              queryKey: trpc.workflows.list.queryKey({ repoId: repo.id }),
+            })
+          }
+        },
+      }
+    )
+  }
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex shrink-0 items-center gap-3 border-b border-tw-border px-4 py-3">
@@ -170,6 +188,25 @@ export function AutomationEditorPage() {
           )}
         </div>
         <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="xs"
+            type="button"
+            onClick={toggleEnforce}
+            disabled={updateWf.isPending}
+            title={
+              wf.enforce
+                ? "Actions fire on real events"
+                : "Runs are recorded but take no action"
+            }
+            className={
+              wf.enforce
+                ? "rounded-md bg-tw-warning/10 px-2 py-0.5 text-[11px] font-medium text-tw-warning"
+                : "rounded-md bg-[#FFFFFF08] px-2 py-0.5 text-[11px] font-medium text-tw-text-muted"
+            }
+          >
+            {wf.enforce ? "Enforcing" : "Observe only"}
+          </Button>
           <span
             className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${wf.enabled ? "bg-tw-success/10 text-tw-success" : "bg-[#FFFFFF08] text-tw-text-muted"}`}
           >

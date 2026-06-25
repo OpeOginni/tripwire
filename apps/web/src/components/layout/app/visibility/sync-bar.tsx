@@ -30,10 +30,12 @@ export function SyncBar({ repoId, repoFullName }: SyncBarProps) {
       { repoId },
       {
         refetchInterval: (q) => {
-          const last = q.state.data?.lastRun
-          return last?.status === "queued" || last?.status === "running"
-            ? 5000
-            : false
+          const data = q.state.data
+          const last = data?.lastRun
+          const active =
+            (last?.status === "queued" || last?.status === "running") &&
+            !data?.stale
+          return active ? 5000 : false
         },
       }
     )
@@ -52,6 +54,7 @@ export function SyncBar({ repoId, repoFullName }: SyncBarProps) {
   )
 
   const last = statusQuery.data?.lastRun
+  const stale = statusQuery.data?.stale ?? false
   const status = last?.status ?? "never"
 
   const prevStatusRef = useRef<string | undefined>(undefined)
@@ -67,6 +70,7 @@ export function SyncBar({ repoId, repoFullName }: SyncBarProps) {
     <div className="flex w-full flex-wrap items-center gap-3 rounded-2xl border border-tw-border bg-tw-card px-4 py-3">
       <SyncBarBody
         status={status}
+        stale={stale}
         last={last}
         onSyncClick={() => setConfirmOpen(true)}
         onRetryClick={() => mutation.mutate({ repoId })}
@@ -108,6 +112,7 @@ export function SyncBar({ repoId, repoFullName }: SyncBarProps) {
 
 interface BodyProps {
   status: "never" | "queued" | "running" | "completed" | "errored"
+  stale: boolean
   last:
     | {
         status: string
@@ -131,6 +136,7 @@ interface BodyProps {
 
 function SyncBarBody({
   status,
+  stale,
   last,
   onSyncClick,
   onRetryClick,
@@ -154,6 +160,29 @@ function SyncBarBody({
           loading={mutationPending}
         >
           Sync repo history
+        </Button>
+      </>
+    )
+  }
+
+  if (stale) {
+    return (
+      <>
+        <div className="flex flex-1 flex-col gap-0.5">
+          <span className="text-[13px] font-medium text-tw-error">
+            Sync timed out
+          </span>
+          <span className="text-[11px] text-tw-text-muted">
+            No response from the sync worker — try again.
+          </span>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRetryClick}
+          loading={mutationPending}
+        >
+          Retry
         </Button>
       </>
     )

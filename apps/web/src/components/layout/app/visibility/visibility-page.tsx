@@ -12,7 +12,7 @@ import {
   RiskAlertsPanel,
   SuggestedWhitelistPanel,
 } from "#/components/layout/app/visibility/recommendation-panels"
-import { RepoActivityFeed } from "#/components/layout/app/visibility/repo-activity-feed"
+import { ReviewQueue } from "#/components/layout/app/visibility/review-queue"
 import { SyncBar } from "#/components/layout/app/visibility/sync-bar"
 import { useTRPC } from "#/integrations/trpc/react"
 import { useWorkspace } from "#/providers/workspace-context"
@@ -166,6 +166,7 @@ export function VisibilityPage() {
       <div className="flex w-full flex-col gap-3">
         {repoId ? (
           <>
+            <ReviewQueue repoId={repoId} />
             <SyncBar repoId={repoId} repoFullName={repo?.fullName} />
             <div className="flex w-full flex-col gap-3 md:flex-row">
               <SuggestedWhitelistPanel
@@ -174,7 +175,6 @@ export function VisibilityPage() {
               />
               <RiskAlertsPanel repoId={repoId} onSelect={setActiveUsername} />
             </div>
-            <RepoActivityFeed repoId={repoId} repoFullName={repo?.fullName} />
           </>
         ) : null}
 

@@ -6,11 +6,10 @@ import {
   useState,
   useCallback,
   type KeyboardEvent,
-  type ReactNode,
 } from "react"
 import { Button } from "@tripwire/ui/button"
 import { useQuery } from "@tanstack/react-query"
-import { MicIcon, PlusIcon } from "@tripwire/ui/icons/nav-icons"
+import { MicIcon } from "@tripwire/ui/icons/nav-icons"
 import { useTRPC } from "#/integrations/trpc/react"
 import { cn } from "@tripwire/ui/utils"
 import { useWorkspace } from "#/providers/workspace-context"
@@ -33,7 +32,6 @@ import { UnicodeSpinner } from "@tripwire/ui/unicode-spinner"
 
 interface ChatComposerProps {
   className?: string
-  contextActionAdornment?: ReactNode
   disabled?: boolean
   isLoading?: boolean
   placeholder?: string
@@ -59,7 +57,6 @@ import {
 
 export function ChatComposer({
   className,
-  contextActionAdornment,
   disabled = false,
   isLoading = false,
   placeholder = "Ask anything...",
@@ -568,6 +565,25 @@ export function ChatComposer({
           >
             <MicIcon />
           </Button>
+          <Button
+            variant="ghost"
+            type="button"
+            onClick={sendMessage}
+            disabled={!canSendComposer}
+            className="flex h-8 shrink-0 items-center justify-center gap-1 rounded-[10px] bg-[#363639] px-1.5 transition-colors hover:bg-[#404044] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <span className="px-0.5 text-center text-[14px] leading-none text-tw-text-primary">
+              {isLoading ? "..." : "Go"}
+            </span>
+            <span
+              className="flex h-4 items-center justify-center rounded-sm bg-[#222222] px-1 pt-[3px] pb-0"
+              style={{ boxShadow: "#0000001A 0px 1px 1px" }}
+            >
+              <span className="text-center text-[11px] leading-none text-tw-text-tertiary">
+                {"↵"}
+              </span>
+            </span>
+          </Button>
         </div>
         {mentionsAttachBelow && mentions.length > 0 ? (
           <div
@@ -579,46 +595,6 @@ export function ChatComposer({
             {mentionChipElements}
           </div>
         ) : null}
-      </div>
-      <div className="flex w-full items-center justify-between pt-1.5">
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            type="button"
-            className="flex h-7 items-center gap-1 rounded-lg px-2 text-tw-text-tertiary transition-colors hover:bg-tw-hover hover:text-tw-text-secondary"
-          >
-            <PlusIcon />
-            <span className="text-[12px]">Add files</span>
-          </Button>
-          <Button
-            variant="ghost"
-            type="button"
-            className="flex h-7 items-center gap-1 rounded-lg px-2 text-tw-text-tertiary transition-colors hover:bg-tw-hover hover:text-tw-text-secondary"
-          >
-            <PlusIcon />
-            <span className="text-[12px]">Add context</span>
-            {contextActionAdornment}
-          </Button>
-        </div>
-        <Button
-          variant="ghost"
-          type="button"
-          onClick={sendMessage}
-          disabled={!canSendComposer}
-          className="flex items-center justify-center gap-1 self-stretch rounded-[10px] bg-[#363639] px-1.5 transition-colors hover:bg-[#404044] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <span className="px-0.5 text-center text-[14px] leading-none text-tw-text-primary">
-            {isLoading ? "..." : "Go"}
-          </span>
-          <span
-            className="flex h-4 items-center justify-center rounded-sm bg-[#222222] px-1 pt-[3px] pb-0"
-            style={{ boxShadow: "#0000001A 0px 1px 1px" }}
-          >
-            <span className="text-center text-[11px] leading-none text-tw-text-tertiary">
-              {"\u21B5"}
-            </span>
-          </span>
-        </Button>
       </div>
     </div>
   )

@@ -32,7 +32,9 @@ const POLL_INTERVAL_MS = 20 * 1_000
 const RESUME_SYNC_MIN_INTERVAL_MS = 2_000
 
 function signalCompositeKey(queryKey: QueryKey, signalKey: string): string {
-  return `${JSON.stringify(queryKey)}${signalKey}`
+  // `\0` delimiter (matches diffkit) so a signalKey can't collide with
+  // another (queryKey, signalKey) pair.
+  return `${JSON.stringify(queryKey)}\0${signalKey}`
 }
 
 /**

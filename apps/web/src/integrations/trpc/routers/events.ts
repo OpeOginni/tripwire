@@ -1,9 +1,9 @@
 import { z } from "zod"
 import { eq, desc, sql, and, gte, inArray, isNotNull } from "drizzle-orm"
-import { authedProcedure } from "../init"
-import { assertEventOwner, assertRepoOwner } from "@tripwire/core"
+import { orgProcedure } from "../init"
+import { assertEventBelongsToOrg, assertRepoBelongsToOrg } from "@tripwire/core"
 import { db } from "@tripwire/db/client"
-import { events } from "@tripwire/db"
+import { events, workflowRuns, workflows } from "@tripwire/db"
 
 import type { TRPCRouterRecord } from "@trpc/server"
 
@@ -49,10 +49,48 @@ const severityEnum = z.enum(["info", "warning", "success", "error"])
 
 export const eventsRouter = {
   /** Get a single event by ID */
-  get: authedProcedure
+  get: orgProcedure
     .input(z.object({ eventId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const { event, repo } = await assertEventOwner(ctx.user.id, input.eventId)
+      const { event, repo } = await assertEventBelongsToOrg(input.eventId, ctx.activeOrgId)
+
+      // Every event from the same pipeline run → the full checks timeline
+      // (the outcome event carries metadata.evaluations; near-misses are
+      // separate rows).
+      const pipelineEvents = event.pipelineId
+        ? await db
+            .select()
+            .from(events)
+            .where(eq(events.pipelineId, event.pipelineId))
+            .orderBy(events.createdAt)
+        : []
+
+      // Workflow runs for this PR/issue (number parsed from the "#42" ref).
+      const number = event.githubRef
+        ? Number.parseInt(event.githubRef.replace(/^#/, ""), 10)
+        : Number.NaN
+      const runs = Number.isNaN(number)
+        ? []
+        : await db
+            .select({
+              id: workflowRuns.id,
+              workflowId: workflowRuns.workflowId,
+              workflowName: workflows.name,
+              status: workflowRuns.status,
+              triggerKind: workflowRuns.triggerKind,
+              result: workflowRuns.result,
+              createdAt: workflowRuns.createdAt,
+            })
+            .from(workflowRuns)
+            .leftJoin(workflows, eq(workflows.id, workflowRuns.workflowId))
+            .where(
+              and(
+                eq(workflowRuns.repoId, repo.id),
+                eq(workflowRuns.pullNumber, number)
+              )
+            )
+            .orderBy(desc(workflowRuns.createdAt))
+            .limit(10)
 
       return {
         ...event,
@@ -61,11 +99,13 @@ export const eventsRouter = {
           name: repo.name,
           fullName: repo.fullName,
         },
+        pipelineEvents,
+        workflowRuns: runs,
       }
     }),
 
   /** Get digest events for the home page - recent flagged/blocked events grouped by user */
-  digest: authedProcedure
+  digest: orgProcedure
     .input(
       z.object({
         repoId: z.string().uuid(),
@@ -74,7 +114,7 @@ export const eventsRouter = {
       })
     )
     .query(async ({ ctx, input }) => {
-      await assertRepoOwner(ctx.user.id, input.repoId)
+      await assertRepoBelongsToOrg(input.repoId, ctx.activeOrgId)
 
       const since = new Date()
       since.setHours(since.getHours() - input.hours)
@@ -140,7 +180,7 @@ export const eventsRouter = {
     }),
 
   /** List events with rich filtering */
-  list: authedProcedure
+  list: orgProcedure
     .input(
       z.object({
         repoId: z.string().uuid(),
@@ -156,10 +196,17 @@ export const eventsRouter = {
         ruleName: z.string().optional(),
         /** Only events since this date */
         since: z.string().datetime().optional(),
+        /**
+         * Bot activity handling. "only" returns just bot-account events;
+         * "exclude" hides them so the main feed isn't cluttered. A bot is any
+         * actor whose GitHub login ends in `[bot]` or `bot` (same convention
+         * as `activeUsers`).
+         */
+        botActivity: z.enum(["only", "exclude"]).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
-      await assertRepoOwner(ctx.user.id, input.repoId)
+      await assertRepoBelongsToOrg(input.repoId, ctx.activeOrgId)
 
       const conditions = [eq(events.repoId, input.repoId)]
 
@@ -181,6 +228,15 @@ export const eventsRouter = {
       }
       if (input.since) {
         conditions.push(gte(events.createdAt, new Date(input.since)))
+      }
+      if (input.botActivity === "only") {
+        conditions.push(
+          sql`(${events.targetGithubUsername} ILIKE '%[bot]' OR ${events.targetGithubUsername} ILIKE '%bot')`
+        )
+      } else if (input.botActivity === "exclude") {
+        conditions.push(
+          sql`(${events.targetGithubUsername} IS NULL OR (${events.targetGithubUsername} NOT ILIKE '%[bot]' AND ${events.targetGithubUsername} NOT ILIKE '%bot'))`
+        )
       }
 
       const whereClause = and(...conditions)
@@ -206,10 +262,10 @@ export const eventsRouter = {
     }),
 
   /** Aggregated stats for the Insights page (backward compatible) */
-  stats: authedProcedure
+  stats: orgProcedure
     .input(z.object({ repoId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      await assertRepoOwner(ctx.user.id, input.repoId)
+      await assertRepoBelongsToOrg(input.repoId, ctx.activeOrgId)
 
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
@@ -257,7 +313,7 @@ export const eventsRouter = {
     }),
 
   /** Weekly/monthly event counts for trend charts (backward compatible) */
-  trends: authedProcedure
+  trends: orgProcedure
     .input(
       z.object({
         repoId: z.string().uuid(),
@@ -265,7 +321,7 @@ export const eventsRouter = {
       })
     )
     .query(async ({ ctx, input }) => {
-      await assertRepoOwner(ctx.user.id, input.repoId)
+      await assertRepoBelongsToOrg(input.repoId, ctx.activeOrgId)
 
       const startDate = new Date()
       startDate.setMonth(startDate.getMonth() - input.months)
@@ -297,7 +353,7 @@ export const eventsRouter = {
     }),
 
   /** Get event counts grouped by severity for the last N days */
-  severityCounts: authedProcedure
+  severityCounts: orgProcedure
     .input(
       z.object({
         repoId: z.string().uuid(),
@@ -305,7 +361,7 @@ export const eventsRouter = {
       })
     )
     .query(async ({ ctx, input }) => {
-      await assertRepoOwner(ctx.user.id, input.repoId)
+      await assertRepoBelongsToOrg(input.repoId, ctx.activeOrgId)
 
       const since = new Date()
       since.setDate(since.getDate() - input.days)
@@ -331,7 +387,7 @@ export const eventsRouter = {
     }),
 
   /** Get the distinct GitHub usernames that have triggered events */
-  activeUsers: authedProcedure
+  activeUsers: orgProcedure
     .input(
       z.object({
         repoId: z.string().uuid(),
@@ -339,7 +395,7 @@ export const eventsRouter = {
       })
     )
     .query(async ({ ctx, input }) => {
-      await assertRepoOwner(ctx.user.id, input.repoId)
+      await assertRepoBelongsToOrg(input.repoId, ctx.activeOrgId)
 
       const since = new Date()
       since.setDate(since.getDate() - input.days)
@@ -367,7 +423,7 @@ export const eventsRouter = {
     }),
 
   /** Get event counts grouped by action type for tab badges */
-  countsByAction: authedProcedure
+  countsByAction: orgProcedure
     .input(
       z.object({
         repoId: z.string().uuid(),
@@ -375,21 +431,35 @@ export const eventsRouter = {
       })
     )
     .query(async ({ ctx, input }) => {
-      await assertRepoOwner(ctx.user.id, input.repoId)
+      await assertRepoBelongsToOrg(input.repoId, ctx.activeOrgId)
 
       const since = new Date()
       since.setDate(since.getDate() - input.days)
 
-      const rows = await db
-        .select({
-          action: events.action,
-          count: sql<number>`count(*)::int`,
-        })
-        .from(events)
-        .where(
-          and(eq(events.repoId, input.repoId), gte(events.createdAt, since))
-        )
-        .groupBy(events.action)
+      const botPattern = sql`(${events.targetGithubUsername} ILIKE '%[bot]' OR ${events.targetGithubUsername} ILIKE '%bot')`
+
+      const [rows, botRows] = await Promise.all([
+        db
+          .select({
+            action: events.action,
+            count: sql<number>`count(*)::int`,
+          })
+          .from(events)
+          .where(
+            and(eq(events.repoId, input.repoId), gte(events.createdAt, since))
+          )
+          .groupBy(events.action),
+        db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(events)
+          .where(
+            and(
+              eq(events.repoId, input.repoId),
+              gte(events.createdAt, since),
+              botPattern
+            )
+          ),
+      ])
 
       const counts: Record<string, number> = {}
       let total = 0
@@ -398,8 +468,11 @@ export const eventsRouter = {
         total += row.count
       }
 
+      const botActivity = botRows[0]?.count ?? 0
+
       return {
         total,
+        bot_activity: botActivity,
         pipeline_blocked: counts["pipeline_blocked"] ?? 0,
         pipeline_allowed: counts["pipeline_allowed"] ?? 0,
         rule_near_miss: counts["rule_near_miss"] ?? 0,

@@ -22,7 +22,6 @@ import { maxFilesChanged } from "./rules/max-files-changed"
 import { language } from "./rules/language"
 import { crypto } from "./rules/crypto"
 import { vouchedUsersOnly } from "./rules/vouched-users-only"
-import { aiHoneypot } from "./rules/ai-honeypot"
 import { contributorScore } from "./rules/contributor-score"
 
 import { compare } from "./conditions/compare"
@@ -82,7 +81,6 @@ const RULE_BLOCKS: Block[] = [
   language,
   crypto,
   vouchedUsersOnly,
-  aiHoneypot,
   contributorScore,
 ]
 
@@ -242,7 +240,6 @@ export {
   language,
   crypto,
   vouchedUsersOnly,
-  aiHoneypot,
   contributorScore,
   compare,
   andGate,

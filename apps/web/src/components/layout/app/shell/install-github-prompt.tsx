@@ -5,9 +5,14 @@ import { GithubIcon } from "@tripwire/ui/icons/github"
 import { TripwireLogo } from "@tripwire/ui/icons/tripwire-logo"
 import { routes } from "#/lib/routes"
 import { useRefreshOnReturn } from "#/lib/use-refresh-on-return"
+import { useWorkspace } from "#/providers/workspace-context"
 
 export function InstallGitHubPrompt() {
   const queryClient = useQueryClient()
+  const { org } = useWorkspace()
+  const installHref = org
+    ? `${routes.api.githubInstall}?org=${encodeURIComponent(org.id)}`
+    : routes.api.githubInstall
   // Re-fetch every query when the user returns from clicking through to
   // GitHub's install flow — by the time they're back here, the
   // installation webhook has (probably) arrived and the workspace repo
@@ -36,7 +41,7 @@ export function InstallGitHubPrompt() {
           variant="default"
           size="sm"
           render={
-            <a href={routes.api.githubInstall} className="flex gap-2">
+            <a href={installHref} className="flex gap-2">
               <GithubIcon className="mt-0.5 size-4" />
               Install GitHub App
             </a>

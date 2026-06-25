@@ -79,6 +79,12 @@ export const workflows = pgTable(
     /** The full node graph */
     definition: jsonb("definition").$type<WorkflowDefinition>().notNull(),
     enabled: boolean("enabled").notNull().default(false),
+    /**
+     * Observe-first gate: when false, webhook-triggered runs record their steps
+     * but take no GitHub/list actions. Flip to true to let the workflow's
+     * action nodes actually fire.
+     */
+    enforce: boolean("enforce").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },

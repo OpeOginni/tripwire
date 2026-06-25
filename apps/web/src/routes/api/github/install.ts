@@ -24,8 +24,13 @@ async function handler({ request }: { request: Request }) {
     })
   }
 
+  // The org the user was viewing when they clicked Install (`?org=<baOrgId>`).
+  // Bound into the signed state so the callback attaches the installation to
+  // this org rather than guessing. Membership is re-checked at callback time.
+  const targetOrgId = new URL(request.url).searchParams.get("org") ?? undefined
+
   const appSlug = env.VITE_GITHUB_APP_SLUG ?? "tripwire-dev"
-  const { value, cookieMaxAge } = signInstallState(ctx.user.id)
+  const { value, cookieMaxAge } = signInstallState(ctx.user.id, targetOrgId)
   const isProd = process.env.NODE_ENV === "production"
 
   const cookieAttrs = [

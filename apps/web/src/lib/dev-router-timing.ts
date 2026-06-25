@@ -1,4 +1,4 @@
-import type { RouterEvents } from "@tanstack/router-core"
+import type { RouterEvents } from "@tanstack/react-router"
 
 interface SubscribableRouter {
   subscribe: <TEvent extends keyof RouterEvents>(

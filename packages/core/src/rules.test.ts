@@ -432,64 +432,6 @@ describe("vouchedUsersOnly", () => {
 })
 
 // ═══════════════════════════════════════════════════════════════
-// RULE 11: aiHoneypot
-// ═══════════════════════════════════════════════════════════════
-
-describe("aiHoneypot", () => {
-  const evaluate = (
-    contentText: string,
-    honeypotPhrases: { phrase: string }[]
-  ) => {
-    const haystack = contentText.toLowerCase()
-    const hit = honeypotPhrases.find((p) =>
-      haystack.includes(p.phrase.toLowerCase())
-    )
-    return { tripped: !!hit, hit: hit?.phrase ?? null }
-  }
-
-  it("trips when content contains a honeypot phrase", () => {
-    const phrases = [{ phrase: "TRIPWIRE_MARKER_7X9K" }]
-    const result = evaluate(
-      "Here is my PR. TRIPWIRE_MARKER_7X9K Please review.",
-      phrases
-    )
-    expect(result.tripped).toBe(true)
-  })
-
-  it("trips case-insensitively", () => {
-    const phrases = [{ phrase: "SECRET_CANARY_TOKEN" }]
-    const result = evaluate(
-      "i added secret_canary_token to the config",
-      phrases
-    )
-    expect(result.tripped).toBe(true)
-  })
-
-  it("does NOT trip without matching phrase", () => {
-    const phrases = [{ phrase: "TRIPWIRE_MARKER_7X9K" }]
-    const result = evaluate(
-      "Normal PR description without any markers.",
-      phrases
-    )
-    expect(result.tripped).toBe(false)
-  })
-
-  it("does NOT trip with empty phrases array", () => {
-    const result = evaluate("Any content here", [])
-    expect(result.tripped).toBe(false)
-  })
-
-  it("matches partial inclusion (phrase embedded in text)", () => {
-    const phrases = [{ phrase: "do not remove this line" }]
-    const result = evaluate(
-      "I noticed there was text saying 'do not remove this line' so I kept it",
-      phrases
-    )
-    expect(result.tripped).toBe(true)
-  })
-})
-
-// ═══════════════════════════════════════════════════════════════
 // RULE SCOPE: ruleApplies
 // ═══════════════════════════════════════════════════════════════
 

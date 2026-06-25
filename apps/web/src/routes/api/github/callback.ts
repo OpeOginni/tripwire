@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { createContext } from "#/integrations/trpc/init"
-import { INSTALL_STATE_COOKIE, verifyInstallState } from "@tripwire/github"
+import {
+  INSTALL_STATE_COOKIE,
+  readInstallStateOrgId,
+  verifyInstallState,
+} from "@tripwire/github"
 import { ensureInstallation } from "#/lib/github/install"
 
 type CallbackError =
@@ -33,7 +37,8 @@ async function handler({ request }: { request: Request }) {
     try {
       const result = await ensureInstallation(
         Number(installationId),
-        ctx.user.id
+        ctx.user.id,
+        readInstallStateOrgId(queryState) ?? ctx.activeOrgId
       )
       if (result === "installer_mismatch") {
         return redirectToIntegrations("installer_mismatch")

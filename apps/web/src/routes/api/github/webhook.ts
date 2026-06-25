@@ -1,12 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { verifyWebhookSignature } from "@tripwire/github"
-import {
-  handlePullRequest,
-  handleIssue,
-  handleComment,
-  checkFakeBountyReference,
-  handleFakeBountyCatch,
-} from "@tripwire/core"
+import { handlePullRequest, handleIssue, handleComment } from "@tripwire/core"
 // Side-effect import: registers the reputation-update → rescore hook so
 // `updateReputation` calls from any webhook in this process fan out to the
 // background scorer.
@@ -27,7 +21,20 @@ import {
   recordGitHubWebhookEvent,
 } from "@tripwire/github/webhook-event"
 import { getGitHubWebhookRevalidationSignalKeys } from "#/lib/github/revalidation"
+import {
+  installationPayloadSchema,
+  installationReposPayloadSchema,
+} from "#/lib/github/webhook-schemas"
+import {
+  ISSUE_EVAL_ACTIONS,
+  PR_EVAL_ACTIONS,
+  workflowTriggersForEvent,
+} from "#/constants/webhook-events"
+import { runWorkflowsForEvent } from "#/lib/workflow/dispatch"
 import { broadcastSignalKeys } from "@tripwire/github/signal-broker"
+import { createLogger } from "@tripwire/logger"
+
+const log = createLogger("webhook")
 
 type WebhookCtx = {
   installationId: number
@@ -124,28 +131,13 @@ type GitHubWebhookPayload = {
 function isInstallationPayload(
   p: GitHubWebhookPayload
 ): p is GitHubWebhookPayload & InstallationPayload {
-  const inst = p.installation
-  const sender = p.sender
-  const account = inst?.account
-  return (
-    typeof p.action === "string" &&
-    typeof inst?.id === "number" &&
-    typeof account?.id === "number" &&
-    typeof account.login === "string" &&
-    typeof account.type === "string" &&
-    typeof account.avatar_url === "string" &&
-    typeof sender?.id === "number" &&
-    typeof sender.login === "string"
-  )
+  return installationPayloadSchema.safeParse(p).success
 }
 
 function isInstallationReposPayload(
   p: GitHubWebhookPayload
 ): p is GitHubWebhookPayload & InstallationReposPayload {
-  return (
-    (p.action === "added" || p.action === "removed") &&
-    typeof p.installation?.id === "number"
-  )
+  return installationReposPayloadSchema.safeParse(p).success
 }
 
 /**
@@ -158,7 +150,7 @@ async function safeMarkProcessed(deliveryId: string | null): Promise<void> {
   try {
     await markGitHubWebhookEventProcessed(deliveryId)
   } catch (err) {
-    console.error("[Webhook] failed to mark processed:", err)
+    log.error("failed to mark processed:", err)
   }
 }
 
@@ -173,14 +165,14 @@ async function safeMarkFailed(
       err instanceof Error ? err.message : String(err)
     )
   } catch (logErr) {
-    console.error("[Webhook] failed to record processing error:", logErr)
+    log.error("failed to record processing error:", logErr)
   }
 }
 
 async function handler({ request }: { request: Request }) {
   const secret = process.env.GITHUB_WEBHOOK_SECRET
   if (!secret) {
-    console.error("[Webhook] GITHUB_WEBHOOK_SECRET is not configured")
+    log.error("GITHUB_WEBHOOK_SECRET is not configured")
     return new Response("Server misconfigured", { status: 500 })
   }
 
@@ -194,7 +186,7 @@ async function handler({ request }: { request: Request }) {
   const event = request.headers.get("x-github-event")
   const deliveryId = request.headers.get("x-github-delivery")
   const payload = JSON.parse(body) as GitHubWebhookPayload
-  console.log("[Webhook] Event:", event, "| Action:", payload.action)
+  log.info("Event:", event, "| Action:", payload.action)
 
   // Idempotency: GitHub retries reuse the same X-GitHub-Delivery UUID.
   // Insert-or-ignore against `github_webhook_event` — if the row already
@@ -213,13 +205,12 @@ async function handler({ request }: { request: Request }) {
       })
     } catch (err) {
       // Fail open: better to process twice than to silently drop the webhook.
-      console.error(
-        "[Webhook] failed to record delivery, processing anyway:",
+      log.error("failed to record delivery, processing anyway:",
         err
       )
     }
     if (!isNewDelivery) {
-      console.log("[Webhook] duplicate delivery, skipping:", deliveryId)
+      log.info("duplicate delivery, skipping:", deliveryId)
       return new Response("OK (duplicate)", { status: 200 })
     }
   }
@@ -234,7 +225,7 @@ async function handler({ request }: { request: Request }) {
       await markGitHubRevalidationSignals(signalKeys)
       broadcastSignalKeys(signalKeys)
     } catch (err) {
-      console.error("[Webhook] mark signals failed:", err)
+      log.error("mark signals failed:", err)
     }
   }
 
@@ -249,13 +240,13 @@ async function handler({ request }: { request: Request }) {
       if (isInstallationPayload(payload)) {
         await handleInstallation(payload)
       } else {
-        console.warn("[Webhook] installation payload missing required fields")
+        log.warn("installation payload missing required fields")
       }
     } else if (event === "installation_repositories") {
       if (isInstallationReposPayload(payload)) {
         await handleInstallationRepositories(payload)
       } else {
-        console.warn("[Webhook] installation_repositories payload invalid")
+        log.warn("installation_repositories payload invalid")
       }
     } else if (payload.repository) {
       const repo = payload.repository
@@ -271,7 +262,7 @@ async function handler({ request }: { request: Request }) {
     }
     await safeMarkProcessed(deliveryId)
   } catch (err) {
-    console.error("Webhook handler error:", err)
+    log.error("handler error:", err)
     await safeMarkFailed(deliveryId, err)
   }
 
@@ -296,45 +287,48 @@ async function handleRepoEvent(
   switch (event) {
     case "pull_request": {
       const pr = payload.pull_request
-      if (
-        !pr ||
-        (payload.action !== "opened" && payload.action !== "reopened")
-      ) {
+      // Re-evaluate on new commits (synchronize), title/body edits, and
+      // draft→ready, not just first open — otherwise a flagged author can push
+      // past the initial check.
+      if (!pr || !PR_EVAL_ACTIONS.has(payload.action ?? "")) {
         break
       }
-      const prContent = `${pr.title}\n${pr.body ?? ""}`
-
+      await handlePullRequest(
+        ctx,
+        pr.number,
+        pr.title,
+        pr.body ?? undefined,
+        pr.head?.sha
+      )
       if (repoRow) {
-        const bountyHit = await checkFakeBountyReference(repoRow.id, prContent)
-        if (bountyHit) {
-          await handleFakeBountyCatch({
-            repoId: repoRow.id,
-            bountyId: bountyHit.bountyId,
-            githubUsername: ctx.senderLogin,
-            githubUserId: ctx.senderId,
-            githubRef: `#${pr.number}`,
-            refType: "pr",
-            prNumber: pr.number,
-            installationId: ctx.installationId,
-            repoFullName: ctx.repoFullName,
-          })
-          break
-        }
+        await dispatchWorkflows(
+          ctx,
+          repoRow.id,
+          "pull_request",
+          "pr",
+          pr.number,
+          payload.action
+        )
       }
-
-      await handlePullRequest(ctx, pr.number, pr.title, pr.body ?? undefined)
       break
     }
 
     case "issues": {
       const issue = payload.issue
-      if (
-        !issue ||
-        (payload.action !== "opened" && payload.action !== "reopened")
-      ) {
+      if (!issue || !ISSUE_EVAL_ACTIONS.has(payload.action ?? "")) {
         break
       }
       await handleIssue(ctx, issue.number, issue.title, issue.body ?? undefined)
+      if (repoRow) {
+        await dispatchWorkflows(
+          ctx,
+          repoRow.id,
+          "issues",
+          "issue",
+          issue.number,
+          payload.action
+        )
+      }
       break
     }
 
@@ -355,9 +349,39 @@ async function handleRepoEvent(
         issue.number,
         comment.body ?? undefined
       )
+      if (repoRow) {
+        await dispatchWorkflows(
+          ctx,
+          repoRow.id,
+          "issue_comment",
+          "issue",
+          issue.number,
+          payload.action
+        )
+      }
       break
     }
   }
+}
+
+async function dispatchWorkflows(
+  ctx: WebhookCtx,
+  repoId: string,
+  eventType: "pull_request" | "issues" | "issue_comment",
+  kind: "pr" | "issue",
+  number: number,
+  action: string | undefined
+): Promise<void> {
+  await runWorkflowsForEvent({
+    repoId,
+    installationId: ctx.installationId,
+    repoFullName: ctx.repoFullName,
+    triggers: workflowTriggersForEvent(eventType, action ?? ""),
+    username: ctx.senderLogin,
+    userId: ctx.senderId,
+    kind,
+    number,
+  }).catch((err) => log.error("workflow dispatch failed:", err))
 }
 
 async function recordRepoActivityEvent(
