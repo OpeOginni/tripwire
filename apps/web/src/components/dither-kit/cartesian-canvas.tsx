@@ -357,13 +357,11 @@ export function CartesianCanvas() {
     <>
       <canvas
         ref={canvasRef}
-        role="presentation"
         className="pointer-events-none absolute"
         style={{ ...pos, imageRendering: "pixelated" }}
       />
       <canvas
         ref={bloomRef}
-        role="presentation"
         className="pointer-events-none absolute"
         style={{
           ...pos,

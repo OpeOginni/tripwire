@@ -6,7 +6,7 @@ import {
   SlidersHorizontalIcon,
   XIcon,
 } from "lucide-react"
-import { type ReactNode, useEffect, useRef, useState } from "react"
+import { Fragment, type ReactNode, useEffect, useRef, useState } from "react"
 import {
   ActiveDot,
   Area,
@@ -166,7 +166,7 @@ function useSettled(value: string | number, ms: number, onSettle: () => void) {
   const settle = useRef(onSettle)
   useEffect(() => {
     settle.current = onSettle
-  })
+  }, [onSettle])
   useEffect(() => {
     if (first.current) {
       first.current = false
@@ -227,15 +227,17 @@ const TOKEN_CLASS: Record<TokenType, string> = {
   punct: "text-muted-foreground/70",
 }
 
-/** Tiny JSX-ish highlighter for the docs snippets — no dependency, themed to
- * the dither palette, adapts to light and dark via classes. */
-function Code({ code }: { code: string }) {
-  const parts: ReactNode[] = []
+type Token = { type: TokenType | null; text: string; start: number }
+
+/** Pure tokenizer — `matchAll` leaves the shared regex untouched, and each
+ * token carries its source offset for a stable render key. */
+function tokenize(code: string): Token[] {
+  const tokens: Token[] = []
   let last = 0
-  let i = 0
-  TOKEN_RE.lastIndex = 0
-  for (let m = TOKEN_RE.exec(code); m; m = TOKEN_RE.exec(code)) {
-    if (m.index > last) parts.push(code.slice(last, m.index))
+  for (const m of code.matchAll(TOKEN_RE)) {
+    const start = m.index ?? 0
+    if (start > last)
+      tokens.push({ type: null, text: code.slice(last, start), start: last })
     const type: TokenType = m[1]
       ? "comment"
       : m[2]
@@ -247,15 +249,30 @@ function Code({ code }: { code: string }) {
             : m[5]
               ? "attr"
               : "punct"
-    parts.push(
-      <span key={i++} className={TOKEN_CLASS[type]}>
-        {m[0]}
-      </span>
-    )
-    last = m.index + m[0].length
+    tokens.push({ type, text: m[0], start })
+    last = start + m[0].length
   }
-  if (last < code.length) parts.push(code.slice(last))
-  return <>{parts}</>
+  if (last < code.length)
+    tokens.push({ type: null, text: code.slice(last), start: last })
+  return tokens
+}
+
+/** Tiny JSX-ish highlighter for the docs snippets — no dependency, themed to
+ * the dither palette, adapts to light and dark via classes. */
+function Code({ code }: { code: string }) {
+  return (
+    <>
+      {tokenize(code).map((t) =>
+        t.type ? (
+          <span key={t.start} className={TOKEN_CLASS[t.type]}>
+            {t.text}
+          </span>
+        ) : (
+          <Fragment key={t.start}>{t.text}</Fragment>
+        )
+      )}
+    </>
+  )
 }
 
 function CodeBlock({ code }: { code: string }) {
@@ -339,14 +356,17 @@ function Select<T extends string>({
   value,
   options,
   onChange,
+  ariaLabel,
 }: {
   value: T
   options: readonly T[]
   onChange: (v: T) => void
+  ariaLabel: string
 }) {
   return (
     <select
       value={value}
+      aria-label={ariaLabel}
       onChange={(e) => onChange(e.target.value as T)}
       className="rounded-md border bg-card px-2 py-1.5 font-mono text-xs text-foreground transition-colors hover:border-foreground/25"
     >
@@ -365,18 +385,21 @@ function Range({
   max,
   step,
   onChange,
+  ariaLabel,
 }: {
   value: number
   min: number
   max: number
   step: number
   onChange: (v: number) => void
+  ariaLabel: string
 }) {
   return (
     <div className="flex items-center gap-3 rounded-md border bg-card px-3 py-2">
       <input
         type="range"
         value={value}
+        aria-label={ariaLabel}
         min={min}
         max={max}
         step={step}
@@ -437,6 +460,7 @@ function TweakSidebar({
 
         <Field label="bloom">
           <Select
+            ariaLabel="bloom"
             value={tweaks.bloomPreset}
             options={BLOOM_PRESETS}
             onChange={(v) => set("bloomPreset", v)}
@@ -447,6 +471,7 @@ function TweakSidebar({
           <div className="flex flex-col gap-3 rounded-lg border p-3">
             <Field label="blur (px)">
               <Range
+                ariaLabel="blur (px)"
                 value={tweaks.blur}
                 min={0}
                 max={32}
@@ -456,6 +481,7 @@ function TweakSidebar({
             </Field>
             <Field label="brightness">
               <Range
+                ariaLabel="brightness"
                 value={tweaks.brightness}
                 min={1}
                 max={4}
@@ -465,6 +491,7 @@ function TweakSidebar({
             </Field>
             <Field label="opacity">
               <Range
+                ariaLabel="opacity"
                 value={tweaks.opacity}
                 min={0.05}
                 max={1}
@@ -474,6 +501,7 @@ function TweakSidebar({
             </Field>
             <Field label="saturate">
               <Range
+                ariaLabel="saturate"
                 value={tweaks.saturate}
                 min={1}
                 max={4}
@@ -486,6 +514,7 @@ function TweakSidebar({
 
         <Field label="desktop series variant">
           <Select
+            ariaLabel="desktop series variant"
             value={tweaks.primaryVariant}
             options={VARIANTS}
             onChange={(v) => set("primaryVariant", v)}
@@ -493,6 +522,7 @@ function TweakSidebar({
         </Field>
         <Field label="mobile series variant">
           <Select
+            ariaLabel="mobile series variant"
             value={tweaks.secondaryVariant}
             options={VARIANTS}
             onChange={(v) => set("secondaryVariant", v)}
@@ -516,6 +546,7 @@ function TweakSidebar({
 
         <Field label="pie inner radius (0 = full pie)">
           <Range
+            ariaLabel="pie inner radius (0 = full pie)"
             value={tweaks.donutRadius}
             min={0}
             max={0.8}
@@ -526,6 +557,7 @@ function TweakSidebar({
 
         <Field label="entrance duration (ms)">
           <Range
+            ariaLabel="entrance duration (ms)"
             value={tweaks.duration}
             min={300}
             max={2400}
