@@ -42,10 +42,10 @@ No namespace config? Use the raw URL instead:
 Files land in `components/dither-kit/`; import from each file:
 
 ```tsx
-import { AreaChart, Area } from "@/components/dither-kit/area-chart";
-import { XAxis } from "@/components/dither-kit/x-axis";
-import { Legend } from "@/components/dither-kit/legend";
-import { Tooltip } from "@/components/dither-kit/tooltip";
+import { AreaChart, Area } from "@/components/dither-kit/area-chart"
+import { XAxis } from "@/components/dither-kit/x-axis"
+import { Legend } from "@/components/dither-kit/legend"
+import { Tooltip } from "@/components/dither-kit/tooltip"
 ```
 
 It relies on the standard shadcn theme tokens (`--popover`, `--border`,
@@ -59,9 +59,9 @@ It relies on the standard shadcn theme tokens (`--popover`, `--border`,
 const config = {
   desktop: { label: "Desktop", color: "blue" },
   mobile: { label: "Mobile", color: "purple" },
-};
+}
 
-<AreaChart data={data} config={config} stackType="stacked">
+;<AreaChart data={data} config={config} stackType="stacked">
   <XAxis dataKey="month" />
   <YAxis />
   <Legend isClickable />

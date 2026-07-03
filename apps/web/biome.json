@@ -41,6 +41,19 @@
   },
   "overrides": [
     {
+      "includes": [
+        "**/components/dither-kit/**/*.tsx",
+        "**/routes/dither-kit.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noRestrictedElements": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": ["**/components/icons/**/*.tsx"],
       "linter": {
         "rules": {
