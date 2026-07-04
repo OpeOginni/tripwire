@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { DialRoot, useDialKit } from "dialkit"
+import "dialkit/styles.css"
 import {
   CheckIcon,
   CopyIcon,
   MoonIcon,
   RefreshCcwIcon,
-  SlidersHorizontalIcon,
   SunIcon,
-  XIcon,
 } from "lucide-react"
 import { Fragment, type ReactNode, useEffect, useRef, useState } from "react"
 import {
@@ -106,19 +106,6 @@ type Tweaks = {
   stacked: boolean
   donutRadius: number // 0 = full pie
   duration: number // entrance ms
-}
-
-const DEFAULT_TWEAKS: Tweaks = {
-  bloomPreset: "aura",
-  blur: 24,
-  brightness: 2.9,
-  opacity: 0.1,
-  saturate: 3,
-  primaryVariant: "gradient",
-  secondaryVariant: "hatched",
-  stacked: true,
-  donutRadius: 0.5,
-  duration: 900,
 }
 
 function bloomOf(t: Tweaks): BloomInput {
@@ -359,255 +346,6 @@ function ReplayButton({ onClick }: { onClick: () => void }) {
   )
 }
 
-/* --------------------------------------------------------- tweak sidebar */
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="font-mono text-[11px] text-muted-foreground">
-        {label}
-      </span>
-      {children}
-    </label>
-  )
-}
-
-function Select<T extends string>({
-  value,
-  options,
-  onChange,
-  ariaLabel,
-}: {
-  value: T
-  options: readonly T[]
-  onChange: (v: T) => void
-  ariaLabel: string
-}) {
-  return (
-    <select
-      value={value}
-      aria-label={ariaLabel}
-      onChange={(e) => onChange(e.target.value as T)}
-      className="rounded-md border bg-card px-2 py-1.5 font-mono text-xs text-foreground transition-colors hover:border-foreground/25"
-    >
-      {options.map((o) => (
-        <option key={o} value={o}>
-          {o}
-        </option>
-      ))}
-    </select>
-  )
-}
-
-function Range({
-  value,
-  min,
-  max,
-  step,
-  onChange,
-  ariaLabel,
-}: {
-  value: number
-  min: number
-  max: number
-  step: number
-  onChange: (v: number) => void
-  ariaLabel: string
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-md border bg-card px-3 py-2">
-      <input
-        type="range"
-        value={value}
-        aria-label={ariaLabel}
-        min={min}
-        max={max}
-        step={step}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full accent-foreground"
-      />
-      <span className="w-10 shrink-0 text-right font-mono text-[11px] text-foreground">
-        {value}
-      </span>
-    </div>
-  )
-}
-
-function TweakSidebar({
-  open,
-  onClose,
-  tweaks,
-  setTweaks,
-  onReplayAll,
-}: {
-  open: boolean
-  onClose: () => void
-  tweaks: Tweaks
-  setTweaks: (t: Tweaks) => void
-  onReplayAll: () => void
-}) {
-  const set = <K extends keyof Tweaks>(key: K, value: Tweaks[K]) =>
-    setTweaks({ ...tweaks, [key]: value })
-
-  // Docked, not modal — the page stays visible and interactive alongside, so
-  // you can tweak, watch the charts respond, and tweak again.
-  return (
-    <aside
-      aria-hidden={!open}
-      className={`fixed inset-y-0 right-0 z-40 flex w-80 flex-col border-l bg-background transition-transform duration-200 ${
-        open ? "translate-x-0" : "translate-x-full"
-      }`}
-    >
-      <div className="flex items-center justify-between border-b px-5 py-4">
-        <span className="font-pixel-geist text-sm text-foreground">
-          tweak the charts
-        </span>
-        <button
-          type="button"
-          aria-label="Close"
-          onClick={onClose}
-          className="rounded-md border p-1.5 text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <XIcon className="size-3.5" />
-        </button>
-      </div>
-
-      <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-5">
-        <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
-          every preview on this page rebuilds live as you turn these. the code
-          snippets follow along — copy them when it looks right.
-        </p>
-
-        <Field label="bloom">
-          <Select
-            ariaLabel="bloom"
-            value={tweaks.bloomPreset}
-            options={BLOOM_PRESETS}
-            onChange={(v) => set("bloomPreset", v)}
-          />
-        </Field>
-
-        {tweaks.bloomPreset === "custom" && (
-          <div className="flex flex-col gap-3 rounded-lg border p-3">
-            <Field label="blur (px)">
-              <Range
-                ariaLabel="blur (px)"
-                value={tweaks.blur}
-                min={0}
-                max={32}
-                step={1}
-                onChange={(v) => set("blur", v)}
-              />
-            </Field>
-            <Field label="brightness">
-              <Range
-                ariaLabel="brightness"
-                value={tweaks.brightness}
-                min={1}
-                max={4}
-                step={0.1}
-                onChange={(v) => set("brightness", v)}
-              />
-            </Field>
-            <Field label="opacity">
-              <Range
-                ariaLabel="opacity"
-                value={tweaks.opacity}
-                min={0.05}
-                max={1}
-                step={0.05}
-                onChange={(v) => set("opacity", v)}
-              />
-            </Field>
-            <Field label="saturate">
-              <Range
-                ariaLabel="saturate"
-                value={tweaks.saturate}
-                min={1}
-                max={4}
-                step={0.25}
-                onChange={(v) => set("saturate", v)}
-              />
-            </Field>
-          </div>
-        )}
-
-        <Field label="desktop series variant">
-          <Select
-            ariaLabel="desktop series variant"
-            value={tweaks.primaryVariant}
-            options={VARIANTS}
-            onChange={(v) => set("primaryVariant", v)}
-          />
-        </Field>
-        <Field label="mobile series variant">
-          <Select
-            ariaLabel="mobile series variant"
-            value={tweaks.secondaryVariant}
-            options={VARIANTS}
-            onChange={(v) => set("secondaryVariant", v)}
-          />
-        </Field>
-
-        <Field label="stacking (area + bar)">
-          <div className="flex gap-1.5">
-            <Pill
-              label="stacked"
-              active={tweaks.stacked}
-              onClick={() => set("stacked", true)}
-            />
-            <Pill
-              label="overlaid"
-              active={!tweaks.stacked}
-              onClick={() => set("stacked", false)}
-            />
-          </div>
-        </Field>
-
-        <Field label="pie inner radius (0 = full pie)">
-          <Range
-            ariaLabel="pie inner radius (0 = full pie)"
-            value={tweaks.donutRadius}
-            min={0}
-            max={0.8}
-            step={0.05}
-            onChange={(v) => set("donutRadius", v)}
-          />
-        </Field>
-
-        <Field label="entrance duration (ms)">
-          <Range
-            ariaLabel="entrance duration (ms)"
-            value={tweaks.duration}
-            min={300}
-            max={2400}
-            step={100}
-            onChange={(v) => set("duration", v)}
-          />
-        </Field>
-      </div>
-
-      <div className="flex gap-2 border-t px-5 py-4">
-        <button
-          type="button"
-          onClick={onReplayAll}
-          className="flex flex-1 items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 font-mono text-xs text-primary-foreground transition-opacity hover:opacity-90"
-        >
-          <RefreshCcwIcon className="size-3.5" />
-          replay all
-        </button>
-        <button
-          type="button"
-          onClick={() => setTweaks(DEFAULT_TWEAKS)}
-          className="rounded-md border px-3 py-2 font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          reset
-        </button>
-      </div>
-    </aside>
-  )
-}
-
 /* -------------------------------------------------------------- showcase */
 
 function Showcase({
@@ -679,10 +417,7 @@ function Showcase({
 
 function DitherKitDocs() {
   const { light, toggle: toggleTheme } = usePageTheme()
-  const [tweaks, setTweaks] = useState<Tweaks>(DEFAULT_TWEAKS)
-  const [panelOpen, setPanelOpen] = useState(false)
   const [pm, setPm] = useState<Pm>("npm")
-  const bloom = bloomOf(tweaks)
 
   // One replay counter per showcase so a replay never re-runs its neighbours.
   const [replays, setReplays] = useState({
@@ -703,6 +438,60 @@ function DitherKitDocs() {
         ) as typeof replays
     )
 
+  // The live tweak panel — DialKit (https://joshpuckett.me/dialkit) renders a
+  // floating control surface from this config; every preview and code snippet
+  // on the page follows it.
+  const params = useDialKit(
+    "dither-kit",
+    {
+      bloom: {
+        preset: {
+          type: "select",
+          options: ["off", "low", "high", "aura", "custom"],
+          default: "aura",
+        },
+        blur: [24, 0, 32, 1],
+        brightness: [2.9, 1, 4, 0.1],
+        opacity: [0.1, 0.05, 1, 0.05],
+        saturate: [3, 1, 4, 0.25],
+        _collapsed: true,
+      },
+      desktopVariant: {
+        type: "select",
+        options: VARIANTS,
+        default: "gradient",
+      },
+      mobileVariant: {
+        type: "select",
+        options: VARIANTS,
+        default: "hatched",
+      },
+      stacked: true,
+      pieInnerRadius: [0.5, 0, 0.8, 0.05],
+      entranceMs: [900, 300, 2400, 100],
+      replayAll: { type: "action" },
+    },
+    {
+      onAction: (path: string) => {
+        if (path === "replayAll") replayAll()
+      },
+    }
+  )
+
+  const tweaks: Tweaks = {
+    bloomPreset: params.bloom.preset as BloomPreset,
+    blur: params.bloom.blur,
+    brightness: params.bloom.brightness,
+    opacity: params.bloom.opacity,
+    saturate: params.bloom.saturate,
+    primaryVariant: params.desktopVariant as AreaVariant,
+    secondaryVariant: params.mobileVariant as AreaVariant,
+    stacked: params.stacked,
+    donutRadius: params.pieInnerRadius,
+    duration: params.entranceMs,
+  }
+  const bloom = bloomOf(tweaks)
+
   // Any tweak replays the charts on its own once it settles (300ms after the
   // last change) — no need to reach for "replay all".
   useSettled(JSON.stringify(tweaks), 300, replayAll)
@@ -714,9 +503,9 @@ function DitherKitDocs() {
     // The tweak panel docks on the right; content slides over so the charts
     // stay in view while you turn the knobs.
     <div
-      className={`min-h-screen bg-background text-foreground transition-[padding] duration-200 ${
+      className={`min-h-screen bg-background text-foreground ${
         light ? "dither-light" : "dark"
-      } ${panelOpen ? "lg:pr-80" : ""}`}
+      }`}
     >
       <DitherStrip className="h-2 w-full" />
 
@@ -888,15 +677,9 @@ function DitherKitDocs() {
           <div className="flex items-center gap-3">
             <h2 className="font-pixel-geist text-lg text-foreground">charts</h2>
             <DitherStrip className="h-1.5 flex-1" />
-            <button
-              type="button"
-              onClick={() => setPanelOpen((v) => !v)}
-              aria-pressed={panelOpen}
-              className="flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 font-mono text-xs text-primary-foreground transition-opacity hover:opacity-90"
-            >
-              <SlidersHorizontalIcon className="size-3.5" />
-              tweak these charts
-            </button>
+            <span className="font-mono text-xs text-muted-foreground">
+              tweak these charts from the floating dial panel →
+            </span>
           </div>
 
           <Showcase
@@ -1059,14 +842,7 @@ function DitherKitDocs() {
       </div>
 
       <DitherStrip className="h-2 w-full" />
-
-      <TweakSidebar
-        open={panelOpen}
-        onClose={() => setPanelOpen(false)}
-        tweaks={tweaks}
-        setTweaks={setTweaks}
-        onReplayAll={replayAll}
-      />
+      <DialRoot position="top-right" productionEnabled />
     </div>
   )
 }
