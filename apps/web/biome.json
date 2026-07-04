@@ -61,9 +61,7 @@
       }
     },
     {
-      "includes": [
-        "**/components/icons/**/*.tsx"
-      ],
+      "includes": ["**/components/icons/**/*.tsx"],
       "linter": {
         "rules": {
           "correctness": {
@@ -73,9 +71,7 @@
       }
     },
     {
-      "includes": [
-        "**/packages/ui/src/icons/**/*.tsx"
-      ],
+      "includes": ["**/packages/ui/src/icons/**/*.tsx"],
       "linter": {
         "rules": {
           "correctness": {
