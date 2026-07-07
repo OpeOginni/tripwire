@@ -358,20 +358,9 @@ async function notifyDecisionOnGithub(
     console.error(`[requests] Failed to reopen ${req.githubRef}:`, err)
   }
 
-  await addComment(
-    token,
-    owner,
-    repo,
-    number,
-    renderDecisionComment({
-      prefs,
-      decision,
-      username: req.githubUsername,
-      kind,
-      reopened,
-    })
-  )
-
+  // Log the reopen before the best-effort comment so a comment failure
+  // (network, rate limit) can't drop the audit trail for a reopen that
+  // actually happened on GitHub.
   if (reopened) {
     await logEvent({
       repoId: req.repoId,
@@ -387,6 +376,20 @@ async function notifyDecisionOnGithub(
       githubRef: req.githubRef,
     })
   }
+
+  await addComment(
+    token,
+    owner,
+    repo,
+    number,
+    renderDecisionComment({
+      prefs,
+      decision,
+      username: req.githubUsername,
+      kind,
+      reopened,
+    })
+  )
 }
 
 type DbOrTx = Parameters<Parameters<typeof db.transaction>[0]>[0] | typeof db
