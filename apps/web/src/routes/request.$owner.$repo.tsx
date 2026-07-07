@@ -47,14 +47,14 @@ function RequestPage() {
   const [reason, setReason] = useState("")
   const [submitted, setSubmitted] = useState(false)
 
-  const whoamiQuery = useQuery({
+  const { data: whoami } = useQuery({
     ...trpc.requests.whoami.queryOptions(),
     enabled: !!session,
     staleTime: 60 * 1000,
   })
-  const currentGhLogin = whoamiQuery.data?.githubLogin ?? null
+  const currentGhLogin = whoami?.githubLogin ?? null
 
-  const vouchQuery = useQuery({
+  const { data: vouch } = useQuery({
     ...trpc.vouches.check.queryOptions({ username: currentGhLogin ?? "" }),
     enabled: !!currentGhLogin,
     staleTime: 60 * 1000,
@@ -184,14 +184,14 @@ function RequestPage() {
               </div>
             ) : (
               <>
-                {vouchQuery.data?.isVouched && (
+                {vouch?.isVouched && (
                   <div className="flex items-center gap-3">
                     <div className="text-[13px] text-tw-text-secondary">
                       <span className="font-medium text-tw-text-primary">
                         You&apos;re vouched.
                       </span>{" "}
-                      You have {vouchQuery.data.vouchCount} vouch
-                      {vouchQuery.data.vouchCount !== 1 ? "es" : ""} from
+                      You have {vouch.vouchCount} vouch
+                      {vouch.vouchCount !== 1 ? "es" : ""} from
                       Tripwire maintainers. Some repositories may auto-approve
                       your contributions.
                     </div>
