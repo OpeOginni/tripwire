@@ -67,7 +67,8 @@ function RequestPage() {
   const submit = useMutation(
     trpc.requests.submit.mutationOptions({
       onSuccess: () => setSubmitted(true),
-      onError: (e) => toastFromError(e, { fallbackTitle: "Submission failed" }),
+      onError: (e) =>
+        toastFromError(e, { fallbackTitle: "Couldn't send your request" }),
     })
   )
 
@@ -154,8 +155,8 @@ function RequestPage() {
               <div className="flex flex-col gap-3 rounded-xl border border-tw-border-card bg-tw-card p-5">
                 <p className="m-0 text-[13px] text-[#FFFFFF99]">
                   Sign in with GitHub
-                  {intendedUser ? ` as @${intendedUser}` : ""} so the
-                  maintainers can verify your identity.
+                  {intendedUser ? ` as @${intendedUser}` : ""} so maintainers
+                  know it's really you.
                 </p>
                 <Button onClick={handleLogin} className="self-start">
                   Sign in with GitHub
@@ -238,7 +239,7 @@ function RequestPage() {
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       rows={6}
-                      placeholder="Briefly explain what you were trying to do and why it should be allowed."
+                      placeholder="Tell us what you were working on and why it should be allowed — a sentence or two is plenty."
                       className="w-full resize-none rounded-lg border border-tw-border bg-tw-surface p-3 text-[13px] text-tw-text-primary transition-colors outline-none focus:border-tw-accent"
                     />
                     <p className="m-0 text-[12px] text-[#FFFFFF59]">

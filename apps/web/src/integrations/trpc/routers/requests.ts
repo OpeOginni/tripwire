@@ -142,9 +142,9 @@ export const requestsRouter = {
           status: 409,
           message:
             input.kind === "unblock"
-              ? "You already have a pending appeal for this repository."
-              : "You already have a pending access request for this repository.",
-          fix: "Wait for the maintainer to review your existing request, or contact them directly.",
+              ? "You've already got an appeal in for this repo."
+              : "You've already got an access request in for this repo.",
+          fix: "A maintainer will review it soon — no need to resubmit. Reach out to them directly if it's urgent.",
         })
       }
 
