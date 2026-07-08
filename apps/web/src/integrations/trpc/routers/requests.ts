@@ -16,11 +16,7 @@ import {
   type AppealContentType,
   type RequestKind,
 } from "@tripwire/db"
-import {
-  loadPrefsForInstallation,
-  logEvent,
-  renderDecisionComment,
-} from "@tripwire/core"
+import { logEvent, renderDecisionComment } from "@tripwire/core"
 import {
   addComment,
   getInstallationToken,
@@ -328,7 +324,6 @@ async function notifyDecisionOnGithub(
 
   try {
     const token = await getInstallationToken(installationId)
-    const prefs = await loadPrefsForInstallation(installationId)
 
     if (decision === "deny") {
       await addComment(
@@ -337,7 +332,6 @@ async function notifyDecisionOnGithub(
         repo,
         number,
         renderDecisionComment({
-          prefs,
           decision,
           username: req.githubUsername,
           kind,
@@ -385,7 +379,6 @@ async function notifyDecisionOnGithub(
       repo,
       number,
       renderDecisionComment({
-        prefs,
         decision,
         username: req.githubUsername,
         kind,

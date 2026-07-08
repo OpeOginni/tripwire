@@ -164,8 +164,6 @@ export function renderWarnedComment(input: RenderCommentInput): string {
 }
 
 export interface RenderDecisionInput {
-  /** Org-scoped prefs, or null to use defaults. */
-  prefs: OrgPrCommentPreferences | null
   decision: "approve" | "deny"
   /** Requester's GitHub login (no @ prefix). */
   username: string
@@ -184,16 +182,14 @@ export interface RenderDecisionInput {
  * the requester — an external contributor with no in-app inbox — is notified.
  */
 export function renderDecisionComment(input: RenderDecisionInput): string {
-  const prefs = resolvePrefs(input.prefs)
-  const bot = botName(prefs)
   const subject = subjectNoun(input.kind)
   const mention = `@${input.username}`
 
   if (input.decision === "approve") {
     if (input.reopened === false) {
-      return `**${bot}**: ${mention} — a maintainer approved your review request, but this ${subject} couldn't be reopened automatically (its branch may have been deleted). You can reopen it manually.`
+      return `Good news, ${mention}! A maintainer approved your review request. We couldn't reopen this ${subject} automatically (its branch may have been deleted), but you're welcome to reopen it yourself.`
     }
-    return `**${bot}**: ${mention} — a maintainer approved your review request. Reopening this ${subject}.`
+    return `Good news, ${mention}! A maintainer approved your review request — this ${subject} is back open. Thanks for your patience 🎉`
   }
-  return `**${bot}**: ${mention} — a maintainer reviewed your request and it was not approved. This ${subject} stays closed.`
+  return `Thanks for reaching out, ${mention}. A maintainer reviewed your appeal and decided to keep this ${subject} closed for now — we appreciate you taking the time.`
 }

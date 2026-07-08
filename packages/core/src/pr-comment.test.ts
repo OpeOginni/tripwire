@@ -269,7 +269,6 @@ describe("renderBlockedComment appeal ref", () => {
 describe("renderDecisionComment", () => {
   it("notifies + announces a reopen on approval", () => {
     const out = renderDecisionComment({
-      prefs: null,
       decision: "approve",
       username: "octocat",
       kind: "pull_request",
@@ -277,40 +276,37 @@ describe("renderDecisionComment", () => {
     })
     expect(out).toContain("@octocat")
     expect(out).toContain("approved your review request")
-    expect(out).toContain("Reopening this PR")
+    expect(out).toContain("this PR is back open")
   })
 
   it("notifies without claiming a reopen when the reopen failed", () => {
     const out = renderDecisionComment({
-      prefs: null,
       decision: "approve",
       username: "octocat",
       kind: "pull_request",
       reopened: false,
     })
-    expect(out).toContain("couldn't be reopened automatically")
+    expect(out).toContain("couldn't reopen this PR automatically")
   })
 
-  it("notifies the requester on denial", () => {
+  it("notifies the requester kindly on denial", () => {
     const out = renderDecisionComment({
-      prefs: null,
       decision: "deny",
       username: "octocat",
       kind: "issue",
     })
     expect(out).toContain("@octocat")
-    expect(out).toContain("not approved")
-    expect(out).toContain("This issue stays closed")
+    expect(out).toContain("keep this issue closed")
   })
 
-  it("respects the custom bot display name", () => {
+  it("drops the bot-name prefix — decisions are personal replies", () => {
     const out = renderDecisionComment({
-      prefs: prefs({ botDisplayName: "Acme Bot" }),
       decision: "approve",
       username: "octocat",
       kind: "pull_request",
       reopened: true,
     })
-    expect(out).toContain("**Acme Bot**:")
+    expect(out).not.toContain("Tripwire")
+    expect(out.startsWith("Good news,")).toBe(true)
   })
 })
