@@ -71,7 +71,7 @@ function warnedLeadingLine(prefs: ResolvedPrefs): string {
   const bot = botName(prefs)
   if (prefs.tone === "formal") return `**${bot}**: Policy advisory.`
   if (prefs.tone === "casual") return `**${bot}**: Hey, a quick note.`
-  return `**${bot}**: Warning.`
+  return `**${bot}**: Just a heads up.`
 }
 
 export function buildAppealUrl(
@@ -106,7 +106,7 @@ function appealLineFor(input: RenderCommentInput): string {
   if (input.outcome === "blacklist_blocked") {
     return `> **Blacklisted from this repository.** [Appeal this block as @${input.username}](${url}) if you think it was a mistake.`
   }
-  return `> Think this was a mistake? [Request a review as @${input.username}](${url})`
+  return `> Think this was a mistake? No worries — [request a review as @${input.username}](${url}) and a maintainer will take another look.`
 }
 
 function appendCustomFooter(lines: string[], prefs: ResolvedPrefs) {
@@ -164,8 +164,6 @@ export function renderWarnedComment(input: RenderCommentInput): string {
 }
 
 export interface RenderDecisionInput {
-  /** Org-scoped prefs, or null to use defaults. */
-  prefs: OrgPrCommentPreferences | null
   decision: "approve" | "deny"
   /** Requester's GitHub login (no @ prefix). */
   username: string
@@ -184,16 +182,16 @@ export interface RenderDecisionInput {
  * the requester — an external contributor with no in-app inbox — is notified.
  */
 export function renderDecisionComment(input: RenderDecisionInput): string {
-  const prefs = resolvePrefs(input.prefs)
-  const bot = botName(prefs)
   const subject = subjectNoun(input.kind)
   const mention = `@${input.username}`
 
   if (input.decision === "approve") {
     if (input.reopened === false) {
-      return `**${bot}**: ${mention} — a maintainer approved your review request, but this ${subject} couldn't be reopened automatically (its branch may have been deleted). You can reopen it manually.`
+      const branchHint =
+        input.kind === "pull_request" ? " (its branch may have been deleted)" : ""
+      return `Good news, ${mention}! A maintainer approved your review request. We couldn't reopen this ${subject} automatically${branchHint}, but you're welcome to reopen it yourself.`
     }
-    return `**${bot}**: ${mention} — a maintainer approved your review request. Reopening this ${subject}.`
+    return `Good news, ${mention}! A maintainer approved your review request — this ${subject} is back open. Thanks for your patience 🎉`
   }
-  return `**${bot}**: ${mention} — a maintainer reviewed your request and it was not approved. This ${subject} stays closed.`
+  return `Thanks for reaching out, ${mention}. A maintainer reviewed your appeal and decided to keep this ${subject} closed for now — we appreciate you taking the time.`
 }

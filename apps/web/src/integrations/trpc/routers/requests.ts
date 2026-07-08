@@ -16,11 +16,7 @@ import {
   type AppealContentType,
   type RequestKind,
 } from "@tripwire/db"
-import {
-  loadPrefsForInstallation,
-  logEvent,
-  renderDecisionComment,
-} from "@tripwire/core"
+import { logEvent, renderDecisionComment } from "@tripwire/core"
 import {
   addComment,
   getInstallationToken,
@@ -146,9 +142,9 @@ export const requestsRouter = {
           status: 409,
           message:
             input.kind === "unblock"
-              ? "You already have a pending appeal for this repository."
-              : "You already have a pending access request for this repository.",
-          fix: "Wait for the maintainer to review your existing request, or contact them directly.",
+              ? "You've already got an appeal in for this repo."
+              : "You've already got an access request in for this repo.",
+          fix: "A maintainer will review it soon — no need to resubmit. Reach out to them directly if it's urgent.",
         })
       }
 
@@ -328,7 +324,6 @@ async function notifyDecisionOnGithub(
 
   try {
     const token = await getInstallationToken(installationId)
-    const prefs = await loadPrefsForInstallation(installationId)
 
     if (decision === "deny") {
       await addComment(
@@ -337,7 +332,6 @@ async function notifyDecisionOnGithub(
         repo,
         number,
         renderDecisionComment({
-          prefs,
           decision,
           username: req.githubUsername,
           kind,
@@ -385,7 +379,6 @@ async function notifyDecisionOnGithub(
       repo,
       number,
       renderDecisionComment({
-        prefs,
         decision,
         username: req.githubUsername,
         kind,

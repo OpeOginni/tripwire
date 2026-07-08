@@ -42,7 +42,7 @@ describe("renderBlockedComment (defaults)", () => {
     expect(out).toContain("> **Tripwire**: This PR was automatically closed.")
     expect(out).toContain("> Reason: Account is 3 days old (minimum: 30 days).")
     expect(out).toContain(
-      "> Think this was a mistake? [Request a review as @octocat](https://tripwire.app/request/acme/api?kind=unblock&u=octocat)"
+      "> Think this was a mistake? No worries — [request a review as @octocat](https://tripwire.app/request/acme/api?kind=unblock&u=octocat) and a maintainer will take another look."
     )
     // showRuleName defaults to false
     expect(out).not.toContain("Rule:")
@@ -98,7 +98,7 @@ describe("renderBlockedComment toggles", () => {
       outcome: "blocked",
       kind: "pull_request",
     })
-    expect(out).not.toContain("Request a review")
+    expect(out).not.toContain("request a review")
   })
 
   it("uses blacklist-specific appeal wording on blacklist_blocked", () => {
@@ -159,7 +159,7 @@ describe("renderWarnedComment", () => {
       outcome: "warned",
       kind: "pull_request",
     })
-    expect(out).toContain("> **Tripwire**: Warning.")
+    expect(out).toContain("> **Tripwire**: Just a heads up.")
     expect(out).toContain("> Reason: Account is 3 days old (minimum: 30 days).")
     expect(out).toContain("> _This is a warning. No action was taken._")
   })
@@ -171,7 +171,7 @@ describe("renderWarnedComment", () => {
       outcome: "warned",
       kind: "pull_request",
     })
-    expect(out).not.toContain("Request a review")
+    expect(out).not.toContain("request a review")
     expect(out).not.toContain("Request vouched access")
     expect(out).not.toContain("Appeal this block")
   })
@@ -193,7 +193,7 @@ describe("renderWarnedComment", () => {
       outcome: "unable_to_verify",
       kind: "pull_request",
     })
-    expect(out).toContain("> **Tripwire**: Warning.")
+    expect(out).toContain("> **Tripwire**: Just a heads up.")
   })
 })
 
@@ -269,7 +269,6 @@ describe("renderBlockedComment appeal ref", () => {
 describe("renderDecisionComment", () => {
   it("notifies + announces a reopen on approval", () => {
     const out = renderDecisionComment({
-      prefs: null,
       decision: "approve",
       username: "octocat",
       kind: "pull_request",
@@ -277,40 +276,49 @@ describe("renderDecisionComment", () => {
     })
     expect(out).toContain("@octocat")
     expect(out).toContain("approved your review request")
-    expect(out).toContain("Reopening this PR")
+    expect(out).toContain("this PR is back open")
   })
 
   it("notifies without claiming a reopen when the reopen failed", () => {
     const out = renderDecisionComment({
-      prefs: null,
       decision: "approve",
       username: "octocat",
       kind: "pull_request",
       reopened: false,
     })
-    expect(out).toContain("couldn't be reopened automatically")
+    expect(out).toContain("couldn't reopen this PR automatically")
+    expect(out).toContain("its branch may have been deleted")
   })
 
-  it("notifies the requester on denial", () => {
+  it("omits the branch hint for issues (they have no branch)", () => {
     const out = renderDecisionComment({
-      prefs: null,
+      decision: "approve",
+      username: "octocat",
+      kind: "issue",
+      reopened: false,
+    })
+    expect(out).toContain("couldn't reopen this issue automatically")
+    expect(out).not.toContain("branch")
+  })
+
+  it("notifies the requester kindly on denial", () => {
+    const out = renderDecisionComment({
       decision: "deny",
       username: "octocat",
       kind: "issue",
     })
     expect(out).toContain("@octocat")
-    expect(out).toContain("not approved")
-    expect(out).toContain("This issue stays closed")
+    expect(out).toContain("keep this issue closed")
   })
 
-  it("respects the custom bot display name", () => {
+  it("drops the bot-name prefix — decisions are personal replies", () => {
     const out = renderDecisionComment({
-      prefs: prefs({ botDisplayName: "Acme Bot" }),
       decision: "approve",
       username: "octocat",
       kind: "pull_request",
       reopened: true,
     })
-    expect(out).toContain("**Acme Bot**:")
+    expect(out).not.toContain("Tripwire")
+    expect(out.startsWith("Good news,")).toBe(true)
   })
 })

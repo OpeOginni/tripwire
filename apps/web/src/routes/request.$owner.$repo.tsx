@@ -67,7 +67,8 @@ function RequestPage() {
   const submit = useMutation(
     trpc.requests.submit.mutationOptions({
       onSuccess: () => setSubmitted(true),
-      onError: (e) => toastFromError(e, { fallbackTitle: "Submission failed" }),
+      onError: (e) =>
+        toastFromError(e, { fallbackTitle: "Couldn't send your request" }),
     })
   )
 
@@ -139,10 +140,11 @@ function RequestPage() {
 
             {submitted ? (
               <div className="flex flex-col gap-2 rounded-xl border border-tw-border-card bg-tw-card p-5">
-                <div className="text-[15px] font-medium">Request submitted</div>
+                <div className="text-[15px] font-medium">Request sent 🎉</div>
                 <p className="m-0 text-[13px] text-[#FFFFFF99]">
-                  The maintainers of {repoFullName} have been notified. You'll
-                  see the result reflected on GitHub once they review.
+                  The maintainers of {repoFullName} have it now. Keep an eye on
+                  the thread — we'll post the result there as soon as they
+                  review.
                 </p>
               </div>
             ) : isPending ? (
@@ -153,8 +155,8 @@ function RequestPage() {
               <div className="flex flex-col gap-3 rounded-xl border border-tw-border-card bg-tw-card p-5">
                 <p className="m-0 text-[13px] text-[#FFFFFF99]">
                   Sign in with GitHub
-                  {intendedUser ? ` as @${intendedUser}` : ""} so the
-                  maintainers can verify your identity.
+                  {intendedUser ? ` as @${intendedUser}` : ""} so maintainers
+                  know it's really you.
                 </p>
                 <Button onClick={handleLogin} className="self-start">
                   Sign in with GitHub
@@ -224,8 +226,8 @@ function RequestPage() {
                     </div>
                     <p className="m-0 text-[12px] text-[#FFFFFF73]">
                       {kind === "unblock"
-                        ? "Tripwire closed something you posted. Explain the context and the maintainer can lift the block."
-                        : "Ask the maintainers to vouch for you so your contributions aren't filtered."}
+                        ? "Tripwire closed something you posted. Tell us what happened and a maintainer can take another look and lift the block."
+                        : "Ask the maintainers to vouch for you so your future contributions come straight through."}
                     </p>
                   </div>
 
@@ -237,7 +239,7 @@ function RequestPage() {
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       rows={6}
-                      placeholder="Briefly explain what you were trying to do and why it should be allowed."
+                      placeholder="Tell us what you were working on and why it should be allowed — a sentence or two is plenty."
                       className="w-full resize-none rounded-lg border border-tw-border bg-tw-surface p-3 text-[13px] text-tw-text-primary transition-colors outline-none focus:border-tw-accent"
                     />
                     <p className="m-0 text-[12px] text-[#FFFFFF59]">
