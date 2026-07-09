@@ -1,7 +1,12 @@
 import { useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { parseAsString, parseAsStringEnum, useQueryStates } from "nuqs"
+import {
+  parseAsInteger,
+  parseAsString,
+  parseAsStringEnum,
+  useQueryStates,
+} from "nuqs"
 import { authClient } from "@tripwire/auth/client"
 import { useTRPC } from "#/integrations/trpc/react"
 import { Button } from "@tripwire/ui/button"
@@ -24,11 +29,15 @@ export const Route = createFileRoute("/request/$owner/$repo")({
 
 function RequestPage() {
   const { owner, repo } = Route.useParams()
-  const [{ kind, u: intendedUser }, setSearch] = useQueryStates({
+  const [{ kind, u: intendedUser, ref, ct }, setSearch] = useQueryStates({
     kind: parseAsStringEnum(["unblock", "access"] as const).withDefault(
       "unblock"
     ),
     u: parseAsString,
+    // The closed PR/issue this appeal is for, carried from the block comment's
+    // appeal link so an approval can reopen the exact content.
+    ref: parseAsInteger,
+    ct: parseAsStringEnum(["pull_request", "issue"] as const),
   })
   const trpc = useTRPC()
   const { data: session, isPending } = authClient.useSession()
@@ -38,14 +47,14 @@ function RequestPage() {
   const [reason, setReason] = useState("")
   const [submitted, setSubmitted] = useState(false)
 
-  const whoamiQuery = useQuery({
+  const { data: whoami } = useQuery({
     ...trpc.requests.whoami.queryOptions(),
     enabled: !!session,
     staleTime: 60 * 1000,
   })
-  const currentGhLogin = whoamiQuery.data?.githubLogin ?? null
+  const currentGhLogin = whoami?.githubLogin ?? null
 
-  const vouchQuery = useQuery({
+  const { data: vouch } = useQuery({
     ...trpc.vouches.check.queryOptions({ username: currentGhLogin ?? "" }),
     enabled: !!currentGhLogin,
     staleTime: 60 * 1000,
@@ -58,7 +67,8 @@ function RequestPage() {
   const submit = useMutation(
     trpc.requests.submit.mutationOptions({
       onSuccess: () => setSubmitted(true),
-      onError: (e) => toastFromError(e, { fallbackTitle: "Submission failed" }),
+      onError: (e) =>
+        toastFromError(e, { fallbackTitle: "Couldn't send your request" }),
     })
   )
 
@@ -80,7 +90,15 @@ function RequestPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    submit.mutate({ repoFullName, kind, reason })
+    submit.mutate({
+      repoFullName,
+      kind,
+      reason,
+      // Only send the ref for unblock appeals — access requests aren't tied to
+      // a specific PR/issue.
+      ref: kind === "unblock" && ref ? ref : undefined,
+      contentType: kind === "unblock" && ct ? ct : undefined,
+    })
   }
 
   const canSubmit = reason.trim().length >= 10 && !submit.isPending
@@ -122,10 +140,11 @@ function RequestPage() {
 
             {submitted ? (
               <div className="flex flex-col gap-2 rounded-xl border border-tw-border-card bg-tw-card p-5">
-                <div className="text-[15px] font-medium">Request submitted</div>
+                <div className="text-[15px] font-medium">Request sent 🎉</div>
                 <p className="m-0 text-[13px] text-[#FFFFFF99]">
-                  The maintainers of {repoFullName} have been notified. You'll
-                  see the result reflected on GitHub once they review.
+                  The maintainers of {repoFullName} have it now. Keep an eye on
+                  the thread — we'll post the result there as soon as they
+                  review.
                 </p>
               </div>
             ) : isPending ? (
@@ -136,8 +155,8 @@ function RequestPage() {
               <div className="flex flex-col gap-3 rounded-xl border border-tw-border-card bg-tw-card p-5">
                 <p className="m-0 text-[13px] text-[#FFFFFF99]">
                   Sign in with GitHub
-                  {intendedUser ? ` as @${intendedUser}` : ""} so the
-                  maintainers can verify your identity.
+                  {intendedUser ? ` as @${intendedUser}` : ""} so maintainers
+                  know it's really you.
                 </p>
                 <Button onClick={handleLogin} className="self-start">
                   Sign in with GitHub
@@ -167,14 +186,14 @@ function RequestPage() {
               </div>
             ) : (
               <>
-                {vouchQuery.data?.isVouched && (
+                {vouch?.isVouched && (
                   <div className="flex items-center gap-3">
                     <div className="text-[13px] text-tw-text-secondary">
                       <span className="font-medium text-tw-text-primary">
                         You&apos;re vouched.
                       </span>{" "}
-                      You have {vouchQuery.data.vouchCount} vouch
-                      {vouchQuery.data.vouchCount !== 1 ? "es" : ""} from
+                      You have {vouch.vouchCount} vouch
+                      {vouch.vouchCount !== 1 ? "es" : ""} from
                       Tripwire maintainers. Some repositories may auto-approve
                       your contributions.
                     </div>
@@ -207,8 +226,8 @@ function RequestPage() {
                     </div>
                     <p className="m-0 text-[12px] text-[#FFFFFF73]">
                       {kind === "unblock"
-                        ? "Tripwire closed something you posted. Explain the context and the maintainer can lift the block."
-                        : "Ask the maintainers to vouch for you so your contributions aren't filtered."}
+                        ? "Tripwire closed something you posted. Tell us what happened and a maintainer can take another look and lift the block."
+                        : "Ask the maintainers to vouch for you so your future contributions come straight through."}
                     </p>
                   </div>
 
@@ -220,7 +239,7 @@ function RequestPage() {
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       rows={6}
-                      placeholder="Briefly explain what you were trying to do and why it should be allowed."
+                      placeholder="Tell us what you were working on and why it should be allowed — a sentence or two is plenty."
                       className="w-full resize-none rounded-lg border border-tw-border bg-tw-surface p-3 text-[13px] text-tw-text-primary transition-colors outline-none focus:border-tw-accent"
                     />
                     <p className="m-0 text-[12px] text-[#FFFFFF59]">

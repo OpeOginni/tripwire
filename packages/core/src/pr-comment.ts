@@ -25,6 +25,12 @@ export interface RenderCommentInput {
   username: string
   outcome: RenderOutcome
   kind: CommentKind
+  /**
+   * PR/issue number the appeal is for. Threaded into the appeal URL so an
+   * approval can reopen the exact content. Omitted for comment blocks (not
+   * reopenable).
+   */
+  contentNumber?: number
   /** Base URL for appeal links. Server: env.BETTER_AUTH_URL. Preview: placeholder. */
   appBaseUrl: string
 }
@@ -65,29 +71,42 @@ function warnedLeadingLine(prefs: ResolvedPrefs): string {
   const bot = botName(prefs)
   if (prefs.tone === "formal") return `**${bot}**: Policy advisory.`
   if (prefs.tone === "casual") return `**${bot}**: Hey, a quick note.`
-  return `**${bot}**: Warning.`
+  return `**${bot}**: Just a heads up.`
 }
 
 export function buildAppealUrl(
   appBaseUrl: string,
   repoFullName: string,
-  username: string
+  username: string,
+  ref?: number,
+  contentType?: "pull_request" | "issue"
 ): string {
   const base = (appBaseUrl ?? "").replace(/\/$/, "")
-  const path = `/request/${repoFullName}?kind=unblock&u=${encodeURIComponent(username)}`
+  let path = `/request/${repoFullName}?kind=unblock&u=${encodeURIComponent(username)}`
+  if (ref && contentType) path += `&ref=${ref}&ct=${contentType}`
   return base ? `${base}${path}` : path
+}
+
+function appealContentType(
+  kind: CommentKind
+): "pull_request" | "issue" | undefined {
+  if (kind === "pull_request") return "pull_request"
+  if (kind === "issue") return "issue"
+  return undefined
 }
 
 function appealLineFor(input: RenderCommentInput): string {
   const url = buildAppealUrl(
     input.appBaseUrl,
     input.repoFullName,
-    input.username
+    input.username,
+    input.contentNumber,
+    appealContentType(input.kind)
   )
   if (input.outcome === "blacklist_blocked") {
     return `> **Blacklisted from this repository.** [Appeal this block as @${input.username}](${url}) if you think it was a mistake.`
   }
-  return `> Think this was a mistake? [Request a review as @${input.username}](${url})`
+  return `> Think this was a mistake? No worries — [request a review as @${input.username}](${url}) and a maintainer will take another look.`
 }
 
 function appendCustomFooter(lines: string[], prefs: ResolvedPrefs) {
@@ -142,4 +161,37 @@ export function renderWarnedComment(input: RenderCommentInput): string {
   appendCustomFooter(lines, prefs)
 
   return lines.join("\n")
+}
+
+export interface RenderDecisionInput {
+  decision: "approve" | "deny"
+  /** Requester's GitHub login (no @ prefix). */
+  username: string
+  /** "pull_request" or "issue" — what was appealed. */
+  kind: CommentKind
+  /**
+   * Whether the content was actually reopened (approve only). When false —
+   * e.g. the head branch was deleted — the copy avoids claiming a reopen.
+   */
+  reopened?: boolean
+}
+
+/**
+ * Comment posted back to the requester when a maintainer decides their unblock
+ * request. Approvals reopen the content; denials leave it closed. Either way
+ * the requester — an external contributor with no in-app inbox — is notified.
+ */
+export function renderDecisionComment(input: RenderDecisionInput): string {
+  const subject = subjectNoun(input.kind)
+  const mention = `@${input.username}`
+
+  if (input.decision === "approve") {
+    if (input.reopened === false) {
+      const branchHint =
+        input.kind === "pull_request" ? " (its branch may have been deleted)" : ""
+      return `Good news, ${mention}! A maintainer approved your review request. We couldn't reopen this ${subject} automatically${branchHint}, but you're welcome to reopen it yourself.`
+    }
+    return `Good news, ${mention}! A maintainer approved your review request — this ${subject} is back open. Thanks for your patience 🎉`
+  }
+  return `Thanks for reaching out, ${mention}. A maintainer reviewed your appeal and decided to keep this ${subject} closed for now — we appreciate you taking the time.`
 }

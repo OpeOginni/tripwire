@@ -21,7 +21,13 @@
     "enabled": true,
     "indentStyle": "tab"
   },
-  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
   "linter": {
     "enabled": true,
     "rules": {
@@ -40,6 +46,20 @@
     }
   },
   "overrides": [
+    {
+      "includes": [
+        "**/components/dither-kit/**/*.tsx",
+        "**/routes/dither-kit.tsx",
+        "**/components/dither-kit-docs/**/*.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noRestrictedElements": "off"
+          }
+        }
+      }
+    },
     {
       "includes": ["**/components/icons/**/*.tsx"],
       "linter": {

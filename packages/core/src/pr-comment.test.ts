@@ -5,6 +5,7 @@ import {
 } from "@tripwire/db"
 import {
   renderBlockedComment,
+  renderDecisionComment,
   renderWarnedComment,
   buildAppealUrl,
   type RenderCommentInput,
@@ -41,7 +42,7 @@ describe("renderBlockedComment (defaults)", () => {
     expect(out).toContain("> **Tripwire**: This PR was automatically closed.")
     expect(out).toContain("> Reason: Account is 3 days old (minimum: 30 days).")
     expect(out).toContain(
-      "> Think this was a mistake? [Request a review as @octocat](https://tripwire.app/request/acme/api?kind=unblock&u=octocat)"
+      "> Think this was a mistake? No worries — [request a review as @octocat](https://tripwire.app/request/acme/api?kind=unblock&u=octocat) and a maintainer will take another look."
     )
     // showRuleName defaults to false
     expect(out).not.toContain("Rule:")
@@ -97,7 +98,7 @@ describe("renderBlockedComment toggles", () => {
       outcome: "blocked",
       kind: "pull_request",
     })
-    expect(out).not.toContain("Request a review")
+    expect(out).not.toContain("request a review")
   })
 
   it("uses blacklist-specific appeal wording on blacklist_blocked", () => {
@@ -158,7 +159,7 @@ describe("renderWarnedComment", () => {
       outcome: "warned",
       kind: "pull_request",
     })
-    expect(out).toContain("> **Tripwire**: Warning.")
+    expect(out).toContain("> **Tripwire**: Just a heads up.")
     expect(out).toContain("> Reason: Account is 3 days old (minimum: 30 days).")
     expect(out).toContain("> _This is a warning. No action was taken._")
   })
@@ -170,7 +171,7 @@ describe("renderWarnedComment", () => {
       outcome: "warned",
       kind: "pull_request",
     })
-    expect(out).not.toContain("Request a review")
+    expect(out).not.toContain("request a review")
     expect(out).not.toContain("Request vouched access")
     expect(out).not.toContain("Appeal this block")
   })
@@ -192,7 +193,7 @@ describe("renderWarnedComment", () => {
       outcome: "unable_to_verify",
       kind: "pull_request",
     })
-    expect(out).toContain("> **Tripwire**: Warning.")
+    expect(out).toContain("> **Tripwire**: Just a heads up.")
   })
 })
 
@@ -219,5 +220,105 @@ describe("buildAppealUrl", () => {
     expect(buildAppealUrl("", "acme/api", "octocat")).toBe(
       "/request/acme/api?kind=unblock&u=octocat"
     )
+  })
+
+  it("carries the PR/issue ref so an approval can reopen the exact content", () => {
+    expect(
+      buildAppealUrl(
+        "https://tripwire.app",
+        "acme/api",
+        "octocat",
+        42,
+        "pull_request"
+      )
+    ).toBe(
+      "https://tripwire.app/request/acme/api?kind=unblock&u=octocat&ref=42&ct=pull_request"
+    )
+  })
+
+  it("omits ref params unless both ref and contentType are given", () => {
+    expect(
+      buildAppealUrl("https://tripwire.app", "acme/api", "octocat", 42)
+    ).toBe("https://tripwire.app/request/acme/api?kind=unblock&u=octocat")
+  })
+})
+
+describe("renderBlockedComment appeal ref", () => {
+  it("threads contentNumber into the appeal link for a PR", () => {
+    const out = renderBlockedComment({
+      ...BASE,
+      prefs: null,
+      outcome: "blocked",
+      kind: "pull_request",
+      contentNumber: 42,
+    })
+    expect(out).toContain("&ref=42&ct=pull_request")
+  })
+
+  it("leaves the appeal link ref-less when no contentNumber is provided", () => {
+    const out = renderBlockedComment({
+      ...BASE,
+      prefs: null,
+      outcome: "blocked",
+      kind: "pull_request",
+    })
+    expect(out).not.toContain("&ref=")
+  })
+})
+
+describe("renderDecisionComment", () => {
+  it("notifies + announces a reopen on approval", () => {
+    const out = renderDecisionComment({
+      decision: "approve",
+      username: "octocat",
+      kind: "pull_request",
+      reopened: true,
+    })
+    expect(out).toContain("@octocat")
+    expect(out).toContain("approved your review request")
+    expect(out).toContain("this PR is back open")
+  })
+
+  it("notifies without claiming a reopen when the reopen failed", () => {
+    const out = renderDecisionComment({
+      decision: "approve",
+      username: "octocat",
+      kind: "pull_request",
+      reopened: false,
+    })
+    expect(out).toContain("couldn't reopen this PR automatically")
+    expect(out).toContain("its branch may have been deleted")
+  })
+
+  it("omits the branch hint for issues (they have no branch)", () => {
+    const out = renderDecisionComment({
+      decision: "approve",
+      username: "octocat",
+      kind: "issue",
+      reopened: false,
+    })
+    expect(out).toContain("couldn't reopen this issue automatically")
+    expect(out).not.toContain("branch")
+  })
+
+  it("notifies the requester kindly on denial", () => {
+    const out = renderDecisionComment({
+      decision: "deny",
+      username: "octocat",
+      kind: "issue",
+    })
+    expect(out).toContain("@octocat")
+    expect(out).toContain("keep this issue closed")
+  })
+
+  it("drops the bot-name prefix — decisions are personal replies", () => {
+    const out = renderDecisionComment({
+      decision: "approve",
+      username: "octocat",
+      kind: "pull_request",
+      reopened: true,
+    })
+    expect(out).not.toContain("Tripwire")
+    expect(out.startsWith("Good news,")).toBe(true)
   })
 })
