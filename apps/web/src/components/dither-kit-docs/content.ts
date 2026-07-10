@@ -10,6 +10,9 @@ import type {
 /** Where the registry lives once deployed. */
 export const HOST = "https://tripwire.sh"
 
+/** GitHub repo backing the zero-config shadcn shorthand (`add <REPO>/<item>`). */
+export const REPO = "bountydotnew/tripwire"
+
 /* ------------------------------------------------------- package manager */
 
 export const PMS = ["npm", "pnpm", "yarn", "bun"] as const

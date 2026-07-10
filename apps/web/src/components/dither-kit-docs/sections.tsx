@@ -29,6 +29,7 @@ import {
   pieCode,
   pieConfig,
   pieData,
+  REPO,
   type Pm,
   PMS,
   PROPS,
@@ -158,7 +159,7 @@ export function InstallSection({
   pm: Pm
   onPmChange: (pm: Pm) => void
 }) {
-  // Register the namespace once, then install any chart by name.
+  // Optional prettier path: register the namespace, then install by @name.
   const registries = `// components.json\n{\n  "registries": {\n    "@dither-kit": "${HOST}/r/{name}.json"\n  }\n}`
   return (
     <section className="flex flex-col gap-5">
@@ -177,39 +178,47 @@ export function InstallSection({
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <span className="font-mono text-xs text-muted-foreground">
-            1. register the namespace in{" "}
-            <span className="text-foreground">components.json</span>
-          </span>
-          <CodeBlock code={registries} />
-        </div>
-        <div className="flex flex-col gap-2">
-          <span className="font-mono text-xs text-muted-foreground">
-            2. add charts — each pulls{" "}
-            <span className="text-foreground">@dither-kit/core</span>{" "}
-            automatically
-          </span>
-          <div className="flex flex-col gap-1.5">
-            <CopyLine text={addCmd(pm, "@dither-kit/area-chart")} />
-            <CopyLine text={addCmd(pm, "@dither-kit/pie-chart")} />
-            <CopyLine text={addCmd(pm, "@dither-kit/dither-kit")} />
-          </div>
+      <div className="flex flex-col gap-2">
+        <span className="font-mono text-xs text-muted-foreground">
+          add a chart — no config, pulls{" "}
+          <span className="text-foreground">core</span> and its deps
+          automatically
+        </span>
+        <div className="flex flex-col gap-1.5">
+          <CopyLine text={addCmd(pm, `${REPO}/area-chart`)} />
+          <CopyLine text={addCmd(pm, `${REPO}/pie-chart`)} />
+          <CopyLine text={addCmd(pm, `${REPO}/dither-kit`)} />
         </div>
       </div>
 
       <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
-        also available: <span className="text-foreground">bar-chart</span> and{" "}
-        <span className="text-foreground">radar-chart</span>.{" "}
-        <span className="text-foreground">@dither-kit/dither-kit</span> grabs
-        everything. skipping the namespace config? the raw URL works:{" "}
-        <span className="text-foreground">
-          shadcn add {HOST}/r/radar-chart.json
-        </span>
-        . files land in{" "}
+        also available: <span className="text-foreground">bar-chart</span>,{" "}
+        <span className="text-foreground">radar-chart</span>, and{" "}
+        <span className="text-foreground">core</span>.{" "}
+        <span className="text-foreground">{REPO}/dither-kit</span> grabs
+        everything. files land in{" "}
         <span className="text-foreground">components/dither-kit/</span>.
       </p>
+
+      <details className="group flex flex-col gap-2">
+        <summary className="cursor-pointer font-mono text-xs text-muted-foreground marker:content-['']">
+          <span className="text-foreground group-open:hidden">
+            + prefer the @dither-kit namespace?
+          </span>
+          <span className="hidden text-foreground group-open:inline">
+            − use the @dither-kit namespace
+          </span>
+        </summary>
+        <div className="mt-2 flex flex-col gap-2">
+          <span className="font-mono text-[11px] leading-relaxed text-muted-foreground">
+            register it once in{" "}
+            <span className="text-foreground">components.json</span>, then add
+            by <span className="text-foreground">@name</span>:
+          </span>
+          <CodeBlock code={registries} />
+          <CopyLine text={addCmd(pm, "@dither-kit/area-chart")} />
+        </div>
+      </details>
     </section>
   )
 }
@@ -276,7 +285,7 @@ export function ChartGallery({
 
       <Showcase
         title="area"
-        install={addCmd(pm, "@dither-kit/area-chart")}
+        install={addCmd(pm, `${REPO}/area-chart`)}
         code={areaCode(tweaks)}
         toolbar={<ReplayButton onClick={() => onReplay("area")} />}
       >
@@ -299,7 +308,7 @@ export function ChartGallery({
 
       <Showcase
         title="bar"
-        install={addCmd(pm, "@dither-kit/bar-chart")}
+        install={addCmd(pm, `${REPO}/bar-chart`)}
         code={barCode(tweaks)}
         toolbar={<ReplayButton onClick={() => onReplay("bar")} />}
       >
@@ -322,7 +331,7 @@ export function ChartGallery({
 
       <Showcase
         title="line"
-        install={addCmd(pm, "@dither-kit/area-chart")}
+        install={addCmd(pm, `${REPO}/area-chart`)}
         code={lineCode(tweaks)}
         toolbar={<ReplayButton onClick={() => onReplay("line")} />}
       >
@@ -345,7 +354,7 @@ export function ChartGallery({
       <div className="grid gap-14 lg:grid-cols-2 lg:gap-8">
         <Showcase
           title="pie"
-          install={addCmd(pm, "@dither-kit/pie-chart")}
+          install={addCmd(pm, `${REPO}/pie-chart`)}
           code={pieCode(tweaks)}
           tall
           toolbar={<ReplayButton onClick={() => onReplay("pie")} />}
@@ -368,7 +377,7 @@ export function ChartGallery({
 
         <Showcase
           title="radar"
-          install={addCmd(pm, "@dither-kit/radar-chart")}
+          install={addCmd(pm, `${REPO}/radar-chart`)}
           code={radarCode(tweaks)}
           tall
           toolbar={<ReplayButton onClick={() => onReplay("radar")} />}
