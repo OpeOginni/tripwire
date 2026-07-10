@@ -33,6 +33,12 @@ const NS = "@dither-kit"
 const HOMEPAGE = "https://tripwire.sh/dither-kit"
 const AUTHOR = "ripgrim"
 
+// For shadcn's zero-config GitHub shorthand (`npx shadcn add <REPO>/<item>`):
+// the CLI reads a registry.json at the repo root and pulls each file straight
+// from the repo, so file paths are repo-relative sources (not the served copy).
+const REPO = "bountydotnew/tripwire"
+const SRC_REL = "apps/web/src/components/dither-kit"
+
 // Shared npm deps live on `core`; chart items inherit them via registryDependencies.
 const CORE_DEPS = ["motion", "d3-scale", "d3-shape", "clsx", "tailwind-merge"]
 const CORE_DEV_DEPS = ["@types/d3-scale", "@types/d3-shape"]
@@ -193,6 +199,35 @@ const registry = {
 writeFileSync(
   join(OUT, "registry.json"),
   `${JSON.stringify(registry, null, 2)}\n`
+)
+
+// Repo-root registry — powers the zero-config GitHub shorthand:
+//   npx shadcn@latest add bountydotnew/tripwire/area-chart
+// No inline content (the CLI reads sources from the repo), and deps use the
+// owner/repo/<item> address so `core` resolves without any components.json.
+const githubRegistry = {
+  $schema: "https://ui.shadcn.com/schema/registry.json",
+  name: "dither-kit",
+  homepage: HOMEPAGE,
+  items: ITEMS.map((it) => ({
+    name: it.name,
+    type: "registry:component",
+    title: it.title,
+    description: it.description,
+    dependencies: it.dependencies,
+    registryDependencies: it.registryDependencies.map((d) =>
+      d.replace(`${NS}/`, `${REPO}/`)
+    ),
+    files: it.files.map((name) => ({
+      path: `${SRC_REL}/${name}`,
+      type: "registry:component",
+      target: `${TARGET_DIR}/${name}`,
+    })),
+  })),
+}
+writeFileSync(
+  join(ROOT, "registry.json"),
+  `${JSON.stringify(githubRegistry, null, 2)}\n`
 )
 
 const total = ITEMS.reduce((n, it) => n + it.files.length, 0)
