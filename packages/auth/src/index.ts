@@ -205,6 +205,14 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
+        // Signups are paused while Tripwire is being reworked — block new-user
+        // creation. Existing users are unaffected (signing into an existing
+        // account never triggers a create).
+        before: async () => {
+          throw new APIError("FORBIDDEN", {
+            message: "Sign-ups are paused right now — check back soon.",
+          })
+        },
         after: async (user) => {
           // Auto-create a personal Better Auth org for new users
           try {
