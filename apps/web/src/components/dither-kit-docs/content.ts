@@ -7,11 +7,14 @@ import type {
 /** Everything the dither-kit docs page renders from: install commands, demo
  * data, the tweak model, and the live code snippets. */
 
-/** Where the registry lives once deployed. */
-export const HOST = "https://tripwire.sh"
+/** GitHub repo backing the zero-config shadcn shorthand (`add <REPO>/<item>`).
+ * The primitives live in their own repo; only this lander stays in Tripwire. */
+export const REPO = "Boring-Software-Inc/dither-kit"
 
-/** GitHub repo backing the zero-config shadcn shorthand (`add <REPO>/<item>`). */
-export const REPO = "Boring-Software-Inc/tripwire"
+/** Namespace registry URL — the dither-kit repo's `r/` served over GitHub raw,
+ * for the optional `@dither-kit` components.json path. */
+export const REGISTRY_URL =
+  "https://raw.githubusercontent.com/Boring-Software-Inc/dither-kit/main/r/{name}.json"
 
 /* ------------------------------------------------------- package manager */
 

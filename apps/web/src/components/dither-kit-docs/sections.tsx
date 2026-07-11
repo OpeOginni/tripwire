@@ -24,11 +24,11 @@ import {
   areaCode,
   barCode,
   config,
-  HOST,
   lineCode,
   pieCode,
   pieConfig,
   pieData,
+  REGISTRY_URL,
   REPO,
   type Pm,
   PMS,
@@ -163,7 +163,7 @@ export function InstallSection({
   onPmChange: (pm: Pm) => void
 }) {
   // Optional prettier path: register the namespace, then install by @name.
-  const registries = `// components.json\n{\n  "registries": {\n    "@dither-kit": "${HOST}/r/{name}.json"\n  }\n}`
+  const registries = `// components.json\n{\n  "registries": {\n    "@dither-kit": "${REGISTRY_URL}"\n  }\n}`
   return (
     <section className="flex flex-col gap-5">
       <div className="flex items-center gap-3">
