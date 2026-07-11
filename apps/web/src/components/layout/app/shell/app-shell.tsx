@@ -1,6 +1,7 @@
 import { Outlet, useRouterState } from "@tanstack/react-router"
 import { AuthProvider } from "@tripwire/auth/components"
 import { TopNav } from "#/components/layout/app/shell/top-nav"
+import { BetaBanner } from "#/components/layout/app/shell/beta-banner"
 import { WorkspaceRedirect } from "#/components/layout/app/shell/workspace-redirect"
 import { InstallGitHubPrompt } from "#/components/layout/app/shell/install-github-prompt"
 import { AskSidePanel } from "#/components/layout/app/chat/ask-side-panel"
@@ -55,8 +56,11 @@ function AppShellInner() {
             isChatRoute ? undefined : { boxShadow: "#00000008 0px 1px 4px" }
           }
         >
-          <div className="absolute inset-0 overflow-auto">
-            {needsInstall ? <InstallGitHubPrompt /> : <Outlet />}
+          <div className="absolute inset-0 flex flex-col">
+            <BetaBanner />
+            <div className="min-h-0 flex-1 overflow-auto">
+              {needsInstall ? <InstallGitHubPrompt /> : <Outlet />}
+            </div>
           </div>
         </div>
 
