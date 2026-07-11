@@ -115,7 +115,7 @@
       "title": "Dither Area & Line Chart",
       "description": "Composable dithered area + line charts — children-as-config API with the ordered-dither fill, winking sparkles, a gliding scrub tooltip, selection, and colour bloom. Includes Sparkline. Inspired by Evil Charts (evilcharts.com).",
       "dependencies": [],
-      "registryDependencies": ["bountydotnew/tripwire/core"],
+      "registryDependencies": ["Boring-Software-Inc/tripwire/core"],
       "files": [
         {
           "path": "apps/web/src/components/dither-kit/area-chart.tsx",
@@ -145,7 +145,7 @@
       "title": "Dither Bar Chart",
       "description": "Composable dithered bar chart — grouped or stacked, with a staggered grow-in wave, the ordered-dither fill, scrub tooltip, selection, and colour bloom. Inspired by Evil Charts (evilcharts.com).",
       "dependencies": [],
-      "registryDependencies": ["bountydotnew/tripwire/core"],
+      "registryDependencies": ["Boring-Software-Inc/tripwire/core"],
       "files": [
         {
           "path": "apps/web/src/components/dither-kit/bar-chart.tsx",
@@ -170,7 +170,7 @@
       "title": "Dither Pie / Donut Chart",
       "description": "Composable dithered pie / donut chart — per-pixel radial dither, clockwise sweep-in, slice hover-pop, and colour bloom. Inspired by Evil Charts (evilcharts.com).",
       "dependencies": [],
-      "registryDependencies": ["bountydotnew/tripwire/core"],
+      "registryDependencies": ["Boring-Software-Inc/tripwire/core"],
       "files": [
         {
           "path": "apps/web/src/components/dither-kit/pie-chart.tsx",
@@ -195,7 +195,7 @@
       "title": "Dither Radar Chart",
       "description": "Composable dithered radar chart — polygon-membership dither, scale-in entrance, vertex markers, the dither frame, and colour bloom. Inspired by Evil Charts (evilcharts.com).",
       "dependencies": [],
-      "registryDependencies": ["bountydotnew/tripwire/core"],
+      "registryDependencies": ["Boring-Software-Inc/tripwire/core"],
       "files": [
         {
           "path": "apps/web/src/components/dither-kit/radar-chart.tsx",
@@ -226,10 +226,10 @@
       "description": "All of Dither Kit: area, line, bar, pie, and radar dithered charts on one tiny canvas engine. Inspired by Evil Charts (evilcharts.com).",
       "dependencies": [],
       "registryDependencies": [
-        "bountydotnew/tripwire/area-chart",
-        "bountydotnew/tripwire/bar-chart",
-        "bountydotnew/tripwire/pie-chart",
-        "bountydotnew/tripwire/radar-chart"
+        "Boring-Software-Inc/tripwire/area-chart",
+        "Boring-Software-Inc/tripwire/bar-chart",
+        "Boring-Software-Inc/tripwire/pie-chart",
+        "Boring-Software-Inc/tripwire/radar-chart"
       ],
       "files": [
         {

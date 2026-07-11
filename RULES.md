@@ -1,4 +1,4 @@
-# Contribution rules for bountydotnew/tripwire
+# Contribution rules for Boring-Software-Inc/tripwire
 
 These rules are enforced automatically by [Tripwire](https://tripwire.sh). Contributions that violate them may be closed or held for review.
 

@@ -36,7 +36,7 @@ const AUTHOR = "ripgrim"
 // For shadcn's zero-config GitHub shorthand (`npx shadcn add <REPO>/<item>`):
 // the CLI reads a registry.json at the repo root and pulls each file straight
 // from the repo, so file paths are repo-relative sources (not the served copy).
-const REPO = "bountydotnew/tripwire"
+const REPO = "Boring-Software-Inc/tripwire"
 const SRC_REL = "apps/web/src/components/dither-kit"
 
 // Shared npm deps live on `core`; chart items inherit them via registryDependencies.
@@ -202,7 +202,7 @@ writeFileSync(
 )
 
 // Repo-root registry — powers the zero-config GitHub shorthand:
-//   npx shadcn@latest add bountydotnew/tripwire/area-chart
+//   npx shadcn@latest add Boring-Software-Inc/tripwire/area-chart
 // No inline content (the CLI reads sources from the repo), and deps use the
 // owner/repo/<item> address so `core` resolves without any components.json.
 const githubRegistry = {

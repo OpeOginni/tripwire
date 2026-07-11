@@ -33,7 +33,7 @@ Tripwire watches your repos for low-signal activity (spammy issues, drive-by PRs
 Clone:
 
 ```bash
-git clone https://github.com/bountydotnew/tripwire.git
+git clone https://github.com/Boring-Software-Inc/tripwire.git
 cd tripwire
 pnpm install
 ```
@@ -105,5 +105,5 @@ MIT.
 -->
 
 <p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/chart/github/stars/bountydotnew/tripwire.svg?bg=transparent&amp;title=Tripwire" /><img alt="chart" src="https://shieldcn.dev/chart/github/stars/bountydotnew/tripwire.svg?mode=light&amp;bg=transparent&amp;title=Tripwire" width="1000" /></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/chart/github/stars/Boring-Software-Inc/tripwire.svg?bg=transparent&amp;title=Tripwire" /><img alt="chart" src="https://shieldcn.dev/chart/github/stars/Boring-Software-Inc/tripwire.svg?mode=light&amp;bg=transparent&amp;title=Tripwire" width="1000" /></picture>
 </p>

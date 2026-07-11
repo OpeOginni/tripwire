@@ -67,7 +67,7 @@ function VouchedUsersPage() {
           </span>
         </a>
         <a
-          href="https://github.com/bountydotnew/tripwire"
+          href="https://github.com/Boring-Software-Inc/tripwire"
           target="_blank"
           rel="noopener noreferrer"
           className="text-[12px] text-tw-text-tertiary transition-colors hover:text-tw-text-secondary"
