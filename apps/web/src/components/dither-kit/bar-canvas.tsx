@@ -124,6 +124,7 @@ export function BarCanvas() {
     let lastRevision = state.current.revision
     let intensity = 0
     let needsFill = true
+    let lastPaintSig = ""
     let lastSelected: string | null | undefined = Symbol() as never
     let lastHover: number | null | undefined = Symbol() as never
 
@@ -166,6 +167,15 @@ export function BarCanvas() {
         intensity += (itTarget - intensity) * (reduce ? 1 : 0.16)
         needsFill = true
       } else intensity = itTarget
+
+      // Live tweak repaint (variant, stacking) without replaying the wave.
+      const paintSig = `${s.stackType}|${s.configKeys
+        .map((k) => s.seriesSpecs[k]?.variant ?? "")
+        .join(",")}`
+      if (paintSig !== lastPaintSig) {
+        lastPaintSig = paintSig
+        needsFill = true
+      }
 
       if (!needsFill) return
       paint(prog)

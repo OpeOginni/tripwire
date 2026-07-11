@@ -106,6 +106,7 @@ function startCartesianLoop({
   let entranceReported = !animate
   let intensity = 0
   let needsFill = true
+  let lastPaintSig = ""
   let lastSelected: string | null | undefined = Symbol() as never
 
   const draw = (now: number) => {
@@ -185,7 +186,26 @@ function startCartesianLoop({
     // is the fallback shown when nothing is hovered.
     const marker = s.hoverIndex != null ? s.hoverIndex : s.markerIndex
     const winkDue = !reduce && now - last >= 100
-    if (!(moving || settling || winkDue || marker != null || progChanged))
+    // Repaint when a tweak-driven paint input changes (variant, stacking) so
+    // the panel updates the fill live — without resetting the entrance reveal.
+    const paintSig = `${s.stackType}|${s.configKeys
+      .map((k) => s.seriesSpecs[k]?.variant ?? "")
+      .join(",")}`
+    const sigChanged = paintSig !== lastPaintSig
+    if (sigChanged) {
+      lastPaintSig = paintSig
+      needsFill = true
+    }
+    if (
+      !(
+        moving ||
+        settling ||
+        winkDue ||
+        marker != null ||
+        progChanged ||
+        sigChanged
+      )
+    )
       return
     if (progChanged) {
       lastProg = prog

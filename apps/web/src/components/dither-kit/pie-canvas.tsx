@@ -63,6 +63,7 @@ export function PieCanvas() {
     let intensity = 0
     let popEase = 0 // eases the hovered slice's outward bulge
     let needsFill = true
+    let lastPaintSig = ""
     let lastSelected: string | null | undefined = Symbol() as never
     let lastHover: number | null | undefined = Symbol() as never
 
@@ -168,6 +169,15 @@ export function PieCanvas() {
       } else popEase = popTarget
       if (prog !== lastProg) {
         lastProg = prog
+        needsFill = true
+      }
+
+      // Live tweak repaint (variant, donut inner radius) without re-sweeping.
+      const paintSig = `${s.innerRadius}|${s.pie
+        .map((sl) => s.variantOf(sl.name))
+        .join(",")}`
+      if (paintSig !== lastPaintSig) {
+        lastPaintSig = paintSig
         needsFill = true
       }
 

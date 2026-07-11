@@ -58,6 +58,7 @@ export function RadarCanvas() {
     let lastRevision = state.current.revision
     let intensity = 0
     let needsFill = true
+    let lastPaintSig = ""
     let lastSelected: string | null | undefined = Symbol() as never
     let lastHover: number | null | undefined = Symbol() as never
 
@@ -186,6 +187,13 @@ export function RadarCanvas() {
       } else intensity = itTarget
       if (prog !== lastProg) {
         lastProg = prog
+        needsFill = true
+      }
+
+      // Live tweak repaint (variant) without replaying the scale-in.
+      const paintSig = s.configKeys.map((k) => s.variantOf(k)).join(",")
+      if (paintSig !== lastPaintSig) {
+        lastPaintSig = paintSig
         needsFill = true
       }
 
