@@ -12,7 +12,6 @@ import {
 } from "#/components/dither-kit-docs/content"
 import {
   ChartGallery,
-  CreditAside,
   DocsFooter,
   HeroSection,
   InstallSection,
@@ -122,7 +121,6 @@ function DitherKitDocs() {
           onReplay={() => replay("hero")}
         />
         <InstallSection pm={pm} onPmChange={setPm} />
-        <CreditAside />
         <ChartGallery
           pm={pm}
           tweaks={tweaks}

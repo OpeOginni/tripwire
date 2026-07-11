@@ -239,43 +239,6 @@ export function InstallSection({
   )
 }
 
-export function CreditAside() {
-  return (
-    <aside className="flex flex-col gap-3">
-      <DitherStrip className="h-1.5 w-full" />
-      <p className="max-w-2xl text-sm leading-relaxed">
-        <span className="font-pixel-geist text-foreground">
-          huge thanks to Evil Charts.
-        </span>{" "}
-        <span className="text-muted-foreground">
-          dither-kit exists because of{" "}
-          <a
-            href="https://www.evilcharts.com"
-            target="_blank"
-            rel="noreferrer"
-            className="text-foreground underline underline-offset-2 hover:text-muted-foreground"
-          >
-            Evil Charts
-          </a>{" "}
-          by{" "}
-          <a
-            href="https://github.com/legions-developer/evilcharts"
-            target="_blank"
-            rel="noreferrer"
-            className="text-foreground underline underline-offset-2 hover:text-muted-foreground"
-          >
-            legions-developer
-          </a>{" "}
-          — the original dithered, composable chart aesthetic that inspired
-          every pixel here. Even the per-chart{" "}
-          <span className="text-foreground">@namespace/chart</span> install flow
-          is theirs. Go star it.
-        </span>
-      </p>
-    </aside>
-  )
-}
-
 export function ChartGallery({
   pm,
   tweaks,
