@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
+import { getRouteApi, useNavigate } from "@tanstack/react-router"
 import { authClient } from "@tripwire/auth/client"
 import { useEffect } from "react"
 import { Button } from "@tripwire/ui/button"
@@ -13,8 +13,11 @@ export function LoginPageSkeleton() {
   )
 }
 
+const loginRoute = getRouteApi("/login")
+
 export function LoginPage() {
   const navigate = useNavigate()
+  const { error } = loginRoute.useSearch()
   const { data: session, isPending } = authClient.useSession()
 
   const { data: loginUrl } = useQuery({
@@ -24,6 +27,9 @@ export function LoginPage() {
       const { data } = await authClient.signIn.social({
         provider: "github",
         callbackURL: "/rules",
+        // New-user creation is blocked server-side; failures land back here
+        // so we can show the "sign-ups paused" note instead of a raw error.
+        errorCallbackURL: "/login",
         disableRedirect: true,
       })
       return data?.url ?? null
@@ -44,9 +50,16 @@ export function LoginPage() {
     <div className="flex h-screen w-full shrink-0 flex-col items-center justify-center gap-8 bg-[#191919] px-6 antialiased [font-synthesis:none]">
       <TripwireLogo className="h-10 w-10 text-white" />
       <div className="flex flex-col items-center gap-3">
-        <span className="text-[14px] text-tw-text-secondary">
-          Already have access?
-        </span>
+        {error ? (
+          <p className="max-w-xs text-center text-[13px] leading-relaxed text-tw-text-secondary">
+            We're not taking new sign-ups right now. If you already have access,
+            log in below.
+          </p>
+        ) : (
+          <span className="text-[14px] text-tw-text-secondary">
+            Already have access?
+          </span>
+        )}
         <Button
           render={<a href={loginUrl ?? undefined} />}
           loading={!loginUrl}
@@ -56,9 +69,11 @@ export function LoginPage() {
         >
           Log in
         </Button>
-        <p className="max-w-xs text-center text-[12px] leading-relaxed text-tw-text-muted">
-          New sign-ups are paused for now — check back soon.
-        </p>
+        {error ? null : (
+          <p className="max-w-xs text-center text-[12px] leading-relaxed text-tw-text-muted">
+            New sign-ups are paused for now — check back soon.
+          </p>
+        )}
       </div>
     </div>
   )
