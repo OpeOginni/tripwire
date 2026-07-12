@@ -77,6 +77,10 @@ export type ChartContextValue = {
   setFocusDataKey: (key: string | null) => void
   hoverIndex: number | null
   setHoverIndex: (index: number | null) => void
+  /** Which series' surface the pointer is nearest — drives per-layer hover so
+   * each layer's dither lifts on its own (depth). */
+  hoverKey: string | null
+  setHoverKey: (key: string | null) => void
   markerIndex: number | null // controlled crosshair override (e.g. committed point)
   cursorX: number
   setCursorX: (px: number) => void
@@ -218,6 +222,7 @@ export function useChartController({
   )
   const [focusDataKey, setFocusDataKey] = useState<string | null>(null)
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
+  const [hoverKey, setHoverKey] = useState<string | null>(null)
   const [cursorX, setCursorX] = useState(0)
   const [isMouseInChart, setMouseInChart] = useState(false)
   const [seriesSpecs, setSeriesSpecs] = useState<Record<string, SeriesSpec>>({})
@@ -359,6 +364,8 @@ export function useChartController({
     setFocusDataKey,
     hoverIndex,
     setHoverIndex,
+    hoverKey,
+    setHoverKey,
     markerIndex,
     cursorX,
     setCursorX,

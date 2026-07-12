@@ -126,15 +126,37 @@ export function CartesianRoot<TData extends Row>({
     else svgChildren.push(child)
   })
 
-  const onMove = (clientX: number) => {
+  const onMove = (clientX: number, clientY: number) => {
     const el = ref.current
     if (!el) return
     const rect = el.getBoundingClientRect()
     const px = clientX - rect.left - margins.left
+    const py = clientY - rect.top - margins.top
     const index = ctx.indexAtX(px)
     ctx.setHoverIndex(index)
     ctx.setCursorX(clientX - rect.left)
+    // Per-layer hover: pick the series whose surface is nearest the pointer so
+    // each layer's dither lifts on its own (depth), instead of the whole chart.
+    let nearest: string | null = null
+    let nearestDist = Number.POSITIVE_INFINITY
+    for (const key of ctx.configKeys) {
+      const band = ctx.bands[key]?.[index]
+      if (!band) continue
+      const dist = Math.abs(ctx.y(band[1]) - py)
+      if (dist < nearestDist) {
+        nearestDist = dist
+        nearest = key
+      }
+    }
+    ctx.setHoverKey(nearest)
     onHoverChange?.(index)
+  }
+
+  const clearHover = () => {
+    ctx.setMouseInChart(false)
+    ctx.setHoverIndex(null)
+    ctx.setHoverKey(null)
+    onHoverChange?.(null)
   }
 
   return (
@@ -143,12 +165,36 @@ export function CartesianRoot<TData extends Row>({
         <div
           ref={ref}
           className={cn("relative h-full w-full", className)}
-          onPointerEnter={() => ctx.setMouseInChart(true)}
-          onPointerMove={interactive ? (e) => onMove(e.clientX) : undefined}
-          onPointerLeave={() => {
-            ctx.setMouseInChart(false)
-            ctx.setHoverIndex(null)
-            onHoverChange?.(null)
+          // Let the page still scroll vertically past the chart, but claim
+          // horizontal drags so a thumb-scrub doesn't scroll the page.
+          style={{ touchAction: "pan-y" }}
+          onPointerEnter={(e) => {
+            if (e.pointerType === "mouse") ctx.setMouseInChart(true)
+          }}
+          onPointerDown={
+            interactive
+              ? (e) => {
+                  if (e.pointerType === "mouse") return
+                  // Touch: capture so a slide keeps scrubbing, and the captured
+                  // pointer never reaches the series band's click — tapping
+                  // previews the tooltip without locking selection.
+                  ref.current?.setPointerCapture(e.pointerId)
+                  ctx.setMouseInChart(true)
+                  onMove(e.clientX, e.clientY)
+                }
+              : undefined
+          }
+          onPointerMove={
+            interactive ? (e) => onMove(e.clientX, e.clientY) : undefined
+          }
+          onPointerUp={(e) => {
+            if (e.pointerType !== "mouse") clearHover()
+          }}
+          onPointerCancel={(e) => {
+            if (e.pointerType !== "mouse") clearHover()
+          }}
+          onPointerLeave={(e) => {
+            if (e.pointerType === "mouse") clearHover()
           }}
         >
           {ctx.ready && backChildren.length > 0 && (

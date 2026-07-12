@@ -120,17 +120,37 @@ export function PolarRoot<TData extends Row>({
     ctx.setCursor(clientX - rect.left, clientY - rect.top)
   }
 
+  const clearHover = () => {
+    ctx.setMouseInChart(false)
+    ctx.setHoverIndex(null)
+  }
+
   return (
     <PolarChartContext value={ctx}>
       <CommonChartContext value={ctx.common}>
         <div
           ref={ref}
           className={cn("relative h-full w-full", className)}
-          onPointerEnter={() => ctx.setMouseInChart(true)}
+          style={{ touchAction: "pan-y" }}
+          onPointerEnter={(e) => {
+            if (e.pointerType === "mouse") ctx.setMouseInChart(true)
+          }}
+          onPointerDown={(e) => {
+            if (e.pointerType === "mouse") return
+            // Touch: capture so a slide keeps the tooltip scrubbing.
+            ref.current?.setPointerCapture(e.pointerId)
+            ctx.setMouseInChart(true)
+            onMove(e.clientX, e.clientY)
+          }}
           onPointerMove={(e) => onMove(e.clientX, e.clientY)}
-          onPointerLeave={() => {
-            ctx.setMouseInChart(false)
-            ctx.setHoverIndex(null)
+          onPointerUp={(e) => {
+            if (e.pointerType !== "mouse") clearHover()
+          }}
+          onPointerCancel={(e) => {
+            if (e.pointerType !== "mouse") clearHover()
+          }}
+          onPointerLeave={(e) => {
+            if (e.pointerType === "mouse") clearHover()
           }}
         >
           {ctx.ready && (

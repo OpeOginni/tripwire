@@ -65,9 +65,12 @@ function startCartesianLoop({
   const animate = state.current.animate && !reduce
   const duration = state.current.animationDuration
   const current: Record<string, Surface> = {}
+  // Per-series hover intensity — each layer's dither lifts on its own so the
+  // chart reads with depth. Eased toward 1 for the hovered layer, 0 for the rest.
+  const layerIntensity: Record<string, number> = {}
 
   // `reveal` (0–1) sweeps the fill in left-to-right on first paint.
-  const paintFill = (intensity: number, reveal: number) => {
+  const paintFill = (reveal: number) => {
     octx.clearRect(0, 0, cols, rows)
     const s = state.current
     const stacked = s.stackType === "stacked" || s.stackType === "percent"
@@ -89,7 +92,7 @@ function startCartesianLoop({
         if (x > revealCols) break
         paintColumn(octx, x, cur.top[x] ?? 0, cur.floor[x] ?? 0, seed, {
           variant,
-          intensity,
+          intensity: layerIntensity[key] ?? 0,
           dim,
           stacked: stacked && !isLine,
           sparse,
@@ -105,7 +108,6 @@ function startCartesianLoop({
   let lastProg = -1
   let lastRevision = state.current.revision
   let entranceReported = !animate
-  let intensity = 0
   let needsFill = true
   let lastPaintSig = ""
   let lastSelected: string | null | undefined = Symbol() as never
@@ -175,13 +177,24 @@ function startCartesianLoop({
       needsFill = true
     }
 
-    const itTarget = s.isMouseInChart || s.hovered ? 1 : 0
+    // Ease each layer's hover intensity toward its target — 1 for the hovered
+    // series (or every series on a whole-chart / parent-card hover), 0 for the
+    // rest — so layers lift independently and the chart reads with depth.
     let settling = false
-    if (Math.abs(intensity - itTarget) > 0.001) {
-      intensity += (itTarget - intensity) * 0.16
-      settling = true
-      needsFill = true
-    } else intensity = itTarget
+    for (const key of s.configKeys) {
+      const target =
+        s.hovered ||
+        s.hoverKey === key ||
+        (s.hoverKey == null && s.isMouseInChart)
+          ? 1
+          : 0
+      const cur = layerIntensity[key] ?? 0
+      if (Math.abs(cur - target) > 0.001) {
+        layerIntensity[key] = cur + (target - cur) * (reduce ? 1 : 0.16)
+        settling = true
+        needsFill = true
+      } else layerIntensity[key] = target
+    }
 
     // Live hover wins; the controlled markerIndex (e.g. a committed point)
     // is the fallback shown when nothing is hovered.
@@ -223,7 +236,7 @@ function startCartesianLoop({
     const revealCols = reveal * cols
 
     if (needsFill) {
-      paintFill(intensity, reveal)
+      paintFill(reveal)
       needsFill = false
     }
     c.clearRect(0, 0, cols, rows)
@@ -259,7 +272,7 @@ function startCartesianLoop({
       const floor = cur.floor[sx] ?? rows - 1
       const sy = Math.round(top + star.depth * (floor - top))
       const tw = reduce ? 0.85 : (Math.sin((tick + star.phase) * 0.35) + 1) / 2
-      const lift = tw * (0.7 + 0.3 * intensity)
+      const lift = tw * (0.7 + 0.3 * (layerIntensity[star.key] ?? 0))
       if (lift < 0.55 || sy < 0 || sy >= rows) continue
       // Sparkles glint in the series colour via opacity (the `lift` wink)
       // rather than a lighter shade — so they never read as stray white
