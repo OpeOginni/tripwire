@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import { useCanvasActive } from "./use-chart-dimensions"
 import {
   BAYER,
   backingSize,
@@ -39,7 +40,9 @@ export function PieCanvas() {
     state.current = ctx
   })
 
+  const active = useCanvasActive(canvasRef)
   useEffect(() => {
+    if (!active) return
     const canvas = canvasRef.current
     const c = canvas?.getContext("2d")
     if (!(canvas && c) || cols <= 0 || rows <= 0) return
@@ -188,7 +191,7 @@ export function PieCanvas() {
 
     raf = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(raf)
-  }, [cols, rows, width, height])
+  }, [cols, rows, width, height, active])
 
   const bloom = bloomLayerStyle(
     ctx.bloom,

@@ -11,6 +11,7 @@ import {
   resample,
 } from "./dither-paint"
 import { rgb } from "./palette"
+import { useCanvasActive } from "./use-chart-dimensions"
 
 type Star = { key: string; xi: number; depth: number; phase: number }
 type Surface = { top: number[]; floor: number[] }
@@ -348,7 +349,9 @@ export function CartesianCanvas() {
     starsRef.current = stars
   })
 
+  const active = useCanvasActive(canvasRef)
   useEffect(() => {
+    if (!active) return
     const canvas = canvasRef.current
     if (!canvas) return
     return startCartesianLoop({
@@ -360,7 +363,7 @@ export function CartesianCanvas() {
       targets: targetsRef,
       stars: starsRef,
     })
-  }, [cols, rows])
+  }, [cols, rows, active])
 
   const bloomActive = ctx.bloomOnHover
     ? ctx.isMouseInChart || ctx.hovered

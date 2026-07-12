@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react"
 import { useChart } from "./chart-context"
+import { useCanvasActive } from "./use-chart-dimensions"
 import {
   backingSize,
   bloomLayerStyle,
@@ -58,7 +59,9 @@ export function BarCanvas() {
     targetsRef.current = targets
   })
 
+  const active = useCanvasActive(canvasRef)
   useEffect(() => {
+    if (!active) return
     const canvas = canvasRef.current
     const c = canvas?.getContext("2d")
     if (!(canvas && c) || cols <= 0 || rows <= 0) return
@@ -184,7 +187,7 @@ export function BarCanvas() {
 
     raf = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(raf)
-  }, [cols, rows, width])
+  }, [cols, rows, width, active])
 
   const bloomActive = ctx.bloomOnHover
     ? ctx.isMouseInChart || ctx.hovered

@@ -1,6 +1,51 @@
-import { useLayoutEffect, useRef, useState } from "react"
+import {
+  type RefObject,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react"
 
 export type Dimensions = { width: number; height: number }
+
+/**
+ * True only while `ref`'s element is on-screen and the tab is visible. Lets a
+ * chart's requestAnimationFrame paint loop park itself completely when scrolled
+ * out of view or backgrounded — so a page stacking several dither charts stops
+ * running every loop at once (the fix for phones heating up). Falls back to
+ * always-active where IntersectionObserver is unavailable.
+ */
+export function useCanvasActive<T extends Element>(ref: RefObject<T | null>) {
+  const [active, setActive] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    if (typeof IntersectionObserver === "undefined") {
+      setActive(true)
+      return
+    }
+
+    let onScreen = false
+    const update = () => setActive(onScreen && !document.hidden)
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        onScreen = entry?.isIntersecting ?? false
+        update()
+      },
+      // Start a touch before it scrolls in so the entrance is ready.
+      { rootMargin: "128px" }
+    )
+    io.observe(el)
+    document.addEventListener("visibilitychange", update)
+    return () => {
+      io.disconnect()
+      document.removeEventListener("visibilitychange", update)
+    }
+  }, [ref])
+
+  return active
+}
 
 /**
  * Tracks an element's CSS pixel size via {@link ResizeObserver}. Uses
