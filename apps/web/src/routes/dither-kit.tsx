@@ -13,6 +13,7 @@ import {
 import {
   ChartGallery,
   DocsFooter,
+  ExtrasSection,
   HeroSection,
   InstallSection,
   KnobsSection,
@@ -129,6 +130,7 @@ function DitherKitDocs() {
           onReplay={replay}
         />
         <KnobsSection />
+        <ExtrasSection pm={pm} />
         <DocsFooter />
       </div>
 
