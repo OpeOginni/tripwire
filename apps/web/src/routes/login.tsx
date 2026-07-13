@@ -6,8 +6,12 @@ import {
 import { buildSeo, formatPageTitle } from "#/lib/seo"
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (search: Record<string, unknown>): { error?: string } => ({
+  validateSearch: (
+    search: Record<string, unknown>
+  ): { error?: string; redirect?: string } => ({
     error: typeof search.error === "string" ? search.error : undefined,
+    redirect:
+      typeof search.redirect === "string" ? search.redirect : undefined,
   }),
   component: LoginPage,
   pendingComponent: LoginPageSkeleton,

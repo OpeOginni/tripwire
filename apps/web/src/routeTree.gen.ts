@@ -16,6 +16,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as AdminRouteImport } from './routes/_admin'
 import { Route as OnboardingRouteRouteImport } from './routes/onboarding/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RNameRouteImport } from './routes/r/$name'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
 import { Route as ApiMcpRouteImport } from './routes/api/mcp'
 import { Route as ApiInngestRouteImport } from './routes/api/inngest'
@@ -112,6 +113,11 @@ const OnboardingRouteRoute = OnboardingRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RNameRoute = RNameRouteImport.update({
+  id: '/r/$name',
+  path: '/r/$name',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OauthConsentRoute = OauthConsentRouteImport.update({
@@ -471,6 +477,7 @@ export interface FileRoutesByFullPath {
   '/api/inngest': typeof ApiInngestRoute
   '/api/mcp': typeof ApiMcpRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/r/$name': typeof RNameRoute
   '/$orgHandle/rules': typeof AppOrgHandleRulesRouteRouteWithChildren
   '/.well-known/oauth-authorization-server/$': typeof Char91DotwellKnownChar93OauthAuthorizationServerSplatRoute
   '/.well-known/oauth-protected-resource/$': typeof Char91DotwellKnownChar93OauthProtectedResourceSplatRoute
@@ -542,6 +549,7 @@ export interface FileRoutesByTo {
   '/api/inngest': typeof ApiInngestRoute
   '/api/mcp': typeof ApiMcpRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/r/$name': typeof RNameRoute
   '/.well-known/oauth-authorization-server/$': typeof Char91DotwellKnownChar93OauthAuthorizationServerSplatRoute
   '/.well-known/oauth-protected-resource/$': typeof Char91DotwellKnownChar93OauthProtectedResourceSplatRoute
   '/admin/reputation': typeof AdminAdminReputationRoute
@@ -615,6 +623,7 @@ export interface FileRoutesById {
   '/api/inngest': typeof ApiInngestRoute
   '/api/mcp': typeof ApiMcpRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/r/$name': typeof RNameRoute
   '/_app/$orgHandle/rules': typeof AppOrgHandleRulesRouteRouteWithChildren
   '/.well-known/oauth-authorization-server/$': typeof Char91DotwellKnownChar93OauthAuthorizationServerSplatRoute
   '/.well-known/oauth-protected-resource/$': typeof Char91DotwellKnownChar93OauthProtectedResourceSplatRoute
@@ -688,6 +697,7 @@ export interface FileRouteTypes {
     | '/api/inngest'
     | '/api/mcp'
     | '/oauth/consent'
+    | '/r/$name'
     | '/$orgHandle/rules'
     | '/.well-known/oauth-authorization-server/$'
     | '/.well-known/oauth-protected-resource/$'
@@ -759,6 +769,7 @@ export interface FileRouteTypes {
     | '/api/inngest'
     | '/api/mcp'
     | '/oauth/consent'
+    | '/r/$name'
     | '/.well-known/oauth-authorization-server/$'
     | '/.well-known/oauth-protected-resource/$'
     | '/admin/reputation'
@@ -831,6 +842,7 @@ export interface FileRouteTypes {
     | '/api/inngest'
     | '/api/mcp'
     | '/oauth/consent'
+    | '/r/$name'
     | '/_app/$orgHandle/rules'
     | '/.well-known/oauth-authorization-server/$'
     | '/.well-known/oauth-protected-resource/$'
@@ -897,6 +909,7 @@ export interface RootRouteChildren {
   ApiInngestRoute: typeof ApiInngestRoute
   ApiMcpRoute: typeof ApiMcpRoute
   OauthConsentRoute: typeof OauthConsentRoute
+  RNameRoute: typeof RNameRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiGithubCallbackRoute: typeof ApiGithubCallbackRoute
   ApiGithubInstallRoute: typeof ApiGithubInstallRoute
@@ -958,6 +971,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/r/$name': {
+      id: '/r/$name'
+      path: '/r/$name'
+      fullPath: '/r/$name'
+      preLoaderRoute: typeof RNameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/oauth/consent': {
@@ -1607,6 +1627,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInngestRoute: ApiInngestRoute,
   ApiMcpRoute: ApiMcpRoute,
   OauthConsentRoute: OauthConsentRoute,
+  RNameRoute: RNameRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiGithubCallbackRoute: ApiGithubCallbackRoute,
   ApiGithubInstallRoute: ApiGithubInstallRoute,

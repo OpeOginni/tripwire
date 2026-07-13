@@ -11,10 +11,16 @@ import type {
  * The primitives live in their own repo; only this lander stays in Tripwire. */
 export const REPO = "Boring-Software-Inc/dither-kit"
 
-/** Namespace registry URL — the dither-kit repo's `r/` served over GitHub raw,
- * for the optional `@dither-kit` components.json path. */
-export const REGISTRY_URL =
-  "https://raw.githubusercontent.com/Boring-Software-Inc/dither-kit/main/r/{name}.json"
+/** Tracked registry endpoint — Tripwire proxies the dither-kit repo and counts
+ * each fetch as an install. Leading installs with this URL is what makes the
+ * numbers real (the raw-GitHub shorthand can't be measured). Deps are rewritten
+ * to self-referencing `/r/*` URLs, so a bare install stays zero-config. */
+export const REGISTRY_BASE = "https://tripwire.sh/r"
+export const regItem = (item: string): string => `${REGISTRY_BASE}/${item}.json`
+
+/** Namespace registry URL, pointed at the tracked endpoint, for the optional
+ * `@dither-kit` components.json path. */
+export const REGISTRY_URL = `${REGISTRY_BASE}/{name}.json`
 
 /* ------------------------------------------------------- package manager */
 
@@ -38,7 +44,7 @@ export const addCmd = (pm: Pm, item: string): string =>
 export const SETUP_PROMPT = `Set up dither-kit — composable dithered charts for shadcn/ui — in this project.
 
 Install with the shadcn CLI (this also pulls the shared \`core\` engine + its deps like motion and d3):
-  npx shadcn@latest add ${REPO}/area-chart
+  npx shadcn@latest add ${regItem("area-chart")}
 
 Files land in components/dither-kit/. The API is recharts-style / children-as-config — a data array plus a config object that maps each series to a label and colour:
 
@@ -55,7 +61,7 @@ Files land in components/dither-kit/. The API is recharts-style / children-as-co
     <Area dataKey="desktop" variant="gradient" />
   </AreaChart>
 
-Other charts install the same way: bar-chart, pie-chart, radar-chart (or ${REPO}/dither-kit for all of them).
+Other charts install the same way: bar-chart, pie-chart, radar-chart (or ${regItem("dither-kit")} for all of them).
 - variant: gradient | dotted | hatched | solid
 - color: green blue purple pink orange red grey
 - bloom: off | low | high | aura

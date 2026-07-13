@@ -28,6 +28,7 @@ import {
   pieCode,
   pieConfig,
   pieData,
+  regItem,
   REGISTRY_URL,
   REPO,
   type Pm,
@@ -188,9 +189,9 @@ export function InstallSection({
           automatically
         </span>
         <div className="flex flex-col gap-1.5">
-          <CopyLine text={addCmd(pm, `${REPO}/area-chart`)} />
-          <CopyLine text={addCmd(pm, `${REPO}/pie-chart`)} />
-          <CopyLine text={addCmd(pm, `${REPO}/dither-kit`)} />
+          <CopyLine text={addCmd(pm, regItem("area-chart"))} />
+          <CopyLine text={addCmd(pm, regItem("pie-chart"))} />
+          <CopyLine text={addCmd(pm, regItem("dither-kit"))} />
         </div>
       </div>
 
@@ -210,10 +211,11 @@ export function InstallSection({
       <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
         also available: <span className="text-foreground">bar-chart</span>,{" "}
         <span className="text-foreground">radar-chart</span>, and{" "}
-        <span className="text-foreground">core</span>.{" "}
-        <span className="text-foreground">{REPO}/dither-kit</span> grabs
-        everything. files land in{" "}
-        <span className="text-foreground">components/dither-kit/</span>.
+        <span className="text-foreground">core</span> — swap the last path
+        segment. files land in{" "}
+        <span className="text-foreground">components/dither-kit/</span>. prefer
+        GitHub? <span className="text-foreground">{REPO}/area-chart</span> works
+        too.
       </p>
 
       <details className="group flex flex-col gap-2">
@@ -264,7 +266,7 @@ export function ChartGallery({
 
       <Showcase
         title="area"
-        install={addCmd(pm, `${REPO}/area-chart`)}
+        install={addCmd(pm, regItem("area-chart"))}
         code={areaCode(tweaks)}
         toolbar={<ReplayButton onClick={() => onReplay("area")} />}
       >
@@ -287,7 +289,7 @@ export function ChartGallery({
 
       <Showcase
         title="bar"
-        install={addCmd(pm, `${REPO}/bar-chart`)}
+        install={addCmd(pm, regItem("bar-chart"))}
         code={barCode(tweaks)}
         toolbar={<ReplayButton onClick={() => onReplay("bar")} />}
       >
@@ -310,7 +312,7 @@ export function ChartGallery({
 
       <Showcase
         title="line"
-        install={addCmd(pm, `${REPO}/area-chart`)}
+        install={addCmd(pm, regItem("area-chart"))}
         code={lineCode(tweaks)}
         toolbar={<ReplayButton onClick={() => onReplay("line")} />}
       >
@@ -333,7 +335,7 @@ export function ChartGallery({
       <div className="grid gap-14 lg:grid-cols-2 lg:gap-8">
         <Showcase
           title="pie"
-          install={addCmd(pm, `${REPO}/pie-chart`)}
+          install={addCmd(pm, regItem("pie-chart"))}
           code={pieCode(tweaks)}
           tall
           toolbar={<ReplayButton onClick={() => onReplay("pie")} />}
@@ -356,7 +358,7 @@ export function ChartGallery({
 
         <Showcase
           title="radar"
-          install={addCmd(pm, `${REPO}/radar-chart`)}
+          install={addCmd(pm, regItem("radar-chart"))}
           code={radarCode(tweaks)}
           tall
           toolbar={<ReplayButton onClick={() => onReplay("radar")} />}

@@ -80,6 +80,7 @@ export const env = createEnv({
         message: "DATABASE_URL must be set in production",
       }),
     UNKEY_ROOT_KEY: z.string().min(1).optional(),
+    DATABUDDY_API_KEY: z.string().min(1).optional(),
     OPENROUTER_API_KEY: z.string().min(1).optional(),
     AUTUMN_SECRET_KEY: z.string().min(1).optional(),
     BETTER_AUTH_API_KEY: z.string().min(1).optional(),
