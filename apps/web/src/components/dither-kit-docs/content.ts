@@ -66,6 +66,11 @@ Other charts install the same way: bar-chart, pie-chart, radar-chart (or ${regIt
 - color: green blue purple pink orange red grey
 - bloom: off | low | high | aura
 
+Three standalone extras (no chart engine, tiny installs):
+- avatar — generative mirrored pixel avatars: <DitherAvatar name="dan" /> (optional hue={0-360})
+- button — dithered native buttons: <DitherButton color="blue" variant="gradient">label</DitherButton>
+- gradient — dithered background washes: <DitherGradient from="purple" direction="up" /> inside a relative container
+
 Add one chart where it fits what I'm building. Keep it minimal — don't scaffold a new page or demo unless I ask.`
 
 /* ------------------------------------------------------------------ data */
@@ -203,6 +208,52 @@ export const radarCode = (t: Tweaks): string =>
   <Radar dataKey="desktop" variant="${t.primaryVariant}" />
   <Radar dataKey="mobile" variant="${t.secondaryVariant}" />
 </RadarChart>`
+
+/** Demo state for the avatar playground. */
+export type AvatarTweaks = {
+  name: string
+  hue: number | null // null = derived from the name
+}
+
+export const avatarCode = (t: AvatarTweaks): string =>
+  `// deterministic — same name, same avatar, ~1.5T combinations
+<DitherAvatar name="${t.name}"${t.hue !== null ? ` hue={${t.hue}}` : ""} size={96} />
+
+// a team row — mirror axis and hue fall out of each name
+{members.map((m) => (
+  <DitherAvatar key={m} name={m} className="size-10" />
+))}`
+
+/** Demo state for the button playground. */
+export type ButtonTweaks = {
+  color: string
+  variant: string
+  bloom: boolean
+}
+
+export const buttonCode = (t: ButtonTweaks): string =>
+  `// a native <button> — all button props pass through
+<DitherButton color="${t.color}"${
+    t.variant === "gradient" ? "" : ` variant="${t.variant}"`
+  }${t.bloom ? ` bloom="aura"` : ""} onClick={save}>
+  save changes
+</DitherButton>`
+
+/** Demo state for the gradient playground. */
+export type GradientTweaks = {
+  from: string
+  to: string | null // null = transparent
+  direction: "up" | "down" | "left" | "right"
+}
+
+export const gradientCode = (t: GradientTweaks): string =>
+  `// fills its nearest relative ancestor — footers, section fades, cards
+<footer className="relative">
+  <DitherGradient from="${t.from}"${t.to ? ` to="${t.to}"` : ""}${
+    t.direction === "up" ? "" : ` direction="${t.direction}"`
+  } />
+  <p className="relative">…footer content…</p>
+</footer>`
 
 export const PROPS: [string, string][] = [
   ["variant", '"gradient" | "dotted" | "hatched" | "solid"'],

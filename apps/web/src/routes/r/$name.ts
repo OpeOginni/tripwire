@@ -23,6 +23,9 @@ const ITEMS = new Set([
   "bar-chart",
   "pie-chart",
   "radar-chart",
+  "avatar",
+  "button",
+  "gradient",
   "dither-kit",
 ])
 
@@ -94,7 +97,8 @@ async function handler({ request }: { request: Request }) {
   }
 
   // Fire-and-forget — never block the install. Skip the index (`registry`);
-  // per-item hits are the signal (core ≈ total installs, others = popularity).
+  // per-item hits are the signal (core ≈ chart installs — avatar and gradient
+  // are standalone and don't pull it — others = popularity).
   if (db && name !== "registry") {
     db.track({
       name: "registry_install",

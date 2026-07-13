@@ -1,6 +1,7 @@
 "use client"
 
 import { MoonIcon, SparklesIcon, SunIcon } from "lucide-react"
+import { useState } from "react"
 import {
   ActiveDot,
   Area,
@@ -8,6 +9,12 @@ import {
   Bar,
   BarChart,
   type BloomInput,
+  type ButtonVariant,
+  DitherAvatar,
+  DitherButton,
+  type DitherColor,
+  DitherGradient,
+  type GradientDirection,
   Legend,
   Line,
   LineChart,
@@ -22,8 +29,11 @@ import {
 import {
   addCmd,
   areaCode,
+  avatarCode,
   barCode,
+  buttonCode,
   config,
+  gradientCode,
   lineCode,
   pieCode,
   pieConfig,
@@ -88,7 +98,8 @@ export function HeroSection({
             dither-kit
           </h1>
           <p className="font-mono text-xs text-muted-foreground">
-            five chart types on one tiny canvas engine, no recharts
+            five chart types, generative avatars, buttons, and gradient washes
+            on one tiny canvas engine — no recharts
           </p>
         </div>
         <button
@@ -378,6 +389,290 @@ export function ChartGallery({
           </RadarChart>
         </Showcase>
       </div>
+    </div>
+  )
+}
+
+const SAMPLE_NAMES = [
+  "ada",
+  "grace",
+  "alan",
+  "edsger",
+  "barbara",
+  "linus",
+  "margaret",
+  "dennis",
+  "radia",
+  "donald",
+  "guido",
+  "brendan",
+]
+
+function AvatarShowcase({ pm }: { pm: Pm }) {
+  const [name, setName] = useState("dan")
+  const [hue, setHue] = useState(210)
+  const [auto, setAuto] = useState(true)
+  const [replayToken, setReplayToken] = useState(0)
+
+  return (
+    <Showcase
+      title="avatar"
+      install={addCmd(pm, regItem("avatar"))}
+      code={avatarCode({ name, hue: auto ? null : hue })}
+      toolbar={<ReplayButton onClick={() => setReplayToken((t) => t + 1)} />}
+    >
+      <div className="flex h-full flex-col justify-between gap-4 py-1">
+        <div className="flex flex-wrap items-center gap-4">
+          <DitherAvatar
+            name={name}
+            hue={auto ? undefined : hue}
+            size={96}
+            bloom="aura"
+            replayToken={replayToken}
+          />
+          <div className="flex min-w-48 flex-1 flex-col gap-2.5">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="type a name"
+              className="w-full rounded-lg border bg-card/60 px-3 py-2 font-mono text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-foreground/25"
+            />
+            <div className="flex items-center gap-2.5">
+              <Pill label="hue from name" active={auto} onClick={() => setAuto(!auto)} />
+              <input
+                type="range"
+                min={0}
+                max={358}
+                step={2}
+                value={hue}
+                disabled={auto}
+                onChange={(e) => setHue(Number(e.target.value))}
+                aria-label="Avatar hue"
+                className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full disabled:cursor-default disabled:opacity-30 [&::-moz-range-thumb]:size-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-background [&::-moz-range-thumb]:bg-foreground [&::-webkit-slider-thumb]:size-3.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-background [&::-webkit-slider-thumb]:bg-foreground"
+                style={{
+                  background:
+                    "linear-gradient(to right, hsl(0 85% 58%), hsl(60 85% 58%), hsl(120 85% 58%), hsl(180 85% 58%), hsl(240 85% 58%), hsl(300 85% 58%), hsl(358 85% 58%))",
+                }}
+              />
+            </div>
+            <span className="font-mono text-[11px] leading-relaxed text-muted-foreground">
+              deterministic from the name — 32 mirrored pattern bits × 2 mirror
+              axes × 180 hues ≈{" "}
+              <span className="text-foreground">1.5 trillion avatars</span>.
+              half fold left/right, half fold top/bottom.
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {SAMPLE_NAMES.map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => setName(n)}
+              aria-label={`Use the name ${n}`}
+              className="rounded-md p-1 transition-colors hover:bg-card"
+            >
+              <DitherAvatar name={n} className="size-9" animate={false} />
+            </button>
+          ))}
+        </div>
+      </div>
+    </Showcase>
+  )
+}
+
+const BUTTON_VARIANTS: ButtonVariant[] = [
+  "gradient",
+  "dotted",
+  "hatched",
+  "solid",
+]
+const BUTTON_COLORS: DitherColor[] = [
+  "blue",
+  "purple",
+  "green",
+  "pink",
+  "orange",
+  "red",
+]
+
+function ButtonShowcase({ pm }: { pm: Pm }) {
+  const [color, setColor] = useState<DitherColor>("blue")
+  const [variant, setVariant] = useState<ButtonVariant>("gradient")
+  const [withBloom, setWithBloom] = useState(true)
+
+  return (
+    <Showcase
+      title="button"
+      install={addCmd(pm, regItem("button"))}
+      code={buttonCode({ color, variant, bloom: withBloom })}
+    >
+      <div className="flex h-full flex-col justify-between gap-4 py-1">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="flex items-center gap-1.5">
+            {BUTTON_VARIANTS.map((v) => (
+              <Pill
+                key={v}
+                label={v}
+                active={variant === v}
+                onClick={() => setVariant(v)}
+              />
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5">
+            {BUTTON_COLORS.map((c) => (
+              <Pill
+                key={c}
+                label={c}
+                active={color === c}
+                onClick={() => setColor(c)}
+              />
+            ))}
+          </div>
+          <Pill
+            label="bloom"
+            active={withBloom}
+            onClick={() => setWithBloom(!withBloom)}
+          />
+        </div>
+        <div className="flex flex-1 flex-wrap content-center items-center gap-3">
+          <DitherButton
+            color={color}
+            variant={variant}
+            bloom={withBloom ? "aura" : "off"}
+          >
+            save changes
+          </DitherButton>
+          <DitherButton
+            color={color}
+            variant={variant}
+            bloom={withBloom ? "aura" : "off"}
+            className="px-6 py-3 text-sm"
+          >
+            deploy →
+          </DitherButton>
+          <DitherButton
+            color={color}
+            variant={variant}
+            bloom={withBloom ? "aura" : "off"}
+            disabled
+          >
+            disabled
+          </DitherButton>
+        </div>
+        <span className="font-mono text-[11px] leading-relaxed text-muted-foreground">
+          a real <span className="text-foreground">&lt;button&gt;</span> — the
+          dither eases denser on hover, denser still while pressed. size it
+          with className like any button.
+        </span>
+      </div>
+    </Showcase>
+  )
+}
+
+const GRADIENT_COLORS: DitherColor[] = [
+  "purple",
+  "blue",
+  "green",
+  "pink",
+  "orange",
+  "red",
+]
+const DIRECTIONS: GradientDirection[] = ["up", "down", "left", "right"]
+
+function GradientShowcase({ pm }: { pm: Pm }) {
+  const [from, setFrom] = useState<DitherColor>("purple")
+  const [to, setTo] = useState<DitherColor | null>(null)
+  const [direction, setDirection] = useState<GradientDirection>("up")
+
+  return (
+    <Showcase
+      title="gradient"
+      install={addCmd(pm, regItem("gradient"))}
+      code={gradientCode({ from, to, direction })}
+    >
+      <div className="flex h-full flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="flex items-center gap-1.5">
+            {DIRECTIONS.map((d) => (
+              <Pill
+                key={d}
+                label={d}
+                active={direction === d}
+                onClick={() => setDirection(d)}
+              />
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-[11px] text-muted-foreground">
+              from
+            </span>
+            {GRADIENT_COLORS.map((c) => (
+              <Pill
+                key={c}
+                label={c}
+                active={from === c}
+                onClick={() => setFrom(c)}
+              />
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-[11px] text-muted-foreground">
+              to
+            </span>
+            <Pill
+              label="transparent"
+              active={to === null}
+              onClick={() => setTo(null)}
+            />
+            <Pill
+              label="blue"
+              active={to === "blue"}
+              onClick={() => setTo("blue")}
+            />
+            <Pill
+              label="pink"
+              active={to === "pink"}
+              onClick={() => setTo("pink")}
+            />
+          </div>
+        </div>
+        <div className="relative flex-1 overflow-hidden rounded-lg border">
+          <DitherGradient
+            from={from}
+            to={to ?? "transparent"}
+            direction={direction}
+            opacity={0.85}
+          />
+          <div className="relative flex h-full flex-col justify-end gap-1 p-5">
+            <span className="font-pixel-geist text-sm text-foreground">
+              your footer
+            </span>
+            <span className="font-mono text-[11px] text-muted-foreground">
+              the wash fills whatever relative container it sits in
+            </span>
+          </div>
+        </div>
+      </div>
+    </Showcase>
+  )
+}
+
+export function ExtrasSection({ pm }: { pm: Pm }) {
+  return (
+    <div className="flex flex-col gap-14">
+      <div className="flex items-center gap-3">
+        <h2 className="font-pixel-geist text-lg text-foreground">
+          beyond charts
+        </h2>
+        <DitherStrip className="h-1.5 flex-1" />
+        <span className="font-mono text-xs text-muted-foreground">
+          standalone — none of these pull in the chart engine
+        </span>
+      </div>
+      <AvatarShowcase pm={pm} />
+      <ButtonShowcase pm={pm} />
+      <GradientShowcase pm={pm} />
     </div>
   )
 }
