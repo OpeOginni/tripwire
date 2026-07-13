@@ -35,16 +35,28 @@ const PM_RUNNER: Record<Pm, string> = {
   bun: "bunx --bun",
 }
 
+/** Recommended installer — `@dither-kit/cli` (lockfile → `update` / `diff`).
+ * Item is a bare registry name (`area-chart`, `button`, …). */
 export const addCmd = (pm: Pm, item: string): string =>
+  `${PM_RUNNER[pm]} @dither-kit/cli add ${item}`
+
+/** List what's available (registry is fetched live — no CLI republish). */
+export const listCmd = (pm: Pm): string =>
+  `${PM_RUNNER[pm]} @dither-kit/cli list`
+
+/** Fallback: raw shadcn against a full registry URL / GitHub shorthand /
+ * `@dither-kit/…` namespace entry. No lockfile. */
+export const shadcnAddCmd = (pm: Pm, item: string): string =>
   `${PM_RUNNER[pm]} shadcn@latest add ${item}`
 
 /** Paste-into-your-AI setup prompt — install command + the non-obvious API
  * shape (the config label/color object) + one worked example. Deliberately
  * tells the assistant not to scaffold a whole page. */
-export const SETUP_PROMPT = `Set up dither-kit — composable dithered charts for shadcn/ui — in this project.
+export const SETUP_PROMPT = `Set up dither-kit — composable dithered charts + avatars/buttons/gradients for shadcn/ui — in this project.
 
-Install with the shadcn CLI (this also pulls the shared \`core\` engine + its deps like motion and d3):
-  npx shadcn@latest add ${regItem("area-chart")}
+Requires Tailwind + a shadcn project (components.json). Install with the Dither Kit CLI (pulls the shared \`core\` engine + deps like motion and d3 automatically; writes a lockfile so you can update later):
+  npx @dither-kit/cli add area-chart
+  npx @dither-kit/cli list
 
 Files land in components/dither-kit/. The API is recharts-style / children-as-config — a data array plus a config object that maps each series to a label and colour:
 
@@ -61,17 +73,17 @@ Files land in components/dither-kit/. The API is recharts-style / children-as-co
     <Area dataKey="desktop" variant="gradient" />
   </AreaChart>
 
-Other charts install the same way: bar-chart, pie-chart, radar-chart (or ${regItem("dither-kit")} for all of them).
+Other charts: bar-chart, pie-chart, radar-chart (or \`npx @dither-kit/cli add dither-kit\` for everything).
 - variant: gradient | dotted | hatched | solid
 - color: green blue purple pink orange red grey
 - bloom: off | low | high | aura
 
-Three standalone extras (no chart engine, tiny installs):
+Three standalone extras (no chart engine, tiny installs — same CLI):
 - avatar — generative mirrored pixel avatars: <DitherAvatar name="dan" /> (optional hue={0-360})
 - button — dithered native buttons: <DitherButton color="blue" variant="gradient">label</DitherButton>
 - gradient — dithered background washes: <DitherGradient from="purple" direction="up" /> inside a relative container
 
-Add one chart where it fits what I'm building. Keep it minimal — don't scaffold a new page or demo unless I ask.`
+Add one chart (or a standalone) where it fits what I'm building. Keep it minimal — don't scaffold a new page or demo unless I ask.`
 
 /* ------------------------------------------------------------------ data */
 

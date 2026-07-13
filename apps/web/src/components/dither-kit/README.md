@@ -15,32 +15,36 @@ The pack is **self-contained** (only `react`, `motion`, `d3-scale`, `d3-shape`,
 
 ## Install
 
-Each chart is its own registry item and pulls a shared `core` engine
-automatically. Register the namespace once in `components.json`:
+Recommended: the **Dither Kit CLI** (lockfile for `update` / `diff`, registry
+fetched live so new components appear without a CLI release):
+
+```bash
+npx @dither-kit/cli add area-chart     # area + line (+ Sparkline); pulls core
+npx @dither-kit/cli add bar-chart pie-chart radar-chart
+npx @dither-kit/cli add avatar button gradient   # standalones, no core
+npx @dither-kit/cli add dither-kit               # everything
+npx @dither-kit/cli list
+```
+
+Or with the raw shadcn CLI — register the namespace once in `components.json`:
 
 ```json
 {
   "registries": {
-    "@dither-kit": "https://<your-host>/r/{name}.json"
+    "@dither-kit": "https://tripwire.sh/r/{name}.json"
   }
 }
 ```
 
-…then add only the charts you want:
+…then:
 
 ```bash
-npx shadcn@latest add @dither-kit/area-chart    # area + line (+ Sparkline)
-npx shadcn@latest add @dither-kit/bar-chart
-npx shadcn@latest add @dither-kit/pie-chart
-npx shadcn@latest add @dither-kit/radar-chart
-npx shadcn@latest add @dither-kit/avatar        # standalone, no core
-npx shadcn@latest add @dither-kit/button        # standalone, no core
-npx shadcn@latest add @dither-kit/gradient      # standalone, no core
-npx shadcn@latest add @dither-kit/dither-kit    # everything at once
+npx shadcn@latest add @dither-kit/area-chart
+npx shadcn@latest add @dither-kit/avatar
 ```
 
-No namespace config? Use the raw URL instead:
-`npx shadcn@latest add https://<your-host>/r/radar-chart.json`.
+No namespace config? Use the tracked URL:
+`npx shadcn@latest add https://tripwire.sh/r/radar-chart.json`.
 
 Files land in `components/dither-kit/`; import from each file:
 

@@ -35,6 +35,7 @@ import {
   config,
   gradientCode,
   lineCode,
+  listCmd,
   pieCode,
   pieConfig,
   pieData,
@@ -48,6 +49,7 @@ import {
   radarData,
   series,
   SETUP_PROMPT,
+  shadcnAddCmd,
   SPARKLINE_CODE,
   type Tweaks,
 } from "./content"
@@ -174,7 +176,8 @@ export function InstallSection({
   pm: Pm
   onPmChange: (pm: Pm) => void
 }) {
-  // Optional prettier path: register the namespace, then install by @name.
+  // Optional prettier path: register the namespace, then install by @name
+  // with the raw shadcn CLI (no lockfile).
   const registries = `// components.json\n{\n  "registries": {\n    "@dither-kit": "${REGISTRY_URL}"\n  }\n}`
   return (
     <section className="flex flex-col gap-5">
@@ -195,14 +198,17 @@ export function InstallSection({
 
       <div className="flex flex-col gap-2">
         <span className="font-mono text-xs text-muted-foreground">
-          add a chart — no config, pulls{" "}
-          <span className="text-foreground">core</span> and its deps
-          automatically
+          via{" "}
+          <span className="text-foreground">@dither-kit/cli</span> — lockfile
+          for <span className="text-foreground">update</span> /{" "}
+          <span className="text-foreground">diff</span>, pulls{" "}
+          <span className="text-foreground">core</span> + deps automatically
         </span>
         <div className="flex flex-col gap-1.5">
-          <CopyLine text={addCmd(pm, regItem("area-chart"))} />
-          <CopyLine text={addCmd(pm, regItem("pie-chart"))} />
-          <CopyLine text={addCmd(pm, regItem("dither-kit"))} />
+          <CopyLine text={addCmd(pm, "area-chart")} />
+          <CopyLine text={addCmd(pm, "button")} />
+          <CopyLine text={addCmd(pm, "dither-kit")} />
+          <CopyLine text={listCmd(pm)} />
         </div>
       </div>
 
@@ -221,13 +227,34 @@ export function InstallSection({
 
       <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
         also available: <span className="text-foreground">bar-chart</span>,{" "}
-        <span className="text-foreground">radar-chart</span>, and{" "}
-        <span className="text-foreground">core</span> — swap the last path
-        segment. files land in{" "}
-        <span className="text-foreground">components/dither-kit/</span>. prefer
-        GitHub? <span className="text-foreground">{REPO}/area-chart</span> works
-        too.
+        <span className="text-foreground">pie-chart</span>,{" "}
+        <span className="text-foreground">radar-chart</span>,{" "}
+        <span className="text-foreground">avatar</span>,{" "}
+        <span className="text-foreground">gradient</span>, and{" "}
+        <span className="text-foreground">core</span>. files land in{" "}
+        <span className="text-foreground">components/dither-kit/</span>.
+        registry is live —{" "}
+        <span className="text-foreground">list</span> always reflects{" "}
+        <span className="text-foreground">tripwire.sh/r/*</span>.
       </p>
+
+      <details className="group flex flex-col gap-2">
+        <summary className="cursor-pointer font-mono text-xs text-muted-foreground marker:content-['']">
+          <span className="text-foreground group-open:hidden">
+            + raw shadcn instead (no lockfile)?
+          </span>
+          <span className="hidden text-foreground group-open:inline">
+            − raw shadcn instead
+          </span>
+        </summary>
+        <div className="mt-2 flex flex-col gap-2">
+          <span className="font-mono text-[11px] leading-relaxed text-muted-foreground">
+            tracked URL (counts as an install) or the GitHub shorthand:
+          </span>
+          <CopyLine text={shadcnAddCmd(pm, regItem("area-chart"))} />
+          <CopyLine text={shadcnAddCmd(pm, `${REPO}/area-chart`)} />
+        </div>
+      </details>
 
       <details className="group flex flex-col gap-2">
         <summary className="cursor-pointer font-mono text-xs text-muted-foreground marker:content-['']">
@@ -242,10 +269,10 @@ export function InstallSection({
           <span className="font-mono text-[11px] leading-relaxed text-muted-foreground">
             register it once in{" "}
             <span className="text-foreground">components.json</span>, then add
-            by <span className="text-foreground">@name</span>:
+            by <span className="text-foreground">@name</span> with shadcn:
           </span>
           <CodeBlock code={registries} />
-          <CopyLine text={addCmd(pm, "@dither-kit/area-chart")} />
+          <CopyLine text={shadcnAddCmd(pm, "@dither-kit/area-chart")} />
         </div>
       </details>
     </section>
@@ -277,7 +304,7 @@ export function ChartGallery({
 
       <Showcase
         title="area"
-        install={addCmd(pm, regItem("area-chart"))}
+        install={addCmd(pm, "area-chart")}
         code={areaCode(tweaks)}
         toolbar={<ReplayButton onClick={() => onReplay("area")} />}
       >
@@ -300,7 +327,7 @@ export function ChartGallery({
 
       <Showcase
         title="bar"
-        install={addCmd(pm, regItem("bar-chart"))}
+        install={addCmd(pm, "bar-chart")}
         code={barCode(tweaks)}
         toolbar={<ReplayButton onClick={() => onReplay("bar")} />}
       >
@@ -323,7 +350,7 @@ export function ChartGallery({
 
       <Showcase
         title="line"
-        install={addCmd(pm, regItem("area-chart"))}
+        install={addCmd(pm, "area-chart")}
         code={lineCode(tweaks)}
         toolbar={<ReplayButton onClick={() => onReplay("line")} />}
       >
@@ -346,7 +373,7 @@ export function ChartGallery({
       <div className="grid gap-14 lg:grid-cols-2 lg:gap-8">
         <Showcase
           title="pie"
-          install={addCmd(pm, regItem("pie-chart"))}
+          install={addCmd(pm, "pie-chart")}
           code={pieCode(tweaks)}
           tall
           toolbar={<ReplayButton onClick={() => onReplay("pie")} />}
@@ -369,7 +396,7 @@ export function ChartGallery({
 
         <Showcase
           title="radar"
-          install={addCmd(pm, regItem("radar-chart"))}
+          install={addCmd(pm, "radar-chart")}
           code={radarCode(tweaks)}
           tall
           toolbar={<ReplayButton onClick={() => onReplay("radar")} />}
@@ -417,7 +444,7 @@ function AvatarShowcase({ pm }: { pm: Pm }) {
   return (
     <Showcase
       title="avatar"
-      install={addCmd(pm, regItem("avatar"))}
+      install={addCmd(pm, "avatar")}
       code={avatarCode({ name, hue: auto ? null : hue })}
       toolbar={<ReplayButton onClick={() => setReplayToken((t) => t + 1)} />}
     >
@@ -504,7 +531,7 @@ function ButtonShowcase({ pm }: { pm: Pm }) {
   return (
     <Showcase
       title="button"
-      install={addCmd(pm, regItem("button"))}
+      install={addCmd(pm, "button")}
       code={buttonCode({ color, variant, bloom: withBloom })}
     >
       <div className="flex h-full flex-col justify-between gap-4 py-1">
@@ -588,7 +615,7 @@ function GradientShowcase({ pm }: { pm: Pm }) {
   return (
     <Showcase
       title="gradient"
-      install={addCmd(pm, regItem("gradient"))}
+      install={addCmd(pm, "gradient")}
       code={gradientCode({ from, to, direction })}
     >
       <div className="flex h-full flex-col gap-3">
