@@ -24,6 +24,7 @@ const ITEMS = new Set([
   "pie-chart",
   "radar-chart",
   "avatar",
+  "button",
   "gradient",
   "dither-kit",
 ])

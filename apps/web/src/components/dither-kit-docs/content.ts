@@ -66,8 +66,9 @@ Other charts install the same way: bar-chart, pie-chart, radar-chart (or ${regIt
 - color: green blue purple pink orange red grey
 - bloom: off | low | high | aura
 
-Two standalone extras (no chart engine, tiny installs):
+Three standalone extras (no chart engine, tiny installs):
 - avatar — generative mirrored pixel avatars: <DitherAvatar name="dan" /> (optional hue={0-360})
+- button — dithered native buttons: <DitherButton color="blue" variant="gradient">label</DitherButton>
 - gradient — dithered background washes: <DitherGradient from="purple" direction="up" /> inside a relative container
 
 Add one chart where it fits what I'm building. Keep it minimal — don't scaffold a new page or demo unless I ask.`
@@ -222,6 +223,21 @@ export const avatarCode = (t: AvatarTweaks): string =>
 {members.map((m) => (
   <DitherAvatar key={m} name={m} className="size-10" />
 ))}`
+
+/** Demo state for the button playground. */
+export type ButtonTweaks = {
+  color: string
+  variant: string
+  bloom: boolean
+}
+
+export const buttonCode = (t: ButtonTweaks): string =>
+  `// a native <button> — all button props pass through
+<DitherButton color="${t.color}"${
+    t.variant === "gradient" ? "" : ` variant="${t.variant}"`
+  }${t.bloom ? ` bloom="aura"` : ""} onClick={save}>
+  save changes
+</DitherButton>`
 
 /** Demo state for the gradient playground. */
 export type GradientTweaks = {

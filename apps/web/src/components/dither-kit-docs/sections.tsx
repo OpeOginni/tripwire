@@ -9,7 +9,9 @@ import {
   Bar,
   BarChart,
   type BloomInput,
+  type ButtonVariant,
   DitherAvatar,
+  DitherButton,
   type DitherColor,
   DitherGradient,
   type GradientDirection,
@@ -29,6 +31,7 @@ import {
   areaCode,
   avatarCode,
   barCode,
+  buttonCode,
   config,
   gradientCode,
   lineCode,
@@ -95,8 +98,8 @@ export function HeroSection({
             dither-kit
           </h1>
           <p className="font-mono text-xs text-muted-foreground">
-            five chart types, generative avatars, and gradient washes on one
-            tiny canvas engine — no recharts
+            five chart types, generative avatars, buttons, and gradient washes
+            on one tiny canvas engine — no recharts
           </p>
         </div>
         <button
@@ -478,6 +481,95 @@ function AvatarShowcase({ pm }: { pm: Pm }) {
   )
 }
 
+const BUTTON_VARIANTS: ButtonVariant[] = [
+  "gradient",
+  "dotted",
+  "hatched",
+  "solid",
+]
+const BUTTON_COLORS: DitherColor[] = [
+  "blue",
+  "purple",
+  "green",
+  "pink",
+  "orange",
+  "red",
+]
+
+function ButtonShowcase({ pm }: { pm: Pm }) {
+  const [color, setColor] = useState<DitherColor>("blue")
+  const [variant, setVariant] = useState<ButtonVariant>("gradient")
+  const [withBloom, setWithBloom] = useState(true)
+
+  return (
+    <Showcase
+      title="button"
+      install={addCmd(pm, regItem("button"))}
+      code={buttonCode({ color, variant, bloom: withBloom })}
+    >
+      <div className="flex h-full flex-col justify-between gap-4 py-1">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="flex items-center gap-1.5">
+            {BUTTON_VARIANTS.map((v) => (
+              <Pill
+                key={v}
+                label={v}
+                active={variant === v}
+                onClick={() => setVariant(v)}
+              />
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5">
+            {BUTTON_COLORS.map((c) => (
+              <Pill
+                key={c}
+                label={c}
+                active={color === c}
+                onClick={() => setColor(c)}
+              />
+            ))}
+          </div>
+          <Pill
+            label="bloom"
+            active={withBloom}
+            onClick={() => setWithBloom(!withBloom)}
+          />
+        </div>
+        <div className="flex flex-1 flex-wrap content-center items-center gap-3">
+          <DitherButton
+            color={color}
+            variant={variant}
+            bloom={withBloom ? "aura" : "off"}
+          >
+            save changes
+          </DitherButton>
+          <DitherButton
+            color={color}
+            variant={variant}
+            bloom={withBloom ? "aura" : "off"}
+            className="px-6 py-3 text-sm"
+          >
+            deploy →
+          </DitherButton>
+          <DitherButton
+            color={color}
+            variant={variant}
+            bloom={withBloom ? "aura" : "off"}
+            disabled
+          >
+            disabled
+          </DitherButton>
+        </div>
+        <span className="font-mono text-[11px] leading-relaxed text-muted-foreground">
+          a real <span className="text-foreground">&lt;button&gt;</span> — the
+          dither eases denser on hover, denser still while pressed. size it
+          with className like any button.
+        </span>
+      </div>
+    </Showcase>
+  )
+}
+
 const GRADIENT_COLORS: DitherColor[] = [
   "purple",
   "blue",
@@ -575,10 +667,11 @@ export function ExtrasSection({ pm }: { pm: Pm }) {
         </h2>
         <DitherStrip className="h-1.5 flex-1" />
         <span className="font-mono text-xs text-muted-foreground">
-          standalone — neither pulls in the chart engine
+          standalone — none of these pull in the chart engine
         </span>
       </div>
       <AvatarShowcase pm={pm} />
+      <ButtonShowcase pm={pm} />
       <GradientShowcase pm={pm} />
     </div>
   )
